@@ -25,6 +25,18 @@ tasks {
     }
 }
 
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            groupId = "no.nav.aap"
+            artifactId = "kafka"
+            version = "0.0.1"
+
+            from(components["java"])
+        }
+    }
+}
+
 kotlin.sourceSets["main"].kotlin.srcDirs("main")
 kotlin.sourceSets["test"].kotlin.srcDirs("test")
 sourceSets["main"].resources.srcDirs("main")
