@@ -6,21 +6,17 @@ on:
 
 jobs:
   build:
-    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - uses: actions/setup-java@v3
         with:
           java-version: 18
           distribution: 'temurin'
           check-latest: true
-
       - uses: gradle/gradle-build-action@v2
         with:
           arguments: build --continue --no-daemon
-
       - uses: dorny/test-reporter@v1.5.0
         if: always()
         with:
@@ -28,3 +24,31 @@ jobs:
           path: "*/build/test-results/test/TEST-*.xml"
           reporter: java-junit
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # include git tags
+
+      - uses: paulhatch/semantic-version@v4.0.3
+        id: tag
+        with:
+          bump_each_commit: true
+          tag_prefix: ""
+
+      - run: |
+          text="$(git --no-pager log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"%h %s")"
+          echo "::set-output name=CHANGELOG::$text"
+
+      - uses: actions/create-release@latest
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.version }}
+          release_name: ${{ steps.tag.outputs.version }}
+          body: |
+            Changes in this Release
+            ${{ steps.description.outputs.CHANGELOG }}"
