@@ -30,7 +30,7 @@ data class KafkaConfig(
     internal val schemaRegistry: Properties = Properties().apply {
         if (schemaRegistryUrl != null) {
             this[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = schemaRegistryUrl
-            if (keystorePath.isNotEmpty()) {
+            if (schemaRegistryUser != null && schemaRegistryPwd != null) {
                 this[SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE] = "USER_INFO"
                 this[SchemaRegistryClientConfig.USER_INFO_CONFIG] = "$schemaRegistryUser:$schemaRegistryPwd"
             }
@@ -48,7 +48,7 @@ data class KafkaConfig(
     }
 
     val ssl: Properties = Properties().apply {
-        if (keystorePath.isNotEmpty()) {
+        if (keystorePath.isNotEmpty() && truststorePath.isNotEmpty() && credstorePsw.isNotEmpty()) {
             this[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = "SSL"
             this[SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG] = "JKS"
             this[SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG] = truststorePath
@@ -64,7 +64,6 @@ data class KafkaConfig(
     val consumer: Properties = kStreams + ssl + schemaRegistry + Properties().apply {
         this[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
         this[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
-        this[ConsumerConfig.GROUP_ID_CONFIG] = "aap-inntekt-1"
         this[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 124_000
     }
 
