@@ -1,5 +1,7 @@
 [![Release](https://jitpack.io/v/com.github.navikt/aap-libs.svg)](https://jitpack.io/#com.github.navikt/aap-libs)
 
+![img](logo.jpg)
+
 # Libraries for AAP
 Libraries are published to jitpack.
 
