@@ -1,4 +1,4 @@
-rootProject.name = "libs"
+rootProject.name = "aap-libs"
 
 include(
     "kafka",

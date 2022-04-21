@@ -1,12 +1,8 @@
-name: Kafka Test
+name: Push
 
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'kafka-test/**'
-      - '*'
-      - '.github/workflows/kafka-test.yml'
 
 jobs:
   build:
@@ -23,12 +19,12 @@ jobs:
 
       - uses: gradle/gradle-build-action@v2
         with:
-          arguments: kafka-test:test --continue --no-daemon
+          arguments: build --continue --no-daemon
 
       - uses: dorny/test-reporter@v1.5.0
         if: always()
         with:
           name: tests
-          path: "kafka-test/build/test-results/test/TEST-*.xml"
+          path: "*/build/test-results/test/TEST-*.xml"
           reporter: java-junit
           token: ${{ secrets.GITHUB_TOKEN }}
