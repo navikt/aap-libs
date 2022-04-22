@@ -37,4 +37,7 @@ subprojects {
             }
         }
     }
+
+    kotlin.sourceSets["main"].kotlin.srcDirs("main")
+    kotlin.sourceSets["test"].kotlin.srcDirs("test")
 }
