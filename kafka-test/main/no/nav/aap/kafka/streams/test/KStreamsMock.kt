@@ -1,5 +1,7 @@
 package no.nav.aap.kafka.streams.test
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.binder.kafka.KtorKafkaMetrics
 import no.nav.aap.kafka.KafkaConfig
 import no.nav.aap.kafka.plus
 import no.nav.aap.kafka.streams.Kafka
@@ -11,9 +13,10 @@ import java.util.*
 class KStreamsMock : Kafka {
     lateinit var streams: TopologyTestDriver
 
-    override fun start(kafkaConfig: KafkaConfig, streamsBuilder: StreamsBuilder.() -> Unit) {
-        val topology = StreamsBuilder().apply(streamsBuilder).build()
-        streams = TopologyTestDriver(topology, kafkaConfig.consumer + kafkaConfig.producer + testConfig)
+    override fun start(config: KafkaConfig, registry: MeterRegistry, builder: StreamsBuilder.() -> Unit) {
+        val topology = StreamsBuilder().apply(builder).build()
+        KtorKafkaMetrics(registry, streams::metrics)
+        streams = TopologyTestDriver(topology, config.consumer + config.producer + testConfig)
     }
 
     inline fun <reified V : Any> inputTopic(topic: Topic<V>): TestInputTopic<String, V> =

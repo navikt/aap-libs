@@ -1,5 +1,7 @@
 package no.nav.aap.kafka.streams
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.binder.kafka.KafkaStreamsMetrics
 import no.nav.aap.kafka.KafkaConfig
 import no.nav.aap.kafka.ProcessingExceptionHandler
 import no.nav.aap.kafka.plus
@@ -22,7 +24,7 @@ typealias Store<V> = ReadOnlyKeyValueStore<String, V>
 private val secureLog = LoggerFactory.getLogger("secureLog")
 
 interface Kafka : AutoCloseable {
-    fun start(kafkaConfig: KafkaConfig, streamsBuilder: StreamsBuilder.() -> Unit)
+    fun start(config: KafkaConfig, registry: MeterRegistry, builder: StreamsBuilder.() -> Unit)
     fun isReady(): Boolean
     fun isLive(): Boolean
     fun <V> getStore(name: String): Store<V>
@@ -32,11 +34,12 @@ object KStreams : Kafka {
     private lateinit var streams: KafkaStreams
     private var isInitiallyStarted: Boolean = false
 
-    override fun start(kafkaConfig: KafkaConfig, streamsBuilder: StreamsBuilder.() -> Unit) {
-        val topology = StreamsBuilder().apply(streamsBuilder).build()
-        streams = KafkaStreams(topology, kafkaConfig.consumer + kafkaConfig.producer).apply {
+    override fun start(config: KafkaConfig, registry: MeterRegistry, builder: StreamsBuilder.() -> Unit) {
+        val topology = StreamsBuilder().apply(builder).build()
+        streams = KafkaStreams(topology, config.consumer + config.producer).apply {
             setUncaughtExceptionHandler(ProcessingExceptionHandler())
             setStateListener { state, _ -> if (state == RUNNING) isInitiallyStarted = true }
+            KafkaStreamsMetrics(this).bindTo(registry)
             start()
         }
     }
@@ -60,3 +63,4 @@ fun <V> StreamsBuilder.consume(topic: Topic<V>): KStream<String, V?> =
 
 fun <V> StreamsBuilder.globalTable(table: Table<V>): GlobalKTable<String, V> =
     globalTable(table.source.name, table.source.consumed("${table.name}-as-globaltable"))
+
