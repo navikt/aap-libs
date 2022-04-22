@@ -29,10 +29,7 @@ subprojects {
     publishing {
         publications {
             create<MavenPublication>("mavenJava") {
-//                groupId = project.group
                 artifactId = project.name
-//                version = project.version
-
                 from(components["java"])
             }
         }

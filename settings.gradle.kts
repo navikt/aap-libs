@@ -4,4 +4,5 @@ include(
     "kafka",
     "kafka-test",
     "ktor-client-auth",
+    "ktor-utils",
 )
