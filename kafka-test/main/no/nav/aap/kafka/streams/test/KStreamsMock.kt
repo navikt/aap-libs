@@ -15,8 +15,8 @@ class KStreamsMock : Kafka {
 
     override fun start(config: KafkaConfig, registry: MeterRegistry, builder: StreamsBuilder.() -> Unit) {
         val topology = StreamsBuilder().apply(builder).build()
-        KtorKafkaMetrics(registry, streams::metrics)
         streams = TopologyTestDriver(topology, config.consumer + config.producer + testConfig)
+        KtorKafkaMetrics(registry, streams::metrics)
     }
 
     inline fun <reified V : Any> inputTopic(topic: Topic<V>): TestInputTopic<String, V> =
