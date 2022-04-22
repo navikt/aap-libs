@@ -4,6 +4,5 @@ data class Table<V>(
     val name: String,
     val source: Topic<V>,
     val global: Boolean = false,
-) {
-    val stateStoreName = "$name-state-store"
-}
+    val stateStoreName: String = "$name-state-store"
+)
