@@ -4,5 +4,3 @@ dependencies {
 
     testImplementation(kotlin("test"))
 }
-
-sourceSets["test"].resources.srcDirs("test")
