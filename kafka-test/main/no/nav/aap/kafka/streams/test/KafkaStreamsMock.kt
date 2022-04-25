@@ -3,7 +3,6 @@ package no.nav.aap.kafka.streams.test
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KtorKafkaMetrics
-import no.nav.aap.kafka.KFactory
 import no.nav.aap.kafka.KafkaConfig
 import no.nav.aap.kafka.plus
 import no.nav.aap.kafka.streams.KStreams
@@ -15,7 +14,7 @@ import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.streams.*
 import java.util.*
 
-class KafkaStreamsMock : KFactory, KStreams {
+class KafkaStreamsMock : KStreams {
     lateinit var streams: TopologyTestDriver
     var schemaRegistryUrl: String? = null
 

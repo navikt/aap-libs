@@ -6,12 +6,6 @@ import no.nav.aap.kafka.KFactory
 import no.nav.aap.kafka.KafkaConfig
 import no.nav.aap.kafka.ProcessingExceptionHandler
 import no.nav.aap.kafka.plus
-import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.consumer.Consumer
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.KafkaStreams.State.*
 import org.apache.kafka.streams.StoreQueryParameters.fromNameAndType
@@ -30,14 +24,14 @@ typealias Store<V> = ReadOnlyKeyValueStore<String, V>
 
 private val secureLog = LoggerFactory.getLogger("secureLog")
 
-interface KStreams : AutoCloseable {
+interface KStreams : KFactory, AutoCloseable {
     fun start(config: KafkaConfig, registry: MeterRegistry, builder: StreamsBuilder.() -> Unit)
     fun isReady(): Boolean
     fun isLive(): Boolean
     fun <V> getStore(name: String): Store<V>
 }
 
-object KafkaStreams : KFactory, KStreams {
+object KafkaStreams : KStreams {
     private lateinit var streams: ApacheKafkaStreams
     private var isInitiallyStarted: Boolean = false
 
