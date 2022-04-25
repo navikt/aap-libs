@@ -3,15 +3,19 @@ package no.nav.aap.kafka.streams.test
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KtorKafkaMetrics
+import no.nav.aap.kafka.KFactory
 import no.nav.aap.kafka.KafkaConfig
 import no.nav.aap.kafka.plus
-import no.nav.aap.kafka.streams.Kafka
+import no.nav.aap.kafka.streams.KStreams
 import no.nav.aap.kafka.streams.Store
 import no.nav.aap.kafka.streams.Topic
+import org.apache.kafka.clients.consumer.MockConsumer
+import org.apache.kafka.clients.consumer.OffsetResetStrategy.EARLIEST
+import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.streams.*
 import java.util.*
 
-class KStreamsMock : Kafka {
+class KafkaStreamsMock : KFactory, KStreams {
     lateinit var streams: TopologyTestDriver
     var schemaRegistryUrl: String? = null
 
@@ -31,6 +35,9 @@ class KStreamsMock : Kafka {
     override fun isReady() = true
     override fun isLive() = true
     override fun <V> getStore(name: String): Store<V> = streams.getKeyValueStore(name)
+
+    override fun <V : Any> createConsumer(config: KafkaConfig, topic: Topic<V>) = MockConsumer<String, V>(EARLIEST)
+    override fun <V : Any> createProducer(config: KafkaConfig, topic: Topic<V>) = MockProducer<String, V>()
 
     override fun close() {
         streams.close()

@@ -11,7 +11,7 @@ class KStreamsMockTest {
 
     @Test
     fun `streams without schema registry`() {
-        val kafka = KStreamsMock()
+        val kafka = KafkaStreamsMock()
         val registry = SimpleMeterRegistry()
         val config = KafkaConfig(
             "app",
@@ -32,7 +32,7 @@ class KStreamsMockTest {
 
     @Test
     fun `streams with schema registry`() {
-        val kafka = KStreamsMock()
+        val kafka = KafkaStreamsMock()
         val registry = SimpleMeterRegistry()
         val schemaUrl = "mock://schema-reg"
         val config = KafkaConfig(
