@@ -1,4 +1,4 @@
-[![Release](https://jitpack.io/v/com.github.navikt/aap-libs.svg)](https://jitpack.io/#com.github.navikt/aap-libs)
+[![](https://jitpack.io/v/navikt/aap-avro.svg)](https://jitpack.io/#navikt/aap-avro)
 
 ![img](logo.jpg)
 
