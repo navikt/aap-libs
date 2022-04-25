@@ -7,7 +7,7 @@ import java.util.*
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-private inline fun KafkaStreamsMock.schemaRegistryUrl(): String? =
+private fun KafkaStreamsMock.schemaRegistryUrl(): String? =
     javaClass.getDeclaredField("schemaRegistryUrl").let {
         it.isAccessible = true
         return@let it.get(this) as? String;
