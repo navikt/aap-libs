@@ -1,4 +1,4 @@
-[![](https://jitpack.io/v/navikt/aap-avro.svg)](https://jitpack.io/#navikt/aap-avro)
+[![](https://jitpack.io/v/navikt/aap-libs.svg)](https://jitpack.io/#navikt/aap-libs)
 
 ![img](logo.jpg)
 
