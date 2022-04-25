@@ -7,7 +7,7 @@ dependencies {
     implementation(project(":kafka"))
     implementation(kotlin("test"))
 
-    api("io.confluent:kafka-streams-avro-serde:7.0.1") {
+    implementation("io.confluent:kafka-streams-avro-serde:7.0.1") {
         exclude("org.apache.kafka", "kafka-clients")
     }
 
