@@ -16,7 +16,7 @@ import java.util.*
 
 class KafkaStreamsMock : KStreams {
     lateinit var streams: TopologyTestDriver
-    var schemaRegistryUrl: String? = null
+    private var schemaRegistryUrl: String? = null
 
     override fun start(config: KafkaConfig, registry: MeterRegistry, builder: StreamsBuilder.() -> Unit) {
         val topology = StreamsBuilder().apply(builder).build()

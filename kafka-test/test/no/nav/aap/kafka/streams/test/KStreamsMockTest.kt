@@ -7,6 +7,12 @@ import java.util.*
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
+private inline fun KafkaStreamsMock.schemaRegistryUrl(): String? =
+    javaClass.getDeclaredField("schemaRegistryUrl").let {
+        it.isAccessible = true
+        return@let it.get(this) as? String;
+    }
+
 class KStreamsMockTest {
 
     @Test
@@ -27,7 +33,7 @@ class KStreamsMockTest {
 
         kafka.start(config, registry) {}
 
-        assertNull(kafka.schemaRegistryUrl)
+        assertNull(kafka.schemaRegistryUrl())
     }
 
     @Test
@@ -49,6 +55,6 @@ class KStreamsMockTest {
 
         kafka.start(config, registry) {}
 
-        assertNotNull(UUID.fromString(kafka.schemaRegistryUrl?.removePrefix("$schemaUrl/")))
+        assertNotNull(UUID.fromString(kafka.schemaRegistryUrl()?.removePrefix("$schemaUrl/")))
     }
 }
