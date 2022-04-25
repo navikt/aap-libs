@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.6.21"
     `maven-publish`
+    `java-library`
 }
 
 allprojects {
@@ -19,11 +20,20 @@ subprojects {
 
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "maven-publish")
+    apply(plugin = "java-library")
 
     tasks {
         withType<KotlinCompile> {
             kotlinOptions.jvmTarget = "18"
         }
+        withType<Jar> {
+           duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        }
+    }
+
+    java {
+        withSourcesJar()
+        withJavadocJar()
     }
 
     publishing {
