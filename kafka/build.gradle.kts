@@ -1,6 +1,6 @@
 dependencies {
     api("org.apache.kafka:kafka-streams:3.1.0")
-    api("io.confluent:kafka-streams-avro-serde:7.0.1")
+    api("io.confluent:kafka-streams-avro-serde:7.1.1")
 
     implementation("ch.qos.logback:logback-classic:1.2.11")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2")
