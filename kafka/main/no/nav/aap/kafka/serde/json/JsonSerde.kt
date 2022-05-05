@@ -23,7 +23,7 @@ class JacksonDeserializer<T : Any>(private val kclass: KClass<T>) : Deserializer
         disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
     }
 
-    override fun deserialize(topic: String, data: ByteArray?): T? = jackson.readValue(data, kclass.java)
+    override fun deserialize(topic: String, data: ByteArray?): T? = data?.let { jackson.readValue(it, kclass.java) }
 }
 
 class JacksonSerializer<T : Any> : Serializer<T> {
