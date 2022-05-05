@@ -36,7 +36,8 @@ class KafkaStreamsMock : KStreams {
     override fun <V> getStore(name: String): Store<V> = streams.getKeyValueStore(name)
 
     override fun <V : Any> createConsumer(config: KafkaConfig, topic: Topic<V>) = MockConsumer<String, V>(EARLIEST)
-    override fun <V : Any> createProducer(config: KafkaConfig, topic: Topic<V>) = MockProducer<String, V>()
+    override fun <V : Any> createProducer(config: KafkaConfig, topic: Topic<V>) =
+        MockProducer(true, topic.keySerde.serializer(), topic.valueSerde.serializer())
 
     override fun close() {
         streams.close()
