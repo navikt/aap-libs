@@ -13,8 +13,6 @@ data class Topic<V>(
 ) {
     internal fun consumed(named: String): Consumed<String, V> = Consumed.with(keySerde, valueSerde).withName(named)
     internal fun produced(named: String): Produced<String, V> = Produced.with(keySerde, valueSerde).withName(named)
-
+    infix fun <R : Any> with(right: Topic<R>): Joined<String, V, R> =
+        Joined.with(keySerde, valueSerde, right.valueSerde, "$name-joined-${right.name}")
 }
-
-infix fun <L, R : Any> Topic<L>.with(right: Topic<R>): Joined<String, L, R> =
-    Joined.with(keySerde, valueSerde, right.valueSerde, "$name-joined-${right.name}")

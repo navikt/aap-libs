@@ -51,20 +51,52 @@ fun <V> KStream<String, V>.produce(table: Table<V>): KTable<String, V> =
         .toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
 
 @Suppress("UNCHECKED_CAST")
+fun <V> KStream<String, V?>.filterNotNull(name: String): KStream<String, V> =
+    filter({ _, value -> value != null }, named(name)) as KStream<String, V>
+
+@Suppress("UNCHECKED_CAST")
 fun <V> KStream<String, V?>.filterNotNull(named: () -> String): KStream<String, V> =
     filter({ _, value -> value != null }, named(named())) as KStream<String, V>
 
-fun <K, V> KStream<K, V>.filter(predicate: Predicate<in K, in V>, named: () -> String): KStream<K, V> =
-    filter(predicate, named(named()))
+fun <K, V> KStream<K, V>.filter(predicate: Predicate<in K, in V>, name: () -> String): KStream<K, V> =
+    filter(predicate, named(name()))
 
-fun <K, V> KStream<K, V>.filter(named: String, predicate: (K, V) -> Boolean): KStream<K, V> =
-    filter(predicate) { named }
+fun <K, V> KStream<K, V>.filter(name: String, predicate: (K, V) -> Boolean): KStream<K, V> =
+    filter(predicate, named(name))
 
-fun <K, V, VR> KStream<K, V>.mapValues(named: Named, mapper: (V) -> VR): KStream<K, VR> =
-    mapValues(mapper, named)
+fun <K, V, VR> KStream<K, V>.mapValues(name: String, mapper: (V) -> VR): KStream<K, VR> =
+    mapValues(mapper, named(name))
 
-fun <K, V, VR> KStream<K, V>.flatMapValues(named: Named, mapper: (V) -> Iterable<VR>): KStream<K, VR> =
-    flatMapValues(mapper, named)
+fun <K, V, VR> KStream<K, V>.mapValues(name: Named, mapper: (V) -> VR): KStream<K, VR> =
+    mapValues(mapper, name)
+
+fun <K, V, VR> KStream<K, V>.mapValues(name: String, mapper: (K, V) -> VR): KStream<K, VR> =
+    mapValues(mapper, named(name))
+
+fun <K, V, VR> KStream<K, V>.mapValues(name: Named, mapper: (K, V) -> VR): KStream<K, VR> =
+    mapValues(mapper, name)
+
+fun <K, V, VR> KStream<K, V>.flatMapValues(name: String, mapper: (V) -> Iterable<VR>): KStream<K, VR> =
+    flatMapValues(mapper, named(name))
+
+fun <K, V, VR> KStream<K, V>.flatMapValues(name: Named, mapper: (V) -> Iterable<VR>): KStream<K, VR> =
+    flatMapValues(mapper, name)
+
+fun <K, V, VR> KStream<K, V>.flatMapValues(name: String, mapper: (K, V) -> Iterable<VR>): KStream<K, VR> =
+    flatMapValues(mapper, named(name))
+
+fun <K, V, VR> KStream<K, V>.flatMapValues(name: Named, mapper: (K, V) -> Iterable<VR>): KStream<K, VR> =
+    flatMapValues(mapper, name)
+
+fun <V, VR> KStream<String, V?>.mapNotNull(name: String, mapper: (V) -> VR?): KStream<String, VR> = this
+    .filterNotNull("$name-filter-premap")
+    .mapValues("$name-map", mapper)
+    .filterNotNull("$name-filter-postmap")
+
+fun <V, VR> KStream<String, V?>.mapNotNull(name: String, mapper: (String, V) -> VR?): KStream<String, VR> = this
+    .filterNotNull("$name-filter-premap")
+    .mapValues("$name-map", mapper)
+    .filterNotNull("$name-filter-postmap")
 
 /**
  * Await for the given store to be available
