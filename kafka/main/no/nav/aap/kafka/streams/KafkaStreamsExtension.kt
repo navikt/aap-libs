@@ -14,7 +14,7 @@ private val secureLog = LoggerFactory.getLogger("secureLog")
 fun <K, V, VO, VR> KStream<K, V>.join(joined: Joined<K, V, VO>, table: KTable<K, VO>, joiner: (V, VO) -> VR) =
     join(table, joiner, joined)!!
 
-fun <K, V, VO, VR> KStream<K, V>.leftJoin(joined: Joined<K, V, VO>, table: KTable<K, VO>, joiner: (V, VO) -> VR) =
+fun <K, V, VO, VR> KStream<K, V>.leftJoin(joined: Joined<K, V, VO>, table: KTable<K, VO>, joiner: (V, VO?) -> VR) =
     leftJoin(table, joiner, joined)!!
 
 /**
@@ -36,7 +36,7 @@ fun <V, R, VR> KStream<String, V>.join(
 fun <V, R, VR> KStream<String, V>.leftJoin(
     keyMapper: (String, V) -> String,
     table: GlobalKTable<String, R>,
-    valueJoiner: (V, R) -> VR
+    valueJoiner: (V, R?) -> VR
 ) = leftJoin(table, keyMapper, valueJoiner)!!
 
 fun <K, V, KR> KStream<K, V>.selectKey(name: String, mapper: KeyValueMapper<in K, in V, out KR>) =
