@@ -4,15 +4,15 @@ import org.apache.kafka.streams.kstream.Branched
 import org.apache.kafka.streams.kstream.BranchedKStream
 import org.apache.kafka.streams.kstream.KStream
 
-interface BehovVisitor<out JSON> {
+interface BehovExtractor<out JSON> {
     fun toJson(): JSON
 }
 
-interface Behov<out JSON, in BEHOV_VISITOR : BehovVisitor<JSON>> {
+interface Behov<in BEHOV_VISITOR> {
     fun accept(visitor: BEHOV_VISITOR)
 }
 
-fun <JSON : Any, BEHOV_VISITOR : BehovVisitor<JSON>, BEHOV : Behov<JSON, BEHOV_VISITOR>>
+fun <BEHOV_VISITOR, BEHOV : Behov<BEHOV_VISITOR>>
         KStream<String, BEHOV>.sendBehov(
     name: String,
     block: BranchedKStream<String, BEHOV>.() -> Unit
@@ -20,20 +20,20 @@ fun <JSON : Any, BEHOV_VISITOR : BehovVisitor<JSON>, BEHOV : Behov<JSON, BEHOV_V
     split(named("$name-split-behov")).apply(block)
 }
 
-fun <JSON : Any, BEHOV_VISITOR : BehovVisitor<JSON>, BEHOV : Behov<JSON, BEHOV_VISITOR>>
+fun <JSON : Any, EXTRACTOR : BehovExtractor<JSON>, BEHOV : Behov<EXTRACTOR>>
         BranchedKStream<String, BEHOV>.branch(
     topic: Topic<JSON>,
     branchName: String,
     predicate: (BEHOV) -> Boolean,
-    getMapper: () -> BEHOV_VISITOR
+    extractor: () -> EXTRACTOR
 ): BranchedKStream<String, BEHOV> =
     branch(branchName, predicate) { chain ->
         chain
-            .mapValues("branch-$branchName-map-behov") { value -> getMapper().also { value.accept(it) }.toJson() }
+            .mapValues("branch-$branchName-map-behov") { value -> extractor().also(value::accept).toJson() }
             .produce(topic, "branch-$branchName-produced-behov")
     }
 
-private fun <BEHOV_VISITOR : BehovVisitor<*>, BEHOV : Behov<*, BEHOV_VISITOR>> 
+private fun <BEHOV : Behov<*>>
         BranchedKStream<String, BEHOV>.branch(
     branchName: String,
     predicate: (BEHOV) -> Boolean,
