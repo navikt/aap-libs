@@ -26,7 +26,10 @@ data class AzureConfig(val tokenEndpoint: URL, val clientId: String, val clientS
 class HttpClientAzureAdInterceptor(private val config: AzureConfig) {
     private val cache = mutableMapOf<String, Token>()
     private val client = HttpClient(CIO) {
-        install(ContentNegotiation) { jackson { registerModule(JavaTimeModule()) } }
+        install(ContentNegotiation) { jackson {
+            registerModule(JavaTimeModule()) }
+
+        }
     }
 
     internal suspend fun getToken(scope: String) = cache[scope]?.takeUnless(Token::isExpired) ?: fetchToken(scope)
@@ -53,7 +56,7 @@ class HttpClientAzureAdInterceptor(private val config: AzureConfig) {
         }
     }
 
-    internal data class Token(val token_type: String, val expires_in: Long, val access_token: String) {
+    internal data class Token(val token_type: String, val expires_in: Long, val ext_expires_in: Long, val access_token: String) {
         private val expiresOn = Instant.now().plusSeconds(expires_in - 60)
 
         val isExpired get() = expiresOn < Instant.now()
