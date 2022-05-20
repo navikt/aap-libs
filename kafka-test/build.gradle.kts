@@ -1,6 +1,5 @@
 dependencies {
-    api("org.apache.kafka:kafka-streams-test-utils:3.1.0") {
-        exclude("org.rocksdb", "rocksdbjni")
+    api("org.apache.kafka:kafka-streams-test-utils:3.2.0") {
         exclude("org.apache.kafka", "kafka-clients")
     }
 
@@ -8,8 +7,8 @@ dependencies {
 
     implementation(kotlin("test"))
 
-    implementation("io.micrometer:micrometer-registry-prometheus:1.8.5")
-    implementation("io.confluent:kafka-streams-avro-serde:7.0.1") {
+    implementation("io.micrometer:micrometer-registry-prometheus:1.9.0")
+    implementation("io.confluent:kafka-streams-avro-serde:7.1.1") {
         exclude("org.apache.kafka", "kafka-clients")
     }
 
