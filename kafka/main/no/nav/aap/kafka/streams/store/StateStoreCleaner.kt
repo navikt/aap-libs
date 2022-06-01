@@ -37,7 +37,7 @@ private class StateStoreCleaner<K, V>(
 fun <K, V> KTable<K, V>.scheduleCleanup(
     store: String,
     keysToDelete: MutableList<K>,
-) = scheduleCleanup(store, keysToDelete, "Cleanup $store")
+) = scheduleCleanup(store, keysToDelete, "cleanup-$store")
 
 fun <K, V> KTable<K, V>.scheduleCleanup(
     store: String,
