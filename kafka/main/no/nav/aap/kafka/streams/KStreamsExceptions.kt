@@ -1,4 +1,4 @@
-package no.nav.aap.kafka
+package no.nav.aap.kafka.streams
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord

@@ -3,6 +3,8 @@ package no.nav.aap.kafka
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde
+import no.nav.aap.kafka.streams.EntryPointExceptionHandler
+import no.nav.aap.kafka.streams.ExitPointExceptionHandler
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig

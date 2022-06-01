@@ -4,7 +4,6 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KafkaStreamsMetrics
 import no.nav.aap.kafka.KFactory
 import no.nav.aap.kafka.KafkaConfig
-import no.nav.aap.kafka.ProcessingExceptionHandler
 import no.nav.aap.kafka.plus
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.KafkaStreams.State.*
