@@ -42,11 +42,14 @@ data class KafkaConfig(
         this[StreamsConfig.APPLICATION_ID_CONFIG] = applicationId
         this[StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG] = "0"
         this[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = GenericAvroSerde::class.java.name
-        this[StreamsConfig.DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] =
-            ExitPointExceptionHandler::class.java.name
+        this[StreamsConfig.DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] = ExitPointExceptionHandler::class.java.name
         this[StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG] = LogAndSkipOnInvalidTimestamp::class.java.name
-        this[StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] =
-            EntryPointExceptionHandler::class.java.name
+        this[StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] = EntryPointExceptionHandler::class.java.name
+        // Committed when:
+        // acked produce to sink topic
+        // state update of application
+        // offset commit on source topic
+        this[StreamsConfig.PROCESSING_GUARANTEE_CONFIG] = StreamsConfig.EXACTLY_ONCE_V2
     }
 
     val ssl: Properties = Properties().apply {
@@ -73,6 +76,5 @@ data class KafkaConfig(
         this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = brokers
         this[ProducerConfig.ACKS_CONFIG] = "all"
         this[ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION] = "5"
-        this[ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG] = "true"
     }
 }
