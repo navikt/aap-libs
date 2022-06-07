@@ -29,6 +29,9 @@ subprojects {
         withType<Jar> {
            duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }
+        withType<Test> {
+            useJUnitPlatform()
+        }
     }
 
     configurations.all {

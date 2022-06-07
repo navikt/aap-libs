@@ -1,6 +1,6 @@
 package no.nav.aap.ktor.config
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class ConfigTest {

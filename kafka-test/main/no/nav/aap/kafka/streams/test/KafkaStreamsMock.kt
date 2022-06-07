@@ -18,8 +18,7 @@ class KafkaStreamsMock : KStreams {
     lateinit var streams: TopologyTestDriver
     private var schemaRegistryUrl: String? = null
 
-    override fun start(config: KafkaConfig, registry: MeterRegistry, builder: StreamsBuilder.() -> Unit) {
-        val topology = StreamsBuilder().apply(builder).build()
+    override fun connect(config: KafkaConfig, registry: MeterRegistry, topology: Topology) {
         streams = TopologyTestDriver(topology, config.consumer + config.producer + testConfig)
         config.schemaRegistryUrl?.let { schemaRegistryUrl = "$it/${UUID.randomUUID()}" }
         KtorKafkaMetrics(registry, streams::metrics)

@@ -3,7 +3,7 @@ package no.nav.aap.kafka
 import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.streams.KafkaStreams
 import no.nav.aap.kafka.streams.Topic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class KafkaFactoryTest {

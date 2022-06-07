@@ -9,6 +9,7 @@ import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.KafkaStreams.State.*
 import org.apache.kafka.streams.StoreQueryParameters.fromNameAndType
 import org.apache.kafka.streams.StreamsBuilder
+import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.kstream.GlobalKTable
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Materialized
@@ -24,7 +25,7 @@ typealias Store<V> = ReadOnlyKeyValueStore<String, V>
 private val secureLog = LoggerFactory.getLogger("secureLog")
 
 interface KStreams : KFactory, AutoCloseable {
-    fun start(config: KafkaConfig, registry: MeterRegistry, builder: StreamsBuilder.() -> Unit)
+    fun connect(config: KafkaConfig, registry: MeterRegistry, topology: Topology)
     fun isReady(): Boolean
     fun isLive(): Boolean
     fun <V> getStore(name: String): Store<V>
@@ -34,8 +35,7 @@ object KafkaStreams : KStreams {
     private lateinit var streams: ApacheKafkaStreams
     private var isInitiallyStarted: Boolean = false
 
-    override fun start(config: KafkaConfig, registry: MeterRegistry, builder: StreamsBuilder.() -> Unit) {
-        val topology = StreamsBuilder().apply(builder).build()
+    override fun connect(config: KafkaConfig, registry: MeterRegistry, topology: Topology) {
         streams = ApacheKafkaStreams(topology, config.consumer + config.producer).apply {
             setUncaughtExceptionHandler(ProcessingExceptionHandler())
             setStateListener { state, _ -> if (state == RUNNING) isInitiallyStarted = true }

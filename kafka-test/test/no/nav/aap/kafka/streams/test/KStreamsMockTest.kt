@@ -2,7 +2,8 @@ package no.nav.aap.kafka.streams.test
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.KafkaConfig
-import org.junit.Test
+import org.apache.kafka.streams.StreamsBuilder
+import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -31,7 +32,7 @@ class KStreamsMockTest {
             null,
         )
 
-        kafka.start(config, registry) {}
+        kafka.connect(config, registry, StreamsBuilder().build())
 
         assertNull(kafka.schemaRegistryUrl())
     }
@@ -53,7 +54,7 @@ class KStreamsMockTest {
             null,
         )
 
-        kafka.start(config, registry) {}
+        kafka.connect(config, registry, StreamsBuilder().build())
 
         assertNotNull(UUID.fromString(kafka.schemaRegistryUrl()?.removePrefix("$schemaUrl/")))
     }
