@@ -43,12 +43,16 @@ fun <K, V, KR> KStream<K, V>.selectKey(name: String, mapper: KeyValueMapper<in K
     selectKey(mapper, named(name))!!
 
 fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String) =
-    peek { key, value -> secureLog.info("produced [${topic.name}] K:$key V:$value") }
-        .to(topic.name, topic.produced(name))
+    peek(
+        { key, value -> secureLog.info("produced [${topic.name}] K:$key V:$value") },
+        named("log-produced-$name")
+    ).to(topic.name, topic.produced(name))
 
 fun <V> KStream<String, V>.produce(table: Table<V>): KTable<String, V> =
-    peek { key, value -> secureLog.info("produced [${table.stateStoreName}] K:$key V:$value") }
-        .toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
+    peek(
+        { key, value -> secureLog.info("produced [${table.stateStoreName}] K:$key V:$value") },
+        named("log-produced-${table.name}")
+    ).toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
 
 @Suppress("UNCHECKED_CAST")
 fun <K, V> KStream<K, V?>.filterNotNull(name: String): KStream<K, V> =

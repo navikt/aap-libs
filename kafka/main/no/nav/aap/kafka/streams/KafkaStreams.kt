@@ -59,7 +59,10 @@ fun <V> materialized(storeName: String, topic: Topic<V>): Materialized<String, V
 
 fun <V> StreamsBuilder.consume(topic: Topic<V>): KStream<String, V?> =
     stream(topic.name, topic.consumed("consume-${topic.name}"))
-        .peek { key, value -> secureLog.info("consumed [${topic.name}] K:$key V:$value") }
+        .peek(
+            { key, value -> secureLog.info("consumed [${topic.name}] K:$key V:$value") },
+            named("log-consume-${topic.name}")
+        )
 
 fun <V> StreamsBuilder.globalTable(table: Table<V>): GlobalKTable<String, V> =
     globalTable(table.source.name, table.source.consumed("${table.name}-as-globaltable"))
