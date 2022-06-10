@@ -1,16 +1,13 @@
-package no.nav.aap.kafka.streams.uml
+package no.nav.aap.kafka.streams.topology
 
 import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.TopologyDescription
 import java.io.File
 
-internal const val EOL = "\n"
-internal const val TAB = "\t"
-
 /**
  * Uses topology description to create PlantUML
  */
-object KStreamsUML {
+object PlantUML {
     fun create(topology: Topology, filePath: String = "../doc/topology.puml"): File =
         File(filePath).apply { writeText(plantUML(topology)) }
 
@@ -144,3 +141,6 @@ object KStreamsUML {
             """.trimMargin("| ")
     }
 }
+
+private const val EOL = "\n"
+private const val TAB = "\t"
