@@ -1,14 +1,19 @@
 package no.nav.aap.kafka.streams
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.streams.store.allValues
 import no.nav.aap.kafka.streams.store.scheduleCleanup
+import no.nav.aap.kafka.streams.store.scheduleMetrics
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.TopologyDescription
 import org.apache.kafka.streams.TopologyTestDriver
 import org.junit.jupiter.api.Test
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 internal class StateStoreExtension {
 
@@ -39,7 +44,7 @@ internal class StateStoreExtension {
 
         val stream = StreamsBuilder()
         val ktable = stream.consume(topic).filterNotNull("skip-tombstone").produce(table)
-        ktable.scheduleCleanup(table.stateStoreName, keysToDelete)
+        ktable.scheduleCleanup(table, 1.seconds, keysToDelete)
         val topology = stream.build()
 
         val kafka = TopologyTestDriver(topology)
@@ -64,7 +69,7 @@ internal class StateStoreExtension {
 
         val stream = StreamsBuilder()
         val ktable = stream.consume(topic).filterNotNull("skip-tombstone").produce(table)
-        ktable.scheduleCleanup(table.stateStoreName, keysToDelete) // last defined processor node
+        ktable.scheduleCleanup(table, 1.seconds, keysToDelete) // last defined processor node
         val topology = stream.build()
 
         val kafka = TopologyTestDriver(topology)
@@ -78,6 +83,52 @@ internal class StateStoreExtension {
             .single { it.successors().isEmpty() }
 
         assertEquals("cleanup-${table.stateStoreName}", lastProcessorNode.name())
+    }
+
+    @Test
+    fun `state store metrics generates metrics`() {
+        val topic = Topic("source", JsonSerde.jackson<String>())
+        val table = Table("table", topic)
+
+        val registry = SimpleMeterRegistry()
+
+        val stream = StreamsBuilder()
+        val ktable = stream.consume(topic).filterNotNull("skip").produce(table)
+        ktable.scheduleMetrics(table, 1.seconds, registry)
+        val topology = stream.build()
+        val kafka = TopologyTestDriver(topology)
+        val inputTopic = inputTopic(kafka, topic)
+
+        kafka.advanceWallClockTime(1.seconds.toJavaDuration())
+        assertEquals(0.0, registry.get("kafka_stream_state_store_entries").gauge().value())
+
+        inputTopic.pipeInput("123", "some message")
+        kafka.advanceWallClockTime(1.seconds.toJavaDuration())
+        assertEquals(1.0, registry.get("kafka_stream_state_store_entries").gauge().value())
+    }
+
+    @Test
+    fun `state store metrics is named`() {
+        val topic = Topic("source", JsonSerde.jackson<String>())
+        val table = Table("table", topic)
+
+        val registry = SimpleMeterRegistry()
+
+        val stream = StreamsBuilder()
+        val ktable = stream.consume(topic).filterNotNull("skip").produce(table)
+        ktable.scheduleMetrics(table, 1.seconds, registry)
+        val topology = stream.build()
+        val kafka = TopologyTestDriver(topology)
+        inputTopic(kafka, topic)
+
+        val lastProcessorNode = topology
+            .describe()
+            .subtopologies()
+            .flatMap(TopologyDescription.Subtopology::nodes)
+            .filterIsInstance<TopologyDescription.Processor>()
+            .single { it.successors().isEmpty() }
+
+        assertEquals("metrics-${table.stateStoreName}", lastProcessorNode.name())
     }
 }
 

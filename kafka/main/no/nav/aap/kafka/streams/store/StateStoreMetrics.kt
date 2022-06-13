@@ -1,5 +1,6 @@
 package no.nav.aap.kafka.streams.store
 
+import io.micrometer.core.instrument.MeterRegistry
 import no.nav.aap.kafka.streams.Table
 import no.nav.aap.kafka.streams.named
 import org.apache.kafka.streams.kstream.KTable
@@ -10,39 +11,34 @@ import org.apache.kafka.streams.processor.api.ProcessorSupplier
 import org.apache.kafka.streams.processor.api.Record
 import org.apache.kafka.streams.state.KeyValueStore
 import org.apache.kafka.streams.state.ValueAndTimestamp
-import org.slf4j.LoggerFactory
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
-private class StateStoreCleaner<K, V>(
+private class StateStoreMetrics<K, V>(
     private val table: Table<V>,
     private val interval: Duration,
-    private val keysToDelete: MutableList<K>,
+    private val registry: MeterRegistry,
 ) : Processor<K, V, Void, Void> {
+    private val numOfRec = AtomicLong()
+
     override fun process(record: Record<K, V>) {}
 
     override fun init(context: ProcessorContext<Void, Void>) {
+        registry.gauge("kafka_stream_state_store_entries", numOfRec)
         val store = context.getStateStore<KeyValueStore<K, ValueAndTimestamp<V>>>(table.stateStoreName)
         context.schedule(interval.toJavaDuration(), PunctuationType.WALL_CLOCK_TIME) {
-            keysToDelete.removeIf { key ->
-                val value = store.delete(key)
-                secureLog.info("Deleted [${table.stateStoreName}] [$key] [$value]")
-                true
-            }
+            numOfRec.set(store.approximateNumEntries())
         }
-    }
-
-    private companion object {
-        private val secureLog = LoggerFactory.getLogger("secureLog")
     }
 }
 
-fun <K, V> KTable<K, V>.scheduleCleanup(
+fun <K, V> KTable<K, V>.scheduleMetrics(
     table: Table<V>,
     interval: Duration,
-    keysToDelete: MutableList<K>,
+    registry: MeterRegistry,
 ) = toStream().process(
-    ProcessorSupplier { StateStoreCleaner(table, interval, keysToDelete) },
-    named("cleanup-${table.stateStoreName}"),
+    ProcessorSupplier { StateStoreMetrics(table, interval, registry) },
+    named("metrics-${table.stateStoreName}"),
     table.stateStoreName
 )
