@@ -1,6 +1,7 @@
 package no.nav.aap.kafka.streams.store
 
 import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
 import no.nav.aap.kafka.streams.Table
 import no.nav.aap.kafka.streams.named
 import org.apache.kafka.streams.kstream.KTable
@@ -25,7 +26,7 @@ private class StateStoreMetrics<K, V>(
     override fun process(record: Record<K, V>) {}
 
     override fun init(context: ProcessorContext<Void, Void>) {
-        registry.gauge("kafka_stream_state_store_entries", numOfRec)
+        registry.gauge("kafka_stream_state_store_entries", listOf(Tag.of("store", table.stateStoreName)), numOfRec)
         val store = context.getStateStore<KeyValueStore<K, ValueAndTimestamp<V>>>(table.stateStoreName)
         context.schedule(interval.toJavaDuration(), PunctuationType.WALL_CLOCK_TIME) {
             numOfRec.set(store.approximateNumEntries())
