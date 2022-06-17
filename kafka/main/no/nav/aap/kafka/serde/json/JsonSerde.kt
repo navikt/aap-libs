@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.serialization.Serde
 import org.apache.kafka.common.serialization.Serializer
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
 object JsonSerde {
@@ -15,15 +16,25 @@ object JsonSerde {
         override fun serializer(): Serializer<V> = JacksonSerializer()
         override fun deserializer(): Deserializer<V> = JacksonDeserializer(V::class)
     }
-}
 
-class JacksonDeserializer<T : Any>(private val kclass: KClass<T>) : Deserializer<T> {
-    private val jackson: ObjectMapper = jacksonObjectMapper().apply {
-        registerModule(JavaTimeModule())
-        disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+    /**
+     * OBS!
+     * Hvis forrige dto ikke har versjon, og neste versjon kan parses til forrige så vil den ikke migrere.
+     */
+    inline fun <reified V : Any, reified V_PREV : Any> jackson(
+        dtoVersion: Int,
+        noinline migrate: (V_PREV) -> V,
+    ) = object : Serde<V> {
+        override fun serializer(): Serializer<V> = JacksonSerializer()
+
+        override fun deserializer(): Deserializer<V> =
+            JacksonMigrationDeserializer(
+                prevKClass = V_PREV::class,
+                kclass = V::class,
+                dtoVersion = dtoVersion,
+                migrate = migrate,
+            )
     }
-
-    override fun deserialize(topic: String, data: ByteArray?): T? = data?.let { jackson.readValue(it, kclass.java) }
 }
 
 class JacksonSerializer<T : Any> : Serializer<T> {
@@ -33,4 +44,48 @@ class JacksonSerializer<T : Any> : Serializer<T> {
     }
 
     override fun serialize(topic: String, data: T?): ByteArray? = data?.let { jackson.writeValueAsBytes(it) }
+}
+
+class JacksonDeserializer<T : Any>(private val kclass: KClass<T>) : Deserializer<T> {
+    private val jackson: ObjectMapper = jacksonObjectMapper().apply {
+        registerModule(JavaTimeModule())
+        disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+    }
+    override fun deserialize(topic: String, data: ByteArray?): T? = data?.let { jackson.readValue(it, kclass.java) }
+}
+
+class JacksonMigrationDeserializer<T_PREV : Any, T : Any>(
+    private val prevKClass: KClass<T_PREV>,
+    private val kclass: KClass<T>,
+    private val dtoVersion: Int,
+    private val migrate: (T_PREV) -> T,
+) : Deserializer<T> {
+    private val previousDtoVersion = dtoVersion - 1
+
+    override fun deserialize(topic: String, data: ByteArray?): T? =
+        data?.let { byteArray ->
+            val json = jackson.readTree(byteArray)
+            val version = json.get("version")
+
+            runCatching {
+                require(version.intValue() == dtoVersion) { "dto er ikke siste version $dtoVersion" }
+                jackson.readValue(byteArray, kclass.java)
+            }.getOrElse {
+                require(version == null || version.intValue() == previousDtoVersion) {
+                    "forrige dto er ikke forrige version $previousDtoVersion"
+                }
+
+                migrate(jackson.readValue(byteArray, prevKClass.java)).also {
+                    secureLog.info("migrated [$topic] from $json to $it")
+                }
+            }
+        }
+
+    private companion object {
+        private val secureLog = LoggerFactory.getLogger("secureLog")
+        private val jackson: ObjectMapper = jacksonObjectMapper().apply {
+            registerModule(JavaTimeModule())
+            disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        }
+    }
 }
