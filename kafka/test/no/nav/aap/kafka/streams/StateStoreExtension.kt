@@ -10,7 +10,7 @@ import org.apache.kafka.streams.TopologyDescription
 import org.apache.kafka.streams.TopologyTestDriver
 import org.junit.jupiter.api.Test
 import java.time.Duration
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -40,11 +40,15 @@ internal class StateStoreExtension {
     fun `state store cleaner removes requested`() {
         val topic = Topic("source", JsonSerde.jackson<String>())
         val table = Table("table", topic)
-        val keysToDelete = mutableListOf<String>()
+        val keysToDelete = ConcurrentLinkedQueue<String>()
 
         val stream = StreamsBuilder()
         val ktable = stream.consume(topic).filterNotNull("skip-tombstone").produce(table)
-        ktable.scheduleCleanup(table, 1.seconds, keysToDelete)
+
+        ktable.scheduleCleanup(table, 1.seconds) {
+            keysToDelete.poll()
+        }
+
         val topology = stream.build()
 
         val kafka = TopologyTestDriver(topology)
@@ -65,11 +69,14 @@ internal class StateStoreExtension {
     fun `state store cleaner is named`() {
         val topic = Topic("source", JsonSerde.jackson<String>())
         val table = Table("table", topic)
-        val keysToDelete = mutableListOf<String>()
+        val keysToDelete = ConcurrentLinkedQueue<String>()
 
         val stream = StreamsBuilder()
         val ktable = stream.consume(topic).filterNotNull("skip-tombstone").produce(table)
-        ktable.scheduleCleanup(table, 1.seconds, keysToDelete) // last defined processor node
+        ktable.scheduleCleanup(table, 1.seconds) {
+            keysToDelete.poll()
+        }
+
         val topology = stream.build()
 
         val kafka = TopologyTestDriver(topology)

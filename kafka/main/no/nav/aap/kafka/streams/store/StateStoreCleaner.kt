@@ -11,23 +11,23 @@ import org.apache.kafka.streams.processor.api.Record
 import org.apache.kafka.streams.state.KeyValueStore
 import org.apache.kafka.streams.state.ValueAndTimestamp
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 private class StateStoreCleaner<K, V>(
     private val table: Table<V>,
     private val interval: Duration,
-    private val keysToDelete: MutableList<K>,
+    private val keyMarkedForDeletion: () -> K?,
 ) : Processor<K, V, Void, Void> {
     override fun process(record: Record<K, V>) {}
 
     override fun init(context: ProcessorContext<Void, Void>) {
         val store = context.getStateStore<KeyValueStore<K, ValueAndTimestamp<V>>>(table.stateStoreName)
         context.schedule(interval.toJavaDuration(), PunctuationType.WALL_CLOCK_TIME) {
-            keysToDelete.removeIf { key ->
+            keyMarkedForDeletion()?.let { key ->
                 val value = store.delete(key)
                 secureLog.info("Deleted [${table.stateStoreName}] [$key] [$value]")
-                true
             }
         }
     }
@@ -40,9 +40,9 @@ private class StateStoreCleaner<K, V>(
 fun <K, V> KTable<K, V>.scheduleCleanup(
     table: Table<V>,
     interval: Duration,
-    keysToDelete: MutableList<K>,
+    keyMarkedForDeletion: () -> K?,
 ) = toStream().process(
-    ProcessorSupplier { StateStoreCleaner(table, interval, keysToDelete) },
+    ProcessorSupplier { StateStoreCleaner(table, interval, keyMarkedForDeletion) },
     named("cleanup-${table.stateStoreName}"),
     table.stateStoreName
 )
