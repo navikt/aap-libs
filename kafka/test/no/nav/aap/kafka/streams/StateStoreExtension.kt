@@ -3,15 +3,14 @@ package no.nav.aap.kafka.streams
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.streams.store.allValues
-import no.nav.aap.kafka.streams.store.scheduleCleanup
 import no.nav.aap.kafka.streams.store.scheduleMetrics
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.TopologyDescription
 import org.apache.kafka.streams.TopologyTestDriver
+import org.apache.kafka.streams.test.TestRecord
 import org.junit.jupiter.api.Test
-import java.time.Duration
-import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
@@ -37,17 +36,14 @@ internal class StateStoreExtension {
     }
 
     @Test
-    fun `state store cleaner removes requested`() {
+    fun `tombstone also removes record in state store`() {
         val topic = Topic("source", JsonSerde.jackson<String>())
         val table = Table("table", topic)
-        val keysToDelete = ConcurrentLinkedQueue<String>()
 
         val stream = StreamsBuilder()
-        val ktable = stream.consume(topic).filterNotNull("skip-tombstone").produce(table)
-
-        ktable.scheduleCleanup(table, 1.seconds) {
-            keysToDelete.poll()
-        }
+        stream
+            .consume(topic)
+            .produceNullable(table)
 
         val topology = stream.build()
 
@@ -57,40 +53,18 @@ internal class StateStoreExtension {
         inputTopic.pipeInput("456", "hello")
 
         val stateStore = kafka.getKeyValueStore<String, String>("${table.name}-state-store")
-        assertEquals(2, stateStore.allValues().size)
 
-        keysToDelete.add("123")
-        kafka.advanceWallClockTime(Duration.ofSeconds(1)) // processor api punctuate 1 sec
+        assertEquals(2, stateStore.allValues().size)
+        inputTopic.pipeInput(tombstone("123"))
+
         assertEquals(1, stateStore.allValues().size)
         assertEquals("hello", stateStore["456"])
+
+        inputTopic.pipeInput(tombstone("456"))
+        assertTrue(stateStore.allValues().isEmpty())
     }
 
-    @Test
-    fun `state store cleaner is named`() {
-        val topic = Topic("source", JsonSerde.jackson<String>())
-        val table = Table("table", topic)
-        val keysToDelete = ConcurrentLinkedQueue<String>()
-
-        val stream = StreamsBuilder()
-        val ktable = stream.consume(topic).filterNotNull("skip-tombstone").produce(table)
-        ktable.scheduleCleanup(table, 1.seconds) {
-            keysToDelete.poll()
-        }
-
-        val topology = stream.build()
-
-        val kafka = TopologyTestDriver(topology)
-        inputTopic(kafka, topic)
-
-        val lastProcessorNode = topology
-            .describe()
-            .subtopologies()
-            .flatMap(TopologyDescription.Subtopology::nodes)
-            .filterIsInstance<TopologyDescription.Processor>()
-            .single { it.successors().isEmpty() }
-
-        assertEquals("cleanup-${table.stateStoreName}", lastProcessorNode.name())
-    }
+    private fun <K, V> tombstone(key: K): TestRecord<K, V> = TestRecord(key, null)
 
     @Test
     fun `state store metrics generates metrics`() {

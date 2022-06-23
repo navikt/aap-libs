@@ -39,6 +39,7 @@ object KafkaStreams : KStreams {
         streams = ApacheKafkaStreams(topology, config.consumer + config.producer).apply {
             setUncaughtExceptionHandler(ProcessingExceptionHandler())
             setStateListener { state, _ -> if (state == RUNNING) isInitiallyStarted = true }
+            setGlobalStateRestoreListener(RestoreListener())
             KafkaStreamsMetrics(this).bindTo(registry)
             start()
         }
@@ -52,7 +53,7 @@ object KafkaStreams : KStreams {
 
 fun named(named: String): Named = Named.`as`(named)
 
-fun <V> materialized(storeName: String, topic: Topic<V>): Materialized<String, V, KeyValueStore<Bytes, ByteArray>> =
+fun <V> materialized(storeName: String, topic: Topic<V>): Materialized<String, V?, KeyValueStore<Bytes, ByteArray>> =
     Materialized.`as`<String, V, KeyValueStore<Bytes, ByteArray>>(storeName)
         .withKeySerde(topic.keySerde)
         .withValueSerde(topic.valueSerde)

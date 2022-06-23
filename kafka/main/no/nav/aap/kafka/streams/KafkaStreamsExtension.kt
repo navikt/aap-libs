@@ -48,6 +48,12 @@ fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String) =
         named("log-produced-$name")
     ).to(topic.name, topic.produced(name))
 
+fun <V> KStream<String, V?>.produceNullable(table: Table<V>): KTable<String, V?> =
+    peek(
+        { key, value -> secureLog.info("produced [${table.stateStoreName}] K:$key V:$value") },
+        named("log-produced-${table.name}")
+    ).toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
+
 fun <V> KStream<String, V>.produce(table: Table<V>): KTable<String, V> =
     peek(
         { key, value -> secureLog.info("produced [${table.stateStoreName}] K:$key V:$value") },
