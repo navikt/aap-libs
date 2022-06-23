@@ -21,7 +21,7 @@ object JsonSerde {
      * OBS!
      * Hvis forrige dto ikke har versjon, og neste versjon kan parses til forrige så vil den ikke migrere.
      */
-    inline fun <reified V : Any, reified V_PREV : Any> jackson(
+    inline fun <reified V : Migratable, reified V_PREV : Any> jackson(
         dtoVersion: Int,
         noinline migrate: (V_PREV) -> V,
     ) = object : Serde<V> {
@@ -54,7 +54,12 @@ class JacksonDeserializer<T : Any>(private val kclass: KClass<T>) : Deserializer
     override fun deserialize(topic: String, data: ByteArray?): T? = data?.let { jackson.readValue(it, kclass.java) }
 }
 
-class JacksonMigrationDeserializer<T_PREV : Any, T : Any>(
+interface Migratable {
+    fun markerSomMigrertAkkuratNå()
+    fun erMigrertAkkuratNå(): Boolean
+}
+
+class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
     private val prevKClass: KClass<T_PREV>,
     private val kclass: KClass<T>,
     private val dtoVersion: Int,
@@ -75,9 +80,9 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Any>(
                     "forrige dto er ikke forrige version $previousDtoVersion"
                 }
 
-                migrate(jackson.readValue(byteArray, prevKClass.java)).also {
-                    secureLog.info("migrated [$topic] from $json to $it")
-                }
+                migrate(jackson.readValue(byteArray, prevKClass.java))
+                    .also { it.markerSomMigrertAkkuratNå() }
+                    .also { secureLog.info("migrated [$topic] from $json to $it") }
             }
         }
 

@@ -1,6 +1,7 @@
 package no.nav.aap.kafka.streams
 
 import no.nav.aap.kafka.serde.json.JsonSerde
+import no.nav.aap.kafka.serde.json.Migratable
 import org.apache.kafka.common.serialization.Serializer
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.TopologyTestDriver
@@ -12,7 +13,16 @@ import kotlin.test.assertTrue
 
 internal class JsonSerdeTest {
 
-    data class Dto(val version: Int = 2, val title: String)
+    data class Dto(
+        val version: Int = 2,
+        val title: String,
+    ) : Migratable {
+        private var erMigrertAkkuratNå: Boolean = false
+
+        override fun markerSomMigrertAkkuratNå() = let { erMigrertAkkuratNå = true }
+        override fun erMigrertAkkuratNå(): Boolean = erMigrertAkkuratNå
+    }
+
     data class DtoPrevious(val version: Int = 1)
     data class DtoPreviousWithoutVersion(val title: String)
     data class DtoUnsupported(val version: Int = 2, val error: String)
