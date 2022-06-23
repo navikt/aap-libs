@@ -4,8 +4,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.auth.*
-import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -16,14 +14,10 @@ import java.time.Instant
 
 data class AzureConfig(val tokenEndpoint: URL, val clientId: String, val clientSecret: String)
 
-/**
- * Install Auth client interceptor on a HttpClient.
- * Example usage:
- * ```
- *  HttpClient(CIO) { install(Auth) { azureAD(config, "some-scope") } }
- * ```
- */
-class HttpClientAzureAdInterceptor(private val config: AzureConfig) {
+class HttpClientAzureAdTokenProvider(
+    private val config: AzureConfig,
+    private val scope: String
+) {
     private val cache = mutableMapOf<String, Token>()
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) { jackson {
@@ -32,7 +26,7 @@ class HttpClientAzureAdInterceptor(private val config: AzureConfig) {
         }
     }
 
-    internal suspend fun getToken(scope: String) = cache[scope]?.takeUnless(Token::isExpired) ?: fetchToken(scope)
+    suspend fun getToken() = (cache[scope]?.takeUnless(Token::isExpired) ?: fetchToken(scope)).access_token
 
     private suspend fun fetchToken(scope: String): Token =
         client.post(config.tokenEndpoint) {
@@ -42,21 +36,7 @@ class HttpClientAzureAdInterceptor(private val config: AzureConfig) {
             cache[scope] = token
         }
 
-    companion object {
-        private lateinit var interceptor: HttpClientAzureAdInterceptor
-
-        fun Auth.azureAD(config: AzureConfig, scope: String) {
-            interceptor = HttpClientAzureAdInterceptor(config)
-
-            bearer {
-                loadTokens {
-                    BearerTokens(interceptor.getToken(scope).access_token, "")
-                }
-            }
-        }
-    }
-
-    internal data class Token(val token_type: String, val expires_in: Long, val ext_expires_in: Long, val access_token: String) {
+    private data class Token(val token_type: String, val expires_in: Long, val ext_expires_in: Long, val access_token: String) {
         private val expiresOn = Instant.now().plusSeconds(expires_in - 60)
 
         val isExpired get() = expiresOn < Instant.now()
