@@ -22,7 +22,7 @@ internal class StateStoreExtension {
         val table = Table("table", topic)
 
         val topology = StreamsBuilder().apply {
-            consume(topic).filterNotNull("skip-tombstone").produce(table)
+            consume(topic).produce(table)
         }.build()
 
         val kafka = TopologyTestDriver(topology)
@@ -43,7 +43,7 @@ internal class StateStoreExtension {
         val stream = StreamsBuilder()
         stream
             .consume(topic)
-            .produceNullable(table)
+            .produce(table)
 
         val topology = stream.build()
 
@@ -74,7 +74,7 @@ internal class StateStoreExtension {
         val registry = SimpleMeterRegistry()
 
         val stream = StreamsBuilder()
-        val ktable = stream.consume(topic).filterNotNull("skip").produce(table)
+        val ktable = stream.consume(topic).produce(table)
         ktable.scheduleMetrics(table, 1.seconds, registry)
         val topology = stream.build()
         val kafka = TopologyTestDriver(topology)
@@ -96,7 +96,7 @@ internal class StateStoreExtension {
         val registry = SimpleMeterRegistry()
 
         val stream = StreamsBuilder()
-        val ktable = stream.consume(topic).filterNotNull("skip").produce(table)
+        val ktable = stream.consume(topic).produce(table)
         ktable.scheduleMetrics(table, 1.seconds, registry)
         val topology = stream.build()
         val kafka = TopologyTestDriver(topology)

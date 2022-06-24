@@ -3,7 +3,6 @@ package no.nav.aap.kafka.streams
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.LoggerContext
-import net.logstash.logback.marker.ObjectAppendingMarker
 import no.nav.aap.kafka.SecureLogAppender
 import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.structuredArguments
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 internal class KafkaStreamsExtensionTest {
 
@@ -424,9 +422,7 @@ internal class KafkaStreamsExtensionTest {
             val bothTopic = Topic("both", JsonSerde.jackson<String>())
 
             val topology = StreamsBuilder().apply {
-                val ktable = consume(rightTopic)
-                    .filterNotNull("skip-left-tombstone")
-                    .produce(rightTable)
+                val ktable = consume(rightTopic).produce(rightTable)
 
                 consume(leftTopic)
                     .filterNotNull("skip-right-tombstone")
@@ -452,9 +448,7 @@ internal class KafkaStreamsExtensionTest {
             val bothTopic = Topic("both", JsonSerde.jackson<String>())
 
             val topology = StreamsBuilder().apply {
-                val ktable = consume(rightTopic)
-                    .filterNotNull("skip-left-tombstone")
-                    .produce(rightTable)
+                val ktable = consume(rightTopic).produce(rightTable)
 
                 consume(leftTopic)
                     .filterNotNull("skip-right-tombstone")
@@ -478,9 +472,7 @@ internal class KafkaStreamsExtensionTest {
             val bothTopic = Topic("both", JsonSerde.jackson<String>())
 
             val topology = StreamsBuilder().apply {
-                val ktable = consume(rightTopic)
-                    .filterNotNull("skip-left-tombstone")
-                    .produce(rightTable)
+                val ktable = consume(rightTopic).produce(rightTable)
 
                 consume(leftTopic)
                     .filterNotNull("skip-right-tombstone")
@@ -505,9 +497,7 @@ internal class KafkaStreamsExtensionTest {
             val bothTopic = Topic("both", JsonSerde.jackson<String>())
 
             val topology = StreamsBuilder().apply {
-                val ktable = consume(rightTopic)
-                    .filterNotNull("skip-left-tombstone")
-                    .produce(rightTable)
+                val ktable = consume(rightTopic).produce(rightTable)
 
                 consume(leftTopic)
                     .filterNotNull("skip-right-tombstone")
@@ -553,9 +543,7 @@ internal class KafkaStreamsExtensionTest {
             val sinkTable = Table("strings", sourceTopic)
 
             val topology = StreamsBuilder().apply {
-                consume(sourceTopic)
-                    .filterNotNull("skip-tombstone")
-                    .produce(sinkTable)
+                consume(sourceTopic).produce(sinkTable)
             }.build()
 
             val kafka = TopologyTestDriver(topology)
@@ -581,9 +569,7 @@ internal class KafkaStreamsExtensionTest {
             val sinkTable = Table("strings", sourceTopic)
 
             val topology = StreamsBuilder().apply {
-                consume(sourceTopic)
-                    .filterNotNull("skip-tombstone")
-                    .produce(sinkTable, true)
+                consume(sourceTopic).produce(sinkTable, true)
             }.build()
 
             val kafka = TopologyTestDriver(topology)
@@ -608,9 +594,7 @@ internal class KafkaStreamsExtensionTest {
             val sinkTable = Table("strings", sourceTopic)
 
             val topology = StreamsBuilder().apply {
-                consume(sourceTopic)
-                    .filterNotNull("skip-tombstone")
-                    .produce(sinkTable)
+                consume(sourceTopic).produce(sinkTable)
             }.build()
 
             val kafka = TopologyTestDriver(topology)
@@ -627,9 +611,7 @@ internal class KafkaStreamsExtensionTest {
             val sinkTable = Table("strings", sourceTopic)
 
             val topology = StreamsBuilder().apply {
-                consume(sourceTopic)
-                    .filterNotNull("skip-tombstone")
-                    .produce(sinkTable)
+                consume(sourceTopic).produce(sinkTable)
             }.build()
 
             val kafka = TopologyTestDriver(topology)

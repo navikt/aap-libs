@@ -57,18 +57,7 @@ fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String, logValue: Bool
 /**
  * Produser records inkludert tombstones til en ktable
  */
-fun <V> KStream<String, V?>.produceNullable(table: Table<V>, logValue: Boolean = false): KTable<String, V?> =
-    transformValues(
-        ValueTransformerWithKeySupplier {
-            TraceLogTransformer<String, V>(
-                message = "Produserer til KTable inkl tombstones",
-                table = table,
-                logValue = logValue,
-            )
-        }, named("log-produced-${table.name}")
-    ).toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
-
-fun <V> KStream<String, V>.produce(table: Table<V>, logValue: Boolean = false): KTable<String, V> =
+fun <V> KStream<String, V?>.produce(table: Table<V>, logValue: Boolean = false): KTable<String, V> =
     transformValues(
         ValueTransformerWithKeySupplier {
             TraceLogTransformer<String, V>(
@@ -78,6 +67,11 @@ fun <V> KStream<String, V>.produce(table: Table<V>, logValue: Boolean = false): 
             )
         }, named("log-produced-${table.name}")
     ).toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
+        .filterNotNull("filter-not-null-${table.name}-as-table")
+
+@Suppress("UNCHECKED_CAST")
+fun <K, V> KTable<K, V?>.filterNotNull(name: String): KTable<K, V> =
+    filter({ _, value -> value != null }, named(name)) as KTable<K, V>
 
 @Suppress("UNCHECKED_CAST")
 fun <K, V> KStream<K, V?>.filterNotNull(name: String): KStream<K, V> =
