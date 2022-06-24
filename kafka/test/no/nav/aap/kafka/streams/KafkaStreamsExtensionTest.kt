@@ -3,8 +3,10 @@ package no.nav.aap.kafka.streams
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.LoggerContext
+import net.logstash.logback.marker.ObjectAppendingMarker
 import no.nav.aap.kafka.SecureLogAppender
 import no.nav.aap.kafka.serde.json.JsonSerde
+import no.nav.aap.kafka.structuredArguments
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.TopologyDescription
@@ -39,16 +41,29 @@ internal class KafkaStreamsExtensionTest {
 
         @Test
         fun `consume topic is logged`() {
-            val secureLogAppender = SecureLogAppender()
+            val log = SecureLogAppender()
                 .apply { context = LoggerFactory.getILoggerFactory() as LoggerContext }
-                .also { (LoggerFactory.getLogger("secureLog") as Logger).apply { addAppender(it) } }
+                .also {
+                    (LoggerFactory.getLogger("secureLog") as Logger).apply {
+                        level = Level.TRACE
+                        addAppender(it)
+                    }
+                }
                 .apply { start() }
 
             val sourceTopic = Topic("source", JsonSerde.jackson<String>())
-            val topology = StreamsBuilder().apply { consume(sourceTopic) }.build()
+            val topology = StreamsBuilder().apply { consume(sourceTopic, true) }.build()
             inputTopic(TopologyTestDriver(topology), sourceTopic).pipeInput("123", "hello")
 
-            assertTrue(secureLogAppender.contains("consumed [source] K:123 V:hello", Level.INFO))
+            val secureMsg = log.firstContaining("Konsumerer")
+            val args = secureMsg.structuredArguments()
+
+            assertEquals("Konsumerer Topic", secureMsg.message)
+            assertEquals("123", args["key"])
+            assertEquals("hello", args["value"])
+            assertEquals("source", args["topic"])
+            assertEquals("0", args["partition"])
+            assertEquals("0", args["offset"])
         }
 
         @Test
@@ -552,9 +567,14 @@ internal class KafkaStreamsExtensionTest {
 
         @Test
         fun `produced to table is logged`() {
-            val secureLogAppender = SecureLogAppender()
+            val log = SecureLogAppender()
                 .apply { context = LoggerFactory.getILoggerFactory() as LoggerContext }
-                .also { (LoggerFactory.getLogger("secureLog") as Logger).apply { addAppender(it) } }
+                .also {
+                    (LoggerFactory.getLogger("secureLog") as Logger).apply {
+                        level = Level.TRACE
+                        addAppender(it)
+                    }
+                }
                 .apply { start() }
 
             val sourceTopic = Topic("source", JsonSerde.jackson<String>())
@@ -563,13 +583,23 @@ internal class KafkaStreamsExtensionTest {
             val topology = StreamsBuilder().apply {
                 consume(sourceTopic)
                     .filterNotNull("skip-tombstone")
-                    .produce(sinkTable)
+                    .produce(sinkTable, true)
             }.build()
 
             val kafka = TopologyTestDriver(topology)
             inputTopic(kafka, sourceTopic).pipeInput("123", "hello")
 
-            assertTrue(secureLogAppender.contains("produced [${sinkTable.stateStoreName}] K:123 V:hello"))
+            val secureMsg = log.firstContaining("Produserer")
+            val args = secureMsg.structuredArguments()
+
+            assertEquals("Produserer til KTable", secureMsg.message)
+            assertEquals("123", args["key"])
+            assertEquals("hello", args["value"])
+            assertEquals("source", args["topic"])
+            assertEquals("strings", args["table"])
+            assertEquals("strings-state-store", args["store"])
+            assertEquals("0", args["partition"])
+            assertEquals("0", args["offset"])
         }
 
         @Test
@@ -632,9 +662,14 @@ internal class KafkaStreamsExtensionTest {
 
         @Test
         fun `produced topic is logged`() {
-            val secureLogAppender = SecureLogAppender()
+            val log = SecureLogAppender()
                 .apply { context = LoggerFactory.getILoggerFactory() as LoggerContext }
-                .also { (LoggerFactory.getLogger("secureLog") as Logger).apply { addAppender(it) } }
+                .also {
+                    (LoggerFactory.getLogger("secureLog") as Logger).apply {
+                        level = Level.TRACE
+                        addAppender(it)
+                    }
+                }
                 .apply { start() }
 
             val sourceTopic = Topic("source", JsonSerde.jackson<String>())
@@ -651,7 +686,13 @@ internal class KafkaStreamsExtensionTest {
                 inputTopic(this, sourceTopic).pipeInput("123", "hello")
             }
 
-            assertTrue(secureLogAppender.contains("produced [sink] K:123 V:hello", Level.INFO))
+            val secureMsg = log.firstContaining("Produserer")
+            val args = secureMsg.structuredArguments()
+            assertEquals("Produserer til Topic", secureMsg.message)
+            assertEquals("123", args["key"])
+            assertEquals("sink", args["topic"])
+            assertEquals("0", args["partition"])
+            assertEquals("0", args["offset"])
         }
 
         @Test
@@ -670,7 +711,7 @@ internal class KafkaStreamsExtensionTest {
                 inputTopic(this, sourceTopic).pipeInput("123", "hello")
             }
 
-            assertEquals("log-produced-produce-sink", topology.processorName("processor-node"))
+            assertEquals("log-produce-sink", topology.processorName("processor-node"))
         }
     }
 }

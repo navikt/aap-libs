@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import net.logstash.logback.argument.StructuredArguments.kv
+import net.logstash.logback.argument.StructuredArguments.raw
 import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.serialization.Serde
 import org.apache.kafka.common.serialization.Serializer
@@ -51,6 +53,7 @@ class JacksonDeserializer<T : Any>(private val kclass: KClass<T>) : Deserializer
         registerModule(JavaTimeModule())
         disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
     }
+
     override fun deserialize(topic: String, data: ByteArray?): T? = data?.let { jackson.readValue(it, kclass.java) }
 }
 
@@ -82,7 +85,16 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
 
                 migrate(jackson.readValue(byteArray, prevKClass.java))
                     .also { it.markerSomMigrertAkkuratNå() }
-                    .also { secureLog.info("migrated [$topic] from $json to $it") }
+                    .also {
+                        secureLog.trace(
+                            "Migrerte ved deserialisering",
+                            kv("topic", topic),
+                            kv("fra_versjon", version),
+                            kv("til_versjon", dtoVersion),
+                            raw("fra_data", byteArray.decodeToString()),
+                            raw("til_data", jackson.writeValueAsString(it)) // fjern for optimalisering
+                        )
+                    }
             }
         }
 

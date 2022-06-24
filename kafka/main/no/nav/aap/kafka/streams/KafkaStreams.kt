@@ -5,24 +5,19 @@ import io.micrometer.core.instrument.binder.kafka.KafkaStreamsMetrics
 import no.nav.aap.kafka.KFactory
 import no.nav.aap.kafka.KafkaConfig
 import no.nav.aap.kafka.plus
+import no.nav.aap.kafka.streams.transformer.TraceLogTransformer
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.KafkaStreams.State.*
 import org.apache.kafka.streams.StoreQueryParameters.fromNameAndType
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.Topology
-import org.apache.kafka.streams.kstream.GlobalKTable
-import org.apache.kafka.streams.kstream.KStream
-import org.apache.kafka.streams.kstream.Materialized
-import org.apache.kafka.streams.kstream.Named
+import org.apache.kafka.streams.kstream.*
 import org.apache.kafka.streams.state.KeyValueStore
 import org.apache.kafka.streams.state.QueryableStoreTypes.keyValueStore
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
-import org.slf4j.LoggerFactory
 import org.apache.kafka.streams.KafkaStreams as ApacheKafkaStreams
 
 typealias Store<V> = ReadOnlyKeyValueStore<String, V>
-
-private val secureLog = LoggerFactory.getLogger("secureLog")
 
 interface KStreams : KFactory, AutoCloseable {
     fun connect(config: KafkaConfig, registry: MeterRegistry, topology: Topology)
@@ -58,11 +53,15 @@ fun <V> materialized(storeName: String, topic: Topic<V>): Materialized<String, V
         .withKeySerde(topic.keySerde)
         .withValueSerde(topic.valueSerde)
 
-fun <V> StreamsBuilder.consume(topic: Topic<V>): KStream<String, V?> =
+fun <V> StreamsBuilder.consume(topic: Topic<V>, logValue: Boolean = false): KStream<String, V?> =
     stream(topic.name, topic.consumed("consume-${topic.name}"))
-        .peek(
-            { key, value -> secureLog.info("consumed [${topic.name}] K:$key V:$value") },
-            named("log-consume-${topic.name}")
+        .transformValues(
+            ValueTransformerWithKeySupplier {
+                TraceLogTransformer<String, V>(
+                    message = "Konsumerer Topic",
+                    logValue = logValue,
+                )
+            }, named("log-consume-${topic.name}")
         )
 
 fun <V> StreamsBuilder.globalTable(table: Table<V>): GlobalKTable<String, V> =

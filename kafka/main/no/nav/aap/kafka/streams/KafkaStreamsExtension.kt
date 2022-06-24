@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import no.nav.aap.kafka.streams.transformer.TraceLogTransformer
 import org.apache.kafka.streams.kstream.*
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
 import org.slf4j.LoggerFactory
@@ -42,22 +43,40 @@ fun <V, R, VR> KStream<String, V>.leftJoin(
 fun <K, V, KR> KStream<K, V>.selectKey(name: String, mapper: KeyValueMapper<in K, in V, out KR>) =
     selectKey(mapper, named(name))!!
 
-fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String) =
-    peek(
-        { key, value -> secureLog.info("produced [${topic.name}] K:$key V:$value") },
-        named("log-produced-$name")
+fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String, logValue: Boolean = false) =
+    transformValues(
+        ValueTransformerWithKeySupplier {
+            TraceLogTransformer<String, V>(
+                message = "Produserer til Topic",
+                sinkTopic = topic,
+                logValue = logValue,
+            )
+        }, named("log-$name")
     ).to(topic.name, topic.produced(name))
 
-fun <V> KStream<String, V?>.produceNullable(table: Table<V>): KTable<String, V?> =
-    peek(
-        { key, value -> secureLog.info("produced [${table.stateStoreName}] K:$key V:$value") },
-        named("log-produced-${table.name}")
+/**
+ * Produser records inkludert tombstones til en ktable
+ */
+fun <V> KStream<String, V?>.produceNullable(table: Table<V>, logValue: Boolean = false): KTable<String, V?> =
+    transformValues(
+        ValueTransformerWithKeySupplier {
+            TraceLogTransformer<String, V>(
+                message = "Produserer til KTable inkl tombstones",
+                table = table,
+                logValue = logValue,
+            )
+        }, named("log-produced-${table.name}")
     ).toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
 
-fun <V> KStream<String, V>.produce(table: Table<V>): KTable<String, V> =
-    peek(
-        { key, value -> secureLog.info("produced [${table.stateStoreName}] K:$key V:$value") },
-        named("log-produced-${table.name}")
+fun <V> KStream<String, V>.produce(table: Table<V>, logValue: Boolean = false): KTable<String, V> =
+    transformValues(
+        ValueTransformerWithKeySupplier {
+            TraceLogTransformer<String, V>(
+                message = "Produserer til KTable",
+                table = table,
+                logValue = logValue,
+            )
+        }, named("log-produced-${table.name}")
     ).toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
 
 @Suppress("UNCHECKED_CAST")
