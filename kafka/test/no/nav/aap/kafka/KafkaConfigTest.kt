@@ -37,6 +37,19 @@ internal class KafkaConfigTest {
     }
 
     @Test
+    fun `required streams config is present`() {
+        val streamsProps = defaultKafkaTestConfig.streamsProperties()
+        assertEquals("app", streamsProps.getProperty("application.id", "missing"))
+        assertEquals("localhost:9092", streamsProps.getProperty("bootstrap.servers", "missing"))
+    }
+
+    @Test
+    fun `kafka streams has exactly onces turned on`() {
+        val streamsProps = defaultKafkaTestConfig.streamsProperties()
+        assertEquals("exactly_once_v2", streamsProps.getProperty("processing.guarantee", "missing"))
+    }
+
+    @Test
     fun `ssl is empty without keystorePath`() {
         val config = defaultKafkaTestConfig.copy(keystorePath = "")
         assertEquals(Properties(), config.sslProperties())
