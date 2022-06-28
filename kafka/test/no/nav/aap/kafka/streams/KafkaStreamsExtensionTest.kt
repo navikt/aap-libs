@@ -6,14 +6,12 @@ import ch.qos.logback.classic.LoggerContext
 import no.nav.aap.kafka.SecureLogAppender
 import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.structuredArguments
-import org.apache.kafka.streams.StreamsBuilder
-import org.apache.kafka.streams.Topology
-import org.apache.kafka.streams.TopologyDescription
-import org.apache.kafka.streams.TopologyTestDriver
+import org.apache.kafka.streams.*
 import org.apache.kafka.streams.kstream.Named
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
+import java.util.*
 import kotlin.test.assertEquals
 
 internal class KafkaStreamsExtensionTest {
@@ -430,7 +428,8 @@ internal class KafkaStreamsExtensionTest {
                     .produce(bothTopic, "produced-both")
             }.build()
 
-            val kafka = TopologyTestDriver(topology)
+            val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+            val kafka = TopologyTestDriver(topology, config)
             val outputTopic = outputTopic(kafka, bothTopic)
             inputTopic(kafka, rightTopic).pipeInput("123", "banana")
             inputTopic(kafka, leftTopic).pipeInput("123", "apple")
@@ -456,7 +455,8 @@ internal class KafkaStreamsExtensionTest {
                     .produce(bothTopic, "produced-both")
             }.build()
 
-            val kafka = TopologyTestDriver(topology)
+            val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+            val kafka = TopologyTestDriver(topology, config)
             outputTopic(kafka, bothTopic)
             inputTopic(kafka, rightTopic)
             inputTopic(kafka, leftTopic)
@@ -480,7 +480,8 @@ internal class KafkaStreamsExtensionTest {
                     .produce(bothTopic, "produced-both")
             }.build()
 
-            val kafka = TopologyTestDriver(topology)
+            val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+            val kafka = TopologyTestDriver(topology, config)
             val outputTopic = outputTopic(kafka, bothTopic)
             inputTopic(kafka, leftTopic).pipeInput("123", "apple")
 
@@ -505,7 +506,8 @@ internal class KafkaStreamsExtensionTest {
                     .produce(bothTopic, "produced-both")
             }.build()
 
-            val kafka = TopologyTestDriver(topology)
+            val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+            val kafka = TopologyTestDriver(topology, config)
             outputTopic(kafka, bothTopic)
             inputTopic(kafka, rightTopic)
             inputTopic(kafka, leftTopic)
@@ -546,7 +548,8 @@ internal class KafkaStreamsExtensionTest {
                 consume(sourceTopic).produce(sinkTable)
             }.build()
 
-            val kafka = TopologyTestDriver(topology)
+            val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+            val kafka = TopologyTestDriver(topology, config)
             inputTopic(kafka, sourceTopic).pipeInput("123", "hello")
 
             val stateStore = kafka.getKeyValueStore<String, String>("strings-state-store")
@@ -572,7 +575,8 @@ internal class KafkaStreamsExtensionTest {
                 consume(sourceTopic).produce(sinkTable, true)
             }.build()
 
-            val kafka = TopologyTestDriver(topology)
+            val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+            val kafka = TopologyTestDriver(topology, config)
             inputTopic(kafka, sourceTopic).pipeInput("123", "hello")
 
             val secureMsg = log.firstContaining("Produserer")
@@ -597,7 +601,8 @@ internal class KafkaStreamsExtensionTest {
                 consume(sourceTopic).produce(sinkTable)
             }.build()
 
-            val kafka = TopologyTestDriver(topology)
+            val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+            val kafka = TopologyTestDriver(topology, config)
             inputTopic(kafka, sourceTopic).pipeInput("123", "hello")
 
             val expected = "log-consume-${sourceTopic.name}"
@@ -614,7 +619,8 @@ internal class KafkaStreamsExtensionTest {
                 consume(sourceTopic).produce(sinkTable)
             }.build()
 
-            val kafka = TopologyTestDriver(topology)
+            val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+            val kafka = TopologyTestDriver(topology, config)
             inputTopic(kafka, sourceTopic).pipeInput("123", "hello")
 
             assertEquals(

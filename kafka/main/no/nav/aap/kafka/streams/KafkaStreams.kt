@@ -31,7 +31,8 @@ object KafkaStreams : KStreams {
     private var isInitiallyStarted: Boolean = false
 
     override fun connect(config: KafkaConfig, registry: MeterRegistry, topology: Topology) {
-        streams = ApacheKafkaStreams(topology, config.consumer + config.producer).apply {
+        val properties = config.streamsProperties() + config.sslProperties() + config.schemaProperties()
+        streams = ApacheKafkaStreams(topology, properties).apply {
             setUncaughtExceptionHandler(ProcessingExceptionHandler())
             setStateListener { state, _ -> if (state == RUNNING) isInitiallyStarted = true }
             setGlobalStateRestoreListener(RestoreListener())

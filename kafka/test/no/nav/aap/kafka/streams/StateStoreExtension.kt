@@ -5,10 +5,12 @@ import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.streams.store.allValues
 import no.nav.aap.kafka.streams.store.scheduleMetrics
 import org.apache.kafka.streams.StreamsBuilder
+import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.TopologyDescription
 import org.apache.kafka.streams.TopologyTestDriver
 import org.apache.kafka.streams.test.TestRecord
 import org.junit.jupiter.api.Test
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
@@ -25,7 +27,8 @@ internal class StateStoreExtension {
             consume(topic).produce(table)
         }.build()
 
-        val kafka = TopologyTestDriver(topology)
+        val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+        val kafka = TopologyTestDriver(topology, config)
         inputTopic(kafka, topic).pipeInput("123", "hello")
         inputTopic(kafka, topic).pipeInput("456", "hello")
 
@@ -47,7 +50,8 @@ internal class StateStoreExtension {
 
         val topology = stream.build()
 
-        val kafka = TopologyTestDriver(topology)
+        val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+        val kafka = TopologyTestDriver(topology, config)
         val inputTopic = inputTopic(kafka, topic)
         inputTopic.pipeInput("123", "hello")
         inputTopic.pipeInput("456", "hello")
@@ -77,7 +81,8 @@ internal class StateStoreExtension {
         val ktable = stream.consume(topic).produce(table)
         ktable.scheduleMetrics(table, 1.seconds, registry)
         val topology = stream.build()
-        val kafka = TopologyTestDriver(topology)
+        val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+        val kafka = TopologyTestDriver(topology, config)
         val inputTopic = inputTopic(kafka, topic)
 
         kafka.advanceWallClockTime(1.seconds.toJavaDuration())
@@ -99,7 +104,8 @@ internal class StateStoreExtension {
         val ktable = stream.consume(topic).produce(table)
         ktable.scheduleMetrics(table, 1.seconds, registry)
         val topology = stream.build()
-        val kafka = TopologyTestDriver(topology)
+        val config = Properties().apply { this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state" }
+        val kafka = TopologyTestDriver(topology, config)
         inputTopic(kafka, topic)
 
         val lastProcessorNode = topology

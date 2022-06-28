@@ -13,7 +13,7 @@ internal class KafkaConfigTest {
     @Test
     fun `schemaRegistry is empty without schema registry url`() {
         val config = defaultKafkaTestConfig.copy(schemaRegistryUrl = null)
-        assertEquals(Properties(), config.schemaRegistry)
+        assertEquals(Properties(), config.schemaProperties())
     }
 
     @Test
@@ -22,7 +22,7 @@ internal class KafkaConfigTest {
         val expectedConfig = Properties().apply {
             this[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = "localhost:8081"
         }
-        assertEquals(expectedConfig, config.schemaRegistry)
+        assertEquals(expectedConfig, config.schemaProperties())
     }
 
     @Test
@@ -33,25 +33,25 @@ internal class KafkaConfigTest {
             this[SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE] = "USER_INFO"
             this[SchemaRegistryClientConfig.USER_INFO_CONFIG] = "usr:pwd"
         }
-        assertEquals(expectedConfig, config.schemaRegistry)
+        assertEquals(expectedConfig, config.schemaProperties())
     }
 
     @Test
     fun `ssl is empty without keystorePath`() {
         val config = defaultKafkaTestConfig.copy(keystorePath = "")
-        assertEquals(Properties(), config.ssl)
+        assertEquals(Properties(), config.sslProperties())
     }
 
     @Test
     fun `ssl is empty without truststorePath`() {
         val config = defaultKafkaTestConfig.copy(truststorePath = "")
-        assertEquals(Properties(), config.ssl)
+        assertEquals(Properties(), config.sslProperties())
     }
 
     @Test
     fun `ssl is empty without credstorePsw`() {
         val config = defaultKafkaTestConfig.copy(credstorePsw = "")
-        assertEquals(Properties(), config.ssl)
+        assertEquals(Properties(), config.sslProperties())
     }
 
     @Test
@@ -68,7 +68,7 @@ internal class KafkaConfigTest {
             this[SslConfigs.SSL_KEY_PASSWORD_CONFIG] = "cred"
             this[SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG] = ""
         }
-        assertEquals(expectedConfig, config.ssl)
+        assertEquals(expectedConfig, config.sslProperties())
     }
 }
 

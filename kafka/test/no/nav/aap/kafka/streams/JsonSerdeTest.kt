@@ -7,6 +7,7 @@ import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.TopologyTestDriver
 import org.apache.kafka.streams.errors.StreamsException
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
