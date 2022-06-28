@@ -1,5 +1,7 @@
 package no.nav.aap.kafka.streams
 
+import no.nav.aap.kafka.streams.extension.mapValues
+import no.nav.aap.kafka.streams.extension.produce
 import org.apache.kafka.streams.kstream.Branched
 import org.apache.kafka.streams.kstream.BranchedKStream
 import org.apache.kafka.streams.kstream.KStream

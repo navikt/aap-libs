@@ -1,10 +1,11 @@
-package no.nav.aap.kafka.streams
+package no.nav.aap.kafka.streams.extension
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import no.nav.aap.kafka.streams.*
 import no.nav.aap.kafka.streams.transformer.TraceLogTransformer
 import org.apache.kafka.streams.kstream.*
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore

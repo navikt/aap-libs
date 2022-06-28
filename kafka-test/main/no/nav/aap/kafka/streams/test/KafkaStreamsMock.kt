@@ -1,14 +1,13 @@
 package no.nav.aap.kafka.streams.test
 
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KtorKafkaMetrics
-import no.nav.aap.kafka.KafkaConfig
-import no.nav.aap.kafka.plus
 import no.nav.aap.kafka.streams.KStreams
+import no.nav.aap.kafka.streams.KStreamsConfig
 import no.nav.aap.kafka.streams.Store
 import no.nav.aap.kafka.streams.Topic
+import no.nav.aap.kafka.vanilla.KafkaConfig
 import org.apache.kafka.clients.consumer.MockConsumer
 import org.apache.kafka.clients.consumer.OffsetResetStrategy.EARLIEST
 import org.apache.kafka.clients.producer.MockProducer
@@ -16,13 +15,18 @@ import org.apache.kafka.streams.*
 import java.util.*
 
 class KafkaStreamsMock : KStreams {
-    private var schemaRegistryUrl: String? = null
+    var schemaRegistryUrl: String? = null
+        private set
 
     lateinit var streams: TopologyTestDriver
 
-    override fun connect(config: KafkaConfig, registry: MeterRegistry, topology: Topology) {
-        val properties = config.streamsProperties() + config.sslProperties() + config.schemaProperties() + testConfig
-        streams = TopologyTestDriver(topology, properties)
+    override fun connect(config: KStreamsConfig, registry: MeterRegistry, topology: Topology) {
+        val testProperties = config.streamsProperties().apply {
+            this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state"
+            this[StreamsConfig.MAX_TASK_IDLE_MS_CONFIG] = StreamsConfig.MAX_TASK_IDLE_MS_DISABLED
+        }
+
+        streams = TopologyTestDriver(topology, testProperties)
         uniqueParallellTestSchemaReg(config)
         KtorKafkaMetrics(registry, streams::metrics)
     }
@@ -55,14 +59,9 @@ class KafkaStreamsMock : KStreams {
         schemaRegistryUrl?.let { MockSchemaRegistry.dropScope(it) }
     }
 
-    private val testConfig = Properties().apply {
-        this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state"
-        this[StreamsConfig.MAX_TASK_IDLE_MS_CONFIG] = StreamsConfig.MAX_TASK_IDLE_MS_DISABLED
-    }
-
     // Unique schema reg url for tests running in parallell without coliding on schema.drop
-    private fun uniqueParallellTestSchemaReg(config: KafkaConfig) {
-        config.schemaProperties()[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG]?.let {
+    private fun uniqueParallellTestSchemaReg(config: KStreamsConfig) {
+        config.streamsProperties()["schema.registry.url"]?.let {
             schemaRegistryUrl = "$it/${UUID.randomUUID()}"
         }
     }

@@ -2,6 +2,8 @@ package no.nav.aap.kafka.streams
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.serde.json.JsonSerde
+import no.nav.aap.kafka.streams.extension.consume
+import no.nav.aap.kafka.streams.extension.produce
 import no.nav.aap.kafka.streams.store.allValues
 import no.nav.aap.kafka.streams.store.scheduleMetrics
 import org.apache.kafka.streams.StreamsBuilder

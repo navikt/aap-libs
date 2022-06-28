@@ -2,12 +2,14 @@ package no.nav.aap.kafka.streams
 
 import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.serde.json.Migratable
+import no.nav.aap.kafka.streams.extension.consume
+import no.nav.aap.kafka.streams.extension.filterNotNull
+import no.nav.aap.kafka.streams.extension.produce
 import org.apache.kafka.common.serialization.Serializer
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.TopologyTestDriver
 import org.apache.kafka.streams.errors.StreamsException
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

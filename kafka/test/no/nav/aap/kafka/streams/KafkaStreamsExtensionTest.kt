@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.LoggerContext
 import no.nav.aap.kafka.SecureLogAppender
 import no.nav.aap.kafka.serde.json.JsonSerde
+import no.nav.aap.kafka.streams.extension.*
 import no.nav.aap.kafka.structuredArguments
 import org.apache.kafka.streams.*
 import org.apache.kafka.streams.kstream.Named
