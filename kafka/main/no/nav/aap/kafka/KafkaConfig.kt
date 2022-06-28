@@ -12,9 +12,6 @@ import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.processor.LogAndSkipOnInvalidTimestamp
 import java.util.*
 
-operator fun Properties.plus(properties: Properties): Properties = apply { putAll(properties) }
-operator fun Properties.plus(properties: Map<String, String>): Properties = apply { putAll(properties) }
-
 data class KafkaConfig(
     private val applicationId: String,
     private val brokers: String,
@@ -39,21 +36,15 @@ data class KafkaConfig(
 
     fun streamsProperties() =
         Properties().apply {
-            this[CommonClientConfigs.CLIENT_ID_CONFIG] = clientId
-
             this[StreamsConfig.APPLICATION_ID_CONFIG] = applicationId
-
-            // The max amount of bytes buffered used across all threads. If not doing aggregation, this can be set to 0, which is also default.
-            this[StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG] = "0"
-
-//            this[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = ByteArraySerde::class.java.name
-//            this[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = StringSerde::class.java.name
-
-            this[StreamsConfig.DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] = ExitPointExceptionHandler::class.java.name
+            this[CommonClientConfigs.CLIENT_ID_CONFIG] = clientId
+            this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = brokers
+            this[StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG] = "0" // change to e.g. 10 MB if doing aggregation
+            this[StreamsConfig.DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] =
+                ExitPointExceptionHandler::class.java.name
             this[StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG] = LogAndSkipOnInvalidTimestamp::class.java.name
-            this[StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] = EntryPointExceptionHandler::class.java.name
-
-            // Committed when: (1) acked produce to sink (2) state update of app (3) offset commit on source
+            this[StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] =
+                EntryPointExceptionHandler::class.java.name
             this[StreamsConfig.PROCESSING_GUARANTEE_CONFIG] = StreamsConfig.EXACTLY_ONCE_V2
         }
 
@@ -78,7 +69,7 @@ data class KafkaConfig(
             this[ConsumerConfig.GROUP_ID_CONFIG] = groupId
             this[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
             this[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
-            // 2 min + worst case processing time (4 sec) before timeout
+            // Should be 2 min + max processing time (e.g 4 sec)
             this[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 124_000
         }
 
@@ -90,3 +81,6 @@ data class KafkaConfig(
             this[ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION] = "5"
         }
 }
+
+operator fun Properties.plus(properties: Properties): Properties = apply { putAll(properties) }
+operator fun Properties.plus(properties: Map<String, String>): Properties = apply { putAll(properties) }
