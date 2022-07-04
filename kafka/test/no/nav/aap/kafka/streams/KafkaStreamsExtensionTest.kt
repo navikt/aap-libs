@@ -586,11 +586,9 @@ internal class KafkaStreamsExtensionTest {
             assertEquals("Produserer til KTable", secureMsg.message)
             assertEquals("123", args["key"])
             assertEquals("hello", args["value"])
-            assertEquals("source", args["topic"])
             assertEquals("strings", args["table"])
             assertEquals("strings-state-store", args["store"])
             assertEquals("0", args["partition"])
-            assertEquals("0", args["offset"])
         }
 
         @Test
@@ -681,7 +679,6 @@ internal class KafkaStreamsExtensionTest {
             assertEquals("123", args["key"])
             assertEquals("sink", args["topic"])
             assertEquals("0", args["partition"])
-            assertEquals("0", args["offset"])
         }
 
         @Test

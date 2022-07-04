@@ -6,7 +6,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import no.nav.aap.kafka.streams.*
-import no.nav.aap.kafka.streams.transformer.TraceLogTransformer
+import no.nav.aap.kafka.streams.transformer.LogConsumeTopic
+import no.nav.aap.kafka.streams.transformer.LogProduceTable
+import no.nav.aap.kafka.streams.transformer.LogProduceTopic
 import org.apache.kafka.streams.kstream.*
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
 import org.slf4j.LoggerFactory
@@ -44,31 +46,43 @@ fun <V, R, VR> KStream<String, V>.leftJoin(
 fun <K, V, KR> KStream<K, V>.selectKey(name: String, mapper: KeyValueMapper<in K, in V, out KR>) =
     selectKey(mapper, named(name))!!
 
-fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String, logValue: Boolean = false) =
-    transformValues(
-        ValueTransformerWithKeySupplier {
-            TraceLogTransformer<String, V>(
-                message = "Produserer til Topic",
-                sinkTopic = topic,
-                logValue = logValue,
-            )
-        }, named("log-$name")
-    ).to(topic.name, topic.produced(name))
+fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String, logValue: Boolean = false) = this
+    .logProduced(topic, named("log-$name"), logValue)
+    .to(topic.name, topic.produced(name))
 
 /**
  * Produser records inkludert tombstones til en ktable
  */
-fun <V> KStream<String, V?>.produce(table: Table<V>, logValue: Boolean = false): KTable<String, V> =
-    transformValues(
-        ValueTransformerWithKeySupplier {
-            TraceLogTransformer<String, V>(
-                message = "Produserer til KTable",
-                table = table,
-                logValue = logValue,
-            )
-        }, named("log-produced-${table.name}")
-    ).toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
-        .filterNotNull("filter-not-null-${table.name}-as-table")
+fun <V> KStream<String, V?>.produce(table: Table<V>, logValue: Boolean = false): KTable<String, V> = this
+    .logProduced(table, named("log-produced-${table.name}"), logValue)
+    .toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
+    .filterNotNull("filter-not-null-${table.name}-as-table")
+
+internal fun <K, V> KStream<K, V?>.logConsumed(
+    topic: Topic<V>,
+    logValue: Boolean = false,
+): KStream<K, V?> = transformValues(
+    ValueTransformerWithKeySupplier { LogConsumeTopic("Konsumerer Topic", logValue) },
+    named("log-consume-${topic.name}")
+)
+
+internal fun <K, V> KStream<K, V>.logProduced(
+    topic: Topic<V>,
+    named: Named,
+    logValue: Boolean = false,
+): KStream<K, V> = transformValues(
+    ValueTransformerWithKeySupplier { LogProduceTopic("Produserer til Topic", topic, logValue) },
+    named
+)
+
+internal fun <K, V> KStream<K, V?>.logProduced(
+    table: Table<V>,
+    named: Named,
+    logValue: Boolean = false,
+): KStream<K, V> = transformValues(
+    ValueTransformerWithKeySupplier { LogProduceTable<K, V>("Produserer til KTable", table, logValue) },
+    named
+)
 
 @Suppress("UNCHECKED_CAST")
 fun <K, V> KTable<K, V?>.filterNotNull(name: String): KTable<K, V> =
