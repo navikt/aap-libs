@@ -22,6 +22,8 @@ object JsonSerde {
     /**
      * OBS!
      * Hvis forrige dto ikke har versjon, og neste versjon kan parses til forrige så vil den ikke migrere.
+     * Løsning: Ikke introduser initiell versjon før man har en "breaking" change.
+     * Alle etterfølgende versjoner trenger ikke være "breaking".
      */
     inline fun <reified V : Migratable, reified V_PREV : Any> jackson(
         dtoVersion: Int,

@@ -6,7 +6,6 @@ import no.nav.aap.kafka.streams.handler.EntryPointExceptionHandler
 import no.nav.aap.kafka.streams.handler.ExitPointExceptionHandler
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.streams.StreamsConfig.*
-import org.apache.kafka.streams.processor.LogAndSkipOnInvalidTimestamp
 import java.util.*
 
 data class KStreamsConfig(
@@ -16,18 +15,37 @@ data class KStreamsConfig(
     internal val schemaRegistry: SchemaRegistryConfig? = null,
 ) {
     fun streamsProperties(): Properties = Properties().apply {
-        putAll(defaults())
-        this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = brokers
+        /* Replaces client-id and group-id, also used by NAIS to allow app to manage internal kafka topics on aiven */
         this[APPLICATION_ID_CONFIG] = applicationId
-        this[CACHE_MAX_BYTES_BUFFERING_CONFIG] = "0" // change to e.g. 10 MB if doing aggregation
-        this[DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] = ExitPointExceptionHandler::class.java.name
-        this[DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG] = LogAndSkipOnInvalidTimestamp::class.java.name
-        this[DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] = EntryPointExceptionHandler::class.java.name
-        this[PROCESSING_GUARANTEE_CONFIG] = EXACTLY_ONCE_V2
-    }
 
-    private fun defaults(): Properties = Properties().apply {
-        ssl?.properties()?.let { putAll(it) }
+        /* A list of minimum 3 brokers (bootstrap servers) */
+        this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = brokers
+
+        /* Buffer across threads, set to 0 for performance or increase when doing aggregate/reduce (e.g. 10MB) */
+        this[CACHE_MAX_BYTES_BUFFERING_CONFIG] = "0"
+
+        /* Exception handler when leaving the stream, e.g. serialization */
+        this[DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] = ExitPointExceptionHandler::class.java.name
+
+        /*  Exception handler when entering the stream, e.g. deserialization */
+        this[DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] = EntryPointExceptionHandler::class.java.name
+
+        /* Security config for accessing Aiven */
+        ssl?.let { putAll(it.properties()) }
+
+        /* Required for avro and protobuf */
         schemaRegistry?.properties()?.let { putAll(it) }
+
+        /**
+         * Enable exactly onces semantics:
+         * 1. ack produce to sink topic
+         * 2. update state in app (state store)
+         * 3. commit offset for source topic
+         *
+         * commit.interval.ms is set to 100ms
+         * comsumers are configured with isolation.level="read_committed"
+         * processing requires minimum three brokers
+         */
+        this[PROCESSING_GUARANTEE_CONFIG] = EXACTLY_ONCE_V2
     }
 }

@@ -3,6 +3,7 @@ package no.nav.aap.kafka.streams
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KafkaStreamsMetrics
 import no.nav.aap.kafka.streams.handler.ProcessingExceptionHandler
+import no.nav.aap.kafka.streams.store.RestoreListener
 import no.nav.aap.kafka.vanilla.KafkaFactory
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.KafkaStreams.State.*

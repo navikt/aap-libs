@@ -18,6 +18,7 @@ internal class ConfigTest {
         val config = KStreamsConfig(
             applicationId = "app",
             brokers = "localhost:9092",
+            ssl = SslConfig("", "", "")
         )
 
         assertNull(config.schemaRegistry)
@@ -29,6 +30,7 @@ internal class ConfigTest {
             applicationId = "app",
             brokers = "localhost:9092",
             schemaRegistry = schemaConfig,
+            ssl = SslConfig("", "", "")
         )
 
         val expectedConfig = Properties().apply {
@@ -42,7 +44,7 @@ internal class ConfigTest {
 
     @Test
     fun `required streams config is present`() {
-        val config = KStreamsConfig(applicationId = "test-app", brokers = "localhost:9092")
+        val config = KStreamsConfig(applicationId = "test-app", brokers = "localhost:9092", ssl = SslConfig("", "", ""))
         val streamsProps = config.streamsProperties()
         assertEquals("test-app", streamsProps.getProperty("application.id", "missing"))
         assertEquals("localhost:9092", streamsProps.getProperty("bootstrap.servers", "missing"))
@@ -50,7 +52,7 @@ internal class ConfigTest {
 
     @Test
     fun `kafka streams has exactly onces turned on`() {
-        val config = KStreamsConfig(applicationId = "test-app", brokers = "localhost:9092")
+        val config = KStreamsConfig(applicationId = "test-app", brokers = "localhost:9092", ssl = SslConfig("", "", ""))
         val streamsProps = config.streamsProperties()
         assertEquals("exactly_once_v2", streamsProps.getProperty("processing.guarantee", "missing"))
     }

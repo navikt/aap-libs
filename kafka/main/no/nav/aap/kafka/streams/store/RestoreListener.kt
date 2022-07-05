@@ -1,4 +1,4 @@
-package no.nav.aap.kafka.streams
+package no.nav.aap.kafka.streams.store
 
 import net.logstash.logback.argument.StructuredArguments.kv
 import org.apache.kafka.common.TopicPartition
@@ -9,7 +9,9 @@ import kotlin.time.toDuration
 
 private val log = LoggerFactory.getLogger("kafka")
 
-
+/**
+ * Logs number of records restored from state store on application startup
+ */
 internal class RestoreListener : StateRestoreListener {
     private val durationForPartition = hashMapOf<Int, Long>()
 

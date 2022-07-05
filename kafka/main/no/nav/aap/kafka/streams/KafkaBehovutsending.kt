@@ -14,16 +14,14 @@ interface Behov<in BEHOV_VISITOR> {
     fun accept(visitor: BEHOV_VISITOR)
 }
 
-fun <BEHOV_VISITOR, BEHOV : Behov<BEHOV_VISITOR>>
-        KStream<String, BEHOV>.sendBehov(
+fun <BEHOV_VISITOR, BEHOV : Behov<BEHOV_VISITOR>> KStream<String, BEHOV>.sendBehov(
     name: String,
     block: BranchedKStream<String, BEHOV>.() -> Unit
 ) {
     split(named("$name-split-behov")).apply(block)
 }
 
-fun <JSON : Any, EXTRACTOR : BehovExtractor<JSON>, BEHOV : Behov<EXTRACTOR>>
-        BranchedKStream<String, BEHOV>.branch(
+fun <JSON : Any, EXTRACTOR : BehovExtractor<JSON>, BEHOV : Behov<EXTRACTOR>> BranchedKStream<String, BEHOV>.branch(
     topic: Topic<JSON>,
     branchName: String,
     predicate: (BEHOV) -> Boolean,
@@ -35,8 +33,7 @@ fun <JSON : Any, EXTRACTOR : BehovExtractor<JSON>, BEHOV : Behov<EXTRACTOR>>
             .produce(topic, "branch-$branchName-produced-behov")
     }
 
-private fun <BEHOV : Behov<*>>
-        BranchedKStream<String, BEHOV>.branch(
+private fun <BEHOV : Behov<*>> BranchedKStream<String, BEHOV>.branch(
     branchName: String,
     predicate: (BEHOV) -> Boolean,
     chain: (KStream<String, BEHOV>) -> Unit

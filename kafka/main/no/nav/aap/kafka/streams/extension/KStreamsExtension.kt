@@ -15,21 +15,57 @@ import org.slf4j.LoggerFactory
 
 private val secureLog = LoggerFactory.getLogger("secureLog")
 
-fun <K, V, VO, VR> KStream<K, V>.join(joined: Joined<K, V, VO>, table: KTable<K, VO>, joiner: (V, VO) -> VR) =
-    join(table, joiner, joined)!!
+/**
+ * Inner join a KStream (left side) with a KTable (right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key
+ * @param L left value
+ * @param R right value
+ * @param LR joined value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @param joiner: Function to perform the join with the object
+ */
+fun <K, L, R, LR> KStream<K, L>.join(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+    joiner: (L, R) -> LR,
+) = join(table, joiner, joined)!!
 
-fun <K, V, VO, VR> KStream<K, V>.leftJoin(joined: Joined<K, V, VO>, table: KTable<K, VO>, joiner: (V, VO?) -> VR) =
-    leftJoin(table, joiner, joined)!!
+/**
+ * Left join a KStream (left side) with a KTable (optional right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key.
+ * @param L left value
+ * @param R right value
+ * @param LR joined value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @param joiner: Function to perform the join with the object
+ */
+fun <K, L, R, LR> KStream<K, L>.leftJoin(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+    joiner: (L, R?) -> LR,
+) = leftJoin(table, joiner, joined)!!
 
 /**
  * @param keyMapper: Map from a KStream record key to a GlobalKTable record key
  * @param table: GlobalKTable
  * @param valueJoiner: The resulting join record
  */
-fun <V, R, VR> KStream<String, V>.join(
-    keyMapper: (String, V) -> String,
-    table: GlobalKTable<String, R>,
-    valueJoiner: (V, R) -> VR
+fun <K, L, R, LR> KStream<K, L>.join(
+    keyMapper: (K, L) -> K,
+    table: GlobalKTable<K, R>,
+    valueJoiner: (L, R) -> LR
 ) = join(table, keyMapper, valueJoiner)!!
 
 /**
@@ -37,27 +73,36 @@ fun <V, R, VR> KStream<String, V>.join(
  * @param table: GlobalKTable
  * @param valueJoiner: The resulting join record
  */
-fun <V, R, VR> KStream<String, V>.leftJoin(
-    keyMapper: (String, V) -> String,
-    table: GlobalKTable<String, R>,
-    valueJoiner: (V, R?) -> VR
+fun <K, L, R, LR> KStream<K, L>.leftJoin(
+    keyMapper: (K, L) -> K,
+    table: GlobalKTable<K, R>,
+    valueJoiner: (L, R?) -> LR
 ) = leftJoin(table, keyMapper, valueJoiner)!!
 
-fun <K, V, KR> KStream<K, V>.selectKey(name: String, mapper: KeyValueMapper<in K, in V, out KR>) =
-    selectKey(mapper, named(name))!!
+fun <K, V, KR> KStream<K, V>.selectKey(
+    name: String,
+    mapper: KeyValueMapper<in K, in V, out KR>,
+) = selectKey(mapper, named(name))!!
 
+/**
+ * @param logValue Logs record values to secure-logs when true
+ */
 fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String, logValue: Boolean = false) = this
     .logProduced(topic, named("log-$name"), logValue)
     .to(topic.name, topic.produced(name))
 
 /**
  * Produser records inkludert tombstones til en ktable
+ * @param logValue Logs record values to secure-logs when true
  */
 fun <V> KStream<String, V?>.produce(table: Table<V>, logValue: Boolean = false): KTable<String, V> = this
     .logProduced(table, named("log-produced-${table.name}"), logValue)
     .toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
     .filterNotNull("filter-not-null-${table.name}-as-table")
 
+/**
+ * @param logValue Logs record values to secure-logs when true
+ */
 internal fun <K, V> KStream<K, V?>.logConsumed(
     topic: Topic<V>,
     logValue: Boolean = false,
@@ -66,6 +111,9 @@ internal fun <K, V> KStream<K, V?>.logConsumed(
     named("log-consume-${topic.name}")
 )
 
+/**
+ * @param logValue Logs record values to secure-logs when true
+ */
 internal fun <K, V> KStream<K, V>.logProduced(
     topic: Topic<V>,
     named: Named,
@@ -75,6 +123,9 @@ internal fun <K, V> KStream<K, V>.logProduced(
     named
 )
 
+/**
+ * @param logValue Logs record values to secure-logs when true
+ */
 internal fun <K, V> KStream<K, V?>.logProduced(
     table: Table<V>,
     named: Named,
