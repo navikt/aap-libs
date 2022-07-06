@@ -1,5 +1,5 @@
 dependencies {
-    api("org.apache.kafka:kafka-streams:3.2.0")
+    api("org.apache.kafka:kafka-streams:7.2.0-ce")
     api("io.confluent:kafka-streams-avro-serde:7.1.1")
 
     implementation("ch.qos.logback:logback-classic:1.2.11")
