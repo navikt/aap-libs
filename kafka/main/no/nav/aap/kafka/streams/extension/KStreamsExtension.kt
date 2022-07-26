@@ -24,6 +24,25 @@ private val secureLog = LoggerFactory.getLogger("secureLog")
  * @param K key
  * @param L left value
  * @param R right value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @return A stream with left and right values joined in a Pair
+ */
+fun <K, L, R> KStream<K, L>.join(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+): KStream<K, Pair<L, R>> = join(joined, table, ::Pair)
+
+/**
+ * Inner join a KStream (left side) with a KTable (right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key
+ * @param L left value
+ * @param R right value
  * @param LR joined value
  * @receiver Left side of the join
  * @param joined: Key serde and value serdes used to deserialize both sides of the join
@@ -34,7 +53,26 @@ fun <K, L, R, LR> KStream<K, L>.join(
     joined: Joined<K, L, R>,
     table: KTable<K, R>,
     joiner: (L, R) -> LR,
-) = join(table, joiner, joined)!!
+): KStream<K, LR> = join(table, joiner, joined)
+
+/**
+ * Left join a KStream (left side) with a KTable (optional right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key.
+ * @param L left value
+ * @param R right value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @return A stream with left and right values joined in a Pair
+ */
+fun <K, L, R> KStream<K, L>.leftJoin(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+): KStream<K, Pair<L, R?>> = leftJoin(joined, table, ::Pair)
 
 /**
  * Left join a KStream (left side) with a KTable (optional right side)
@@ -55,7 +93,17 @@ fun <K, L, R, LR> KStream<K, L>.leftJoin(
     joined: Joined<K, L, R>,
     table: KTable<K, R>,
     joiner: (L, R?) -> LR,
-) = leftJoin(table, joiner, joined)!!
+): KStream<K, LR> = leftJoin(table, joiner, joined)
+
+/**
+ * @param keyMapper: Map from a KStream record key to a GlobalKTable record key
+ * @param table: GlobalKTable
+ * @return A stream with left and right values joined in a Pair
+ */
+fun <K, L, R> KStream<K, L>.join(
+    keyMapper: (K, L) -> K,
+    table: GlobalKTable<K, R>,
+): KStream<K, Pair<L, R>> = join(keyMapper, table, ::Pair)
 
 /**
  * @param keyMapper: Map from a KStream record key to a GlobalKTable record key
@@ -66,7 +114,17 @@ fun <K, L, R, LR> KStream<K, L>.join(
     keyMapper: (K, L) -> K,
     table: GlobalKTable<K, R>,
     valueJoiner: (L, R) -> LR
-) = join(table, keyMapper, valueJoiner)!!
+): KStream<K, LR> = join(table, keyMapper, valueJoiner)
+
+/**
+ * @param keyMapper: Map from a KStream record key to a GlobalKTable record key
+ * @param table: GlobalKTable
+ * @return A stream with left and right values joined in a Pair
+ */
+fun <K, L, R> KStream<K, L>.leftJoin(
+    keyMapper: (K, L) -> K,
+    table: GlobalKTable<K, R>,
+): KStream<K, Pair<L, R?>> = leftJoin(keyMapper, table, ::Pair)
 
 /**
  * @param keyMapper: Map from a KStream record key to a GlobalKTable record key
@@ -77,12 +135,12 @@ fun <K, L, R, LR> KStream<K, L>.leftJoin(
     keyMapper: (K, L) -> K,
     table: GlobalKTable<K, R>,
     valueJoiner: (L, R?) -> LR
-) = leftJoin(table, keyMapper, valueJoiner)!!
+): KStream<K, LR> = leftJoin(table, keyMapper, valueJoiner)
 
 fun <K, V, KR> KStream<K, V>.selectKey(
     name: String,
     mapper: KeyValueMapper<in K, in V, out KR>,
-) = selectKey(mapper, named(name))!!
+): KStream<KR, V> = selectKey(mapper, named(name))
 
 /**
  * @param logValue Logs record values to secure-logs when true
@@ -167,6 +225,27 @@ fun <K, V, VR> KStream<K, V?>.mapNotNull(name: String, mapper: (K, V) -> VR?): K
     .filterNotNull("$name-filter-premap")
     .mapValues("$name-map", mapper)
     .filterNotNull("$name-filter-postmap")
+
+fun <K, V> KStream<K, V>.peek(consumer: (V) -> Unit): KStream<K, V> =
+    peek { _, value -> consumer(value) }
+
+fun <K, V> KStream<K, V>.peek(name: String, consumer: (V) -> Unit): KStream<K, V> =
+    peek(name) { _, value -> consumer(value) }
+
+fun <K, V> KStream<K, V>.peek(name: String, consumer: (K, V) -> Unit): KStream<K, V> =
+    peek(consumer, named(name))
+
+fun <K, VL, VR> KStream<K, Pair<VL, VR>>.first(): KStream<K, VL> =
+    mapValues(Pair<VL, VR>::first)
+
+fun <K, VL, VR> KStream<K, Pair<VL, VR>>.first(name: String): KStream<K, VL> =
+    mapValues(name, Pair<VL, VR>::first)
+
+fun <K, VL, VR> KStream<K, Pair<VL, VR>>.second(): KStream<K, VR> =
+    mapValues(Pair<VL, VR>::second)
+
+fun <K, VL, VR> KStream<K, Pair<VL, VR>>.second(name: String): KStream<K, VR> =
+    mapValues(name, Pair<VL, VR>::second)
 
 /**
  * Await for the given store to be available
