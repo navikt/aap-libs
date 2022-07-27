@@ -1,6 +1,5 @@
 package no.nav.aap.kafka.streams.test
 
-import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KtorKafkaMetrics
 import no.nav.aap.kafka.streams.KStreams
@@ -56,7 +55,6 @@ class KafkaStreamsMock : KStreams {
     override fun close() {
         producers.clear()
         streams.close()
-        schemaRegistryUrl?.let { MockSchemaRegistry.dropScope(it) }
     }
 
     // Unique schema reg url for tests running in parallell without coliding on schema.drop

@@ -1,7 +1,6 @@
 package no.nav.aap.kafka.streams
 
 import no.nav.aap.kafka.SslConfig
-import no.nav.aap.kafka.schemaregistry.SchemaRegistryConfig
 import no.nav.aap.kafka.streams.handler.EntryPointExceptionHandler
 import no.nav.aap.kafka.streams.handler.ExitPointExceptionHandler
 import org.apache.kafka.clients.CommonClientConfigs
@@ -12,7 +11,7 @@ data class KStreamsConfig(
     internal val applicationId: String,
     internal val brokers: String,
     internal val ssl: SslConfig? = null,
-    internal val schemaRegistry: SchemaRegistryConfig? = null,
+    internal val schemaRegistryProperties: Properties? = null,
 ) {
     fun streamsProperties(): Properties = Properties().apply {
         /* Replaces client-id and group-id, also used by NAIS to allow app to manage internal kafka topics on aiven */
@@ -34,7 +33,7 @@ data class KStreamsConfig(
         ssl?.let { putAll(it.properties()) }
 
         /* Required for avro and protobuf */
-        schemaRegistry?.properties()?.let { putAll(it) }
+        schemaRegistryProperties?.let { putAll(it) }
 
         /**
          * Enable exactly onces semantics:

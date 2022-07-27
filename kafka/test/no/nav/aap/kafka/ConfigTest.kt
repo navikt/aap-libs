@@ -1,46 +1,13 @@
 package no.nav.aap.kafka
 
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
-import no.nav.aap.kafka.schemaregistry.SchemaRegistryConfig
 import no.nav.aap.kafka.streams.KStreamsConfig
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.common.config.SslConfigs
 import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 internal class ConfigTest {
-
-    @Test
-    fun `schemaRegistry is empty without schema registry url`() {
-        val config = KStreamsConfig(
-            applicationId = "app",
-            brokers = "localhost:9092",
-            ssl = SslConfig("", "", "")
-        )
-
-        assertNull(config.schemaRegistry)
-    }
-
-    @Test
-    fun `schema registry config is configured when present`() {
-        val config = KStreamsConfig(
-            applicationId = "app",
-            brokers = "localhost:9092",
-            schemaRegistry = schemaConfig,
-            ssl = SslConfig("", "", "")
-        )
-
-        val expectedConfig = Properties().apply {
-            this[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = "localhost:8081"
-            this[SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE] = "USER_INFO"
-            this[SchemaRegistryClientConfig.USER_INFO_CONFIG] = "user:password"
-        }
-
-        assertEquals(expectedConfig, config.schemaRegistry?.properties())
-    }
 
     @Test
     fun `required streams config is present`() {
@@ -81,10 +48,4 @@ val sslConfig = SslConfig(
     truststorePath = "trust",
     keystorePath = "key",
     credstorePsw = "cred"
-)
-
-val schemaConfig = SchemaRegistryConfig(
-    url = "localhost:8081",
-    user = "user",
-    password = "password",
 )

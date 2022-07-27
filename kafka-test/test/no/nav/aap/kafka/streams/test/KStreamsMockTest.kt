@@ -2,7 +2,6 @@ package no.nav.aap.kafka.streams.test
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.SslConfig
-import no.nav.aap.kafka.schemaregistry.SchemaRegistryConfig
 import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.streams.KStreamsConfig
 import no.nav.aap.kafka.streams.Topic
@@ -40,11 +39,11 @@ class KStreamsMockTest {
         val config = KStreamsConfig(
             applicationId = "app",
             brokers = "mock://kafka",
-            schemaRegistry = SchemaRegistryConfig(
-                url = schemaUrl,
-                user = "usr",
-                password = "pwd",
-            ),
+            schemaRegistryProperties = Properties().apply {
+                this["schema.registry.url"] = schemaUrl
+                this["basic.auth.credentials.source"] = "USER_INFO"
+                this["basic.auth.user.info"] = "usr:pwd"
+            },
             ssl = SslConfig("", "", ""),
         )
 

@@ -8,9 +8,6 @@ dependencies {
     implementation(kotlin("test"))
 
     implementation("io.micrometer:micrometer-registry-prometheus:1.9.2")
-    implementation("io.confluent:kafka-streams-avro-serde:7.2.1") {
-        exclude("org.apache.kafka", "kafka-clients")
-    }
 
     testImplementation(kotlin("test"))
 }

@@ -1,7 +1,6 @@
 package no.nav.aap.kafka.vanilla
 
 import no.nav.aap.kafka.SslConfig
-import no.nav.aap.kafka.schemaregistry.SchemaRegistryConfig
 import no.nav.aap.kafka.streams.KStreamsConfig
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -11,13 +10,13 @@ import java.util.*
 data class KafkaConfig(
     private val brokers: String,
     private val ssl: SslConfig?,
-    private val schemaRegistry: SchemaRegistryConfig?,
+    private val schemaRegistryProperties: Properties?,
 ) {
     companion object {
         fun copyFrom(streamsConfig: KStreamsConfig): KafkaConfig = KafkaConfig(
             brokers = streamsConfig.brokers,
             ssl = streamsConfig.ssl,
-            schemaRegistry = streamsConfig.schemaRegistry
+            schemaRegistryProperties = streamsConfig.schemaRegistryProperties
         )
     }
 
@@ -40,7 +39,7 @@ data class KafkaConfig(
         ssl?.let { putAll(it.properties()) }
 
         /* Optional use of schema registry - required for avro and protobuf */
-        schemaRegistry?.properties()?.let { putAll(it) }
+        schemaRegistryProperties?.let { putAll(it) }
     }
 
     fun producerProperties(clientId: String): Properties = Properties().apply {
@@ -53,6 +52,6 @@ data class KafkaConfig(
         ssl?.let { putAll(it.properties()) }
 
         /* Optional use of schema registry - required for avro and protobuf */
-        schemaRegistry?.properties()?.let { putAll(it) }
+        schemaRegistryProperties?.let { putAll(it) }
     }
 }
