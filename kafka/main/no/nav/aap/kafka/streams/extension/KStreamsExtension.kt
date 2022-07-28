@@ -195,11 +195,21 @@ internal fun <K, V> KStream<K, V?>.logProduced(
 
 @Suppress("UNCHECKED_CAST")
 fun <K, V> KTable<K, V?>.filterNotNull(name: String): KTable<K, V> =
-    filter({ _, value -> value != null }, named(name)) as KTable<K, V>
+    filter(name) { _, value -> value != null } as KTable<K, V>
 
 @Suppress("UNCHECKED_CAST")
 fun <K, V> KStream<K, V?>.filterNotNull(name: String): KStream<K, V> =
-    filter({ _, value -> value != null }, named(name)) as KStream<K, V>
+    filter(name) { _, value -> value != null } as KStream<K, V>
+
+fun <K, V> KStream<K, V>.filterNotNullBy(name: String, selector: (V & Any) -> Any?): KStream<K, V & Any> =
+    filterNotNullBy(name) { _, value -> selector(value) }
+
+@Suppress("UNCHECKED_CAST")
+fun <K, V> KStream<K, V>.filterNotNullBy(name: String, selector: (K, V & Any) -> Any?): KStream<K, V & Any> =
+    filter(name) { key, value -> value != null && selector(key, value) != null } as KStream<K, V & Any>
+
+fun <K, V> KTable<K, V>.filter(name: String, predicate: (K, V) -> Boolean): KTable<K, V> =
+    filter(predicate, named(name))
 
 fun <K, V> KStream<K, V>.filter(name: String, predicate: (K, V) -> Boolean): KStream<K, V> =
     filter(predicate, named(name))
