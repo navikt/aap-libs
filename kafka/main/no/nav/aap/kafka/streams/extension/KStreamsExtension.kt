@@ -216,6 +216,12 @@ fun <K, V, VR> KStream<K, V>.flatMapValues(name: String, mapper: (V) -> Iterable
 fun <K, V, VR> KStream<K, V>.flatMapValues(name: String, mapper: (K, V) -> Iterable<VR>): KStream<K, VR> =
     flatMapValues(mapper, named(name))
 
+fun <K, V : Iterable<VR>, VR> KStream<K, V>.flatten(): KStream<K, VR> =
+    flatMapValues { value -> value }
+
+fun <K, V : Iterable<VR>, VR> KStream<K, V>.flatten(name: String): KStream<K, VR> =
+    flatMapValues(name) { value -> value }
+
 fun <K, V, VR> KStream<K, V?>.mapNotNull(name: String, mapper: (V) -> VR?): KStream<K, VR> = this
     .filterNotNull("$name-filter-premap")
     .mapValues("$name-map", mapper)
@@ -235,16 +241,16 @@ fun <K, V> KStream<K, V>.peek(name: String, consumer: (V) -> Unit): KStream<K, V
 fun <K, V> KStream<K, V>.peek(name: String, consumer: (K, V) -> Unit): KStream<K, V> =
     peek(consumer, named(name))
 
-fun <K, VL, VR> KStream<K, Pair<VL, VR>>.first(): KStream<K, VL> =
+fun <K, VL, VR> KStream<K, Pair<VL, VR>>.firstPairValue(): KStream<K, VL> =
     mapValues(Pair<VL, VR>::first)
 
-fun <K, VL, VR> KStream<K, Pair<VL, VR>>.first(name: String): KStream<K, VL> =
+fun <K, VL, VR> KStream<K, Pair<VL, VR>>.firstPairValue(name: String): KStream<K, VL> =
     mapValues(name, Pair<VL, VR>::first)
 
-fun <K, VL, VR> KStream<K, Pair<VL, VR>>.second(): KStream<K, VR> =
+fun <K, VL, VR> KStream<K, Pair<VL, VR>>.secondPairValue(): KStream<K, VR> =
     mapValues(Pair<VL, VR>::second)
 
-fun <K, VL, VR> KStream<K, Pair<VL, VR>>.second(name: String): KStream<K, VR> =
+fun <K, VL, VR> KStream<K, Pair<VL, VR>>.secondPairValue(name: String): KStream<K, VR> =
     mapValues(name, Pair<VL, VR>::second)
 
 /**
