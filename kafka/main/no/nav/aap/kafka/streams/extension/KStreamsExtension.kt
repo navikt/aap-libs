@@ -153,7 +153,7 @@ fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String, logValue: Bool
  * Produser records inkludert tombstones til en ktable
  * @param logValue Logs record values to secure-logs when true
  */
-fun <V> KStream<String, V>.produce(table: Table<V>, logValue: Boolean = false): KTable<String, V & Any> = this
+fun <V> KStream<String, V?>.produce(table: Table<V>, logValue: Boolean = false): KTable<String, V & Any> = this
     .logProduced(table, named("log-produced-${table.name}"), logValue)
     .toTable(named("${table.name}-as-table"), materialized(table.stateStoreName, table.source))
     .filterNotNull("filter-not-null-${table.name}-as-table")
@@ -161,10 +161,10 @@ fun <V> KStream<String, V>.produce(table: Table<V>, logValue: Boolean = false): 
 /**
  * @param logValue Logs record values to secure-logs when true
  */
-internal fun <K, V> KStream<K, V>.logConsumed(
+internal fun <K, V> KStream<K, V?>.logConsumed(
     topic: Topic<V>,
     logValue: Boolean = false,
-): KStream<K, V> = transformValues(
+): KStream<K, V?> = transformValues(
     ValueTransformerWithKeySupplier { LogConsumeTopic("Konsumerer Topic", logValue) },
     named("log-consume-${topic.name}")
 )
@@ -184,11 +184,11 @@ internal fun <K, V> KStream<K, V>.logProduced(
 /**
  * @param logValue Logs record values to secure-logs when true
  */
-internal fun <K, V> KStream<K, V>.logProduced(
+internal fun <K, V> KStream<K, V?>.logProduced(
     table: Table<V>,
     named: Named,
     logValue: Boolean = false,
-): KStream<K, V> = transformValues(
+): KStream<K, V?> = transformValues(
     ValueTransformerWithKeySupplier { LogProduceTable<K, V>("Produserer til KTable", table, logValue) },
     named
 )
@@ -232,12 +232,12 @@ fun <K, V : Iterable<VR>, VR> KStream<K, V>.flatten(): KStream<K, VR> =
 fun <K, V : Iterable<VR>, VR> KStream<K, V>.flatten(name: String): KStream<K, VR> =
     flatMapValues(name) { value -> value }
 
-fun <K, V, VR> KStream<K, V>.mapNotNull(name: String, mapper: (V) -> VR): KStream<K, VR & Any> = this
+fun <K, V, VR> KStream<K, V>.mapNotNull(name: String, mapper: (V & Any) -> VR): KStream<K, VR & Any> = this
     .filterNotNull("$name-filter-premap")
     .mapValues("$name-map", mapper)
     .filterNotNull("$name-filter-postmap")
 
-fun <K, V, VR> KStream<K, V>.mapNotNull(name: String, mapper: (K, V) -> VR): KStream<K, VR & Any> = this
+fun <K, V, VR> KStream<K, V>.mapNotNull(name: String, mapper: (K, V & Any) -> VR): KStream<K, VR & Any> = this
     .filterNotNull("$name-filter-premap")
     .mapValues("$name-map", mapper)
     .filterNotNull("$name-filter-postmap")
