@@ -56,6 +56,27 @@ fun <K, L, R, LR> KStream<K, L>.join(
 ): KStream<K, LR> = join(table, joiner, joined)
 
 /**
+ * Inner join a KStream (left side) with a KTable (right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key
+ * @param L left value
+ * @param R right value
+ * @param KLR joined value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @param joiner: Function to perform the join with the object
+ */
+fun <K, L, R, KLR> KStream<K, L>.join(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+    joiner: (K, L, R) -> KLR,
+): KStream<K, KLR> = join(table, joiner, joined)
+
+/**
  * Left join a KStream (left side) with a KTable (optional right side)
  *
  * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
@@ -96,6 +117,27 @@ fun <K, L, R, LR> KStream<K, L>.leftJoin(
 ): KStream<K, LR> = leftJoin(table, joiner, joined)
 
 /**
+ * Left join a KStream (left side) with a KTable (optional right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key.
+ * @param L left value
+ * @param R right value
+ * @param KLR joined value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @param joiner: Function to perform the join with the object
+ */
+fun <K, L, R, KLR> KStream<K, L>.leftJoin(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+    joiner: (K, L, R?) -> KLR,
+): KStream<K, KLR> = leftJoin(table, joiner, joined)
+
+/**
  * @param keyMapper: Map from a KStream record key to a GlobalKTable record key
  * @param table: GlobalKTable
  * @return A stream with left and right values joined in a Pair
@@ -119,6 +161,17 @@ fun <K, L, R, LR> KStream<K, L>.join(
 /**
  * @param keyMapper: Map from a KStream record key to a GlobalKTable record key
  * @param table: GlobalKTable
+ * @param valueJoiner: The resulting join record
+ */
+fun <K, L, R, KLR> KStream<K, L>.join(
+    keyMapper: (K, L) -> K,
+    table: GlobalKTable<K, R>,
+    valueJoiner: (K, L, R) -> KLR
+): KStream<K, KLR> = join(table, keyMapper, valueJoiner)
+
+/**
+ * @param keyMapper: Map from a KStream record key to a GlobalKTable record key
+ * @param table: GlobalKTable
  * @return A stream with left and right values joined in a Pair
  */
 fun <K, L, R> KStream<K, L>.leftJoin(
@@ -136,6 +189,17 @@ fun <K, L, R, LR> KStream<K, L>.leftJoin(
     table: GlobalKTable<K, R>,
     valueJoiner: (L, R?) -> LR
 ): KStream<K, LR> = leftJoin(table, keyMapper, valueJoiner)
+
+/**
+ * @param keyMapper: Map from a KStream record key to a GlobalKTable record key
+ * @param table: GlobalKTable
+ * @param valueJoiner: The resulting join record
+ */
+fun <K, L, R, KLR> KStream<K, L>.leftJoin(
+    keyMapper: (K, L) -> K,
+    table: GlobalKTable<K, R>,
+    valueJoiner: (K, L, R?) -> KLR
+): KStream<K, KLR> = leftJoin(table, keyMapper, valueJoiner)
 
 fun <K, V, KR> KStream<K, V>.selectKey(
     name: String,
