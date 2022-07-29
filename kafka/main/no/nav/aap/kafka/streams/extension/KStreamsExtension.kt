@@ -211,8 +211,20 @@ fun <K, V> KStream<K, V>.filterNotNullBy(name: String, selector: (K, V & Any) ->
 fun <K, V> KTable<K, V>.filter(name: String, predicate: (K, V) -> Boolean): KTable<K, V> =
     filter(predicate, named(name))
 
+fun <K, V> KTable<K, V>.filterKeys(name: String, predicate: (K) -> Boolean): KTable<K, V> =
+    filter(name) { key, _ -> predicate(key) }
+
+fun <K, V> KTable<K, V>.filterValues(name: String, predicate: (V) -> Boolean): KTable<K, V> =
+    filter(name) { _, value -> predicate(value) }
+
 fun <K, V> KStream<K, V>.filter(name: String, predicate: (K, V) -> Boolean): KStream<K, V> =
     filter(predicate, named(name))
+
+fun <K, V> KStream<K, V>.filterKeys(name: String, predicate: (K) -> Boolean): KStream<K, V> =
+    filter(name) { key, _ -> predicate(key) }
+
+fun <K, V> KStream<K, V>.filterValues(name: String, predicate: (V) -> Boolean): KStream<K, V> =
+    filter(name) { _, value -> predicate(value) }
 
 fun <K, V, VR> KStream<K, V>.mapValues(name: String, mapper: (V) -> VR): KStream<K, VR> =
     mapValues(mapper, named(name))
