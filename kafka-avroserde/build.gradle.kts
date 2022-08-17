@@ -5,7 +5,7 @@ repositories {
 dependencies {
     implementation(project(":kafka"))
 
-    api("org.apache.kafka:kafka-streams:3.2.1")
+    api("org.apache.kafka:kafka-streams:7.2.1-ce")
     api("io.confluent:kafka-streams-avro-serde:7.2.1")
 
     implementation("ch.qos.logback:logback-classic:1.2.11")

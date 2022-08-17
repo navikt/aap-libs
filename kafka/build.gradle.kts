@@ -1,5 +1,5 @@
 dependencies {
-    api("org.apache.kafka:kafka-streams:3.2.1")
+    api("org.apache.kafka:kafka-streams:7.2.1-ce")
 
     implementation("ch.qos.logback:logback-classic:1.2.11")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
