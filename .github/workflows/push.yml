@@ -14,7 +14,7 @@ jobs:
           java-version: 18
           distribution: 'temurin'
           check-latest: true
-      - uses: gradle/gradle-build-action@v2
+      - uses: gradle/gradle-build-action@v2.3.0
         with:
           arguments: build --continue --no-daemon
       - uses: dorny/test-reporter@v1.5.0
