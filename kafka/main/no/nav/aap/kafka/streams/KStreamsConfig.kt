@@ -23,7 +23,7 @@ data class KStreamsConfig(
 
         /* Buffer across threads, set to 0 for performance or increase when doing aggregate/reduce (e.g. 10MB) */
         this[CACHE_MAX_BYTES_BUFFERING_CONFIG] = "1048576"
-        this[COMMIT_INTERVAL_MS_CONFIG] = 30_000
+        this[COMMIT_INTERVAL_MS_CONFIG] = 10_000
 
         /* Exception handler when leaving the stream, e.g. serialization */
         this[DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] = ExitPointExceptionHandler::class.java.name
