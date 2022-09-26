@@ -4,6 +4,7 @@ import no.nav.aap.kafka.SslConfig
 import no.nav.aap.kafka.streams.handler.EntryPointExceptionHandler
 import no.nav.aap.kafka.streams.handler.ExitPointExceptionHandler
 import org.apache.kafka.clients.CommonClientConfigs
+import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.StreamsConfig.*
 import java.util.*
 
@@ -21,7 +22,8 @@ data class KStreamsConfig(
         this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = brokers
 
         /* Buffer across threads, set to 0 for performance or increase when doing aggregate/reduce (e.g. 10MB) */
-        this[CACHE_MAX_BYTES_BUFFERING_CONFIG] = "0"
+        this[CACHE_MAX_BYTES_BUFFERING_CONFIG] = "1048576"
+        this[COMMIT_INTERVAL_MS_CONFIG] = 30_000
 
         /* Exception handler when leaving the stream, e.g. serialization */
         this[DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] = ExitPointExceptionHandler::class.java.name
