@@ -4,7 +4,6 @@ import no.nav.aap.kafka.SslConfig
 import no.nav.aap.kafka.streams.handler.EntryPointExceptionHandler
 import no.nav.aap.kafka.streams.handler.ExitPointExceptionHandler
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.StreamsConfig.*
 import java.util.*
 
@@ -13,6 +12,18 @@ data class KStreamsConfig(
     internal val brokers: String,
     internal val ssl: SslConfig? = null,
     internal val schemaRegistryProperties: Properties? = null,
+    /**
+     * Buffer across threads. For T threads with C cacehd bytes, each thread will get C/T cache bytes.
+     * AAP vedtak uses 12 partitions, hence 120MB / 12 threads = 10 MB per partition.
+     * disable (0) to increase performance.
+     * Increase (e.g 120MB = 120 * 1024 * 1024) when aggregation or reduce is needed
+     */
+    internal val bytesToCacheBeforeCommitInterval: Long = 0,
+    /**
+     * If enabling cache, this should be increased to e.g. 10 seconds
+     * Defaults to EOS_DEFAULT_COMMIT_INTERVAL_MS (100ms) when set to null
+     */
+    internal val commitIntervalInMillis: Long? = null, // defaults to
 ) {
     fun streamsProperties(): Properties = Properties().apply {
         /* Replaces client-id and group-id, also used by NAIS to allow app to manage internal kafka topics on aiven */
@@ -21,9 +32,8 @@ data class KStreamsConfig(
         /* A list of minimum 3 brokers (bootstrap servers) */
         this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = brokers
 
-        /* Buffer across threads, set to 0 for performance or increase when doing aggregate/reduce (e.g. 10MB) */
-        this[CACHE_MAX_BYTES_BUFFERING_CONFIG] = "1048576"
-        this[COMMIT_INTERVAL_MS_CONFIG] = 10_000
+        this[CACHE_MAX_BYTES_BUFFERING_CONFIG] = bytesToCacheBeforeCommitInterval
+        commitIntervalInMillis?.let { this[COMMIT_INTERVAL_MS_CONFIG] = it }
 
         /* Exception handler when leaving the stream, e.g. serialization */
         this[DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] = ExitPointExceptionHandler::class.java.name
