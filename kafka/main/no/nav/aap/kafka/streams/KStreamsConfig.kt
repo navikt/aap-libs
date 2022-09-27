@@ -20,7 +20,7 @@ data class KStreamsConfig(
      */
     internal val bytesToCacheBeforeCommitInterval: Long = 0,
     /**
-     * If enabling cache, this should be increased to e.g. 10 seconds
+     * If enabling cache, this should be increased
      * Defaults to EOS_DEFAULT_COMMIT_INTERVAL_MS (100ms) when set to null
      */
     internal val commitIntervalInMillis: Long? = null, // defaults to
@@ -33,7 +33,10 @@ data class KStreamsConfig(
         this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = brokers
 
         this[CACHE_MAX_BYTES_BUFFERING_CONFIG] = bytesToCacheBeforeCommitInterval
-        commitIntervalInMillis?.let { this[COMMIT_INTERVAL_MS_CONFIG] = it }
+
+        if (commitIntervalInMillis != null) {
+            this[COMMIT_INTERVAL_MS_CONFIG] = commitIntervalInMillis
+        }
 
         /* Exception handler when leaving the stream, e.g. serialization */
         this[DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG] = ExitPointExceptionHandler::class.java.name
