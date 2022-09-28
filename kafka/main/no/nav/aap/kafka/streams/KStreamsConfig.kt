@@ -4,6 +4,9 @@ import no.nav.aap.kafka.SslConfig
 import no.nav.aap.kafka.streams.handler.EntryPointExceptionHandler
 import no.nav.aap.kafka.streams.handler.ExitPointExceptionHandler
 import org.apache.kafka.clients.CommonClientConfigs
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.common.config.TopicConfig
+import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.StreamsConfig.APPLICATION_ID_CONFIG
 import org.apache.kafka.streams.StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG
 import org.apache.kafka.streams.StreamsConfig.COMMIT_INTERVAL_MS_CONFIG
@@ -43,6 +46,16 @@ data class KStreamsConfig(
 
         /*  Exception handler when entering the stream, e.g. deserialization */
         this[DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] = EntryPointExceptionHandler::class.java.name
+
+        // Configuration for resilience
+        this[StreamsConfig.producerPrefix(ProducerConfig.ACKS_CONFIG)] = "all"
+        this[StreamsConfig.REPLICATION_FACTOR_CONFIG] = 3
+        this[StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG] = 1
+
+        // Configuration for decreaseing latency
+        this[StreamsConfig.producerPrefix(ProducerConfig.BATCH_SIZE_CONFIG)] = 0 // do not batch
+        this[StreamsConfig.producerPrefix(ProducerConfig.LINGER_MS_CONFIG)] = 0 // send immediately
+//        this[StreamsConfig.producerPrefix(ProducerConfig.COMPRESSION_TYPE_CONFIG)] = "snappy"
 
         /*
          * Enable exactly onces semantics:
