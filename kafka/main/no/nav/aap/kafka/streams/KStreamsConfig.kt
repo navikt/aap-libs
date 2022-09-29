@@ -5,7 +5,6 @@ import no.nav.aap.kafka.streams.handler.EntryPointExceptionHandler
 import no.nav.aap.kafka.streams.handler.ExitPointExceptionHandler
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.common.config.TopicConfig
 import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.StreamsConfig.APPLICATION_ID_CONFIG
 import org.apache.kafka.streams.StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG
@@ -55,6 +54,7 @@ data class KStreamsConfig(
         // Configuration for decreaseing latency
         this[StreamsConfig.producerPrefix(ProducerConfig.BATCH_SIZE_CONFIG)] = 0 // do not batch
         this[StreamsConfig.producerPrefix(ProducerConfig.LINGER_MS_CONFIG)] = 0 // send immediately
+        this[StreamsConfig.MAX_TASK_IDLE_MS_CONFIG] = 3_000
 //        this[StreamsConfig.producerPrefix(ProducerConfig.COMPRESSION_TYPE_CONFIG)] = "snappy"
 
         /*
