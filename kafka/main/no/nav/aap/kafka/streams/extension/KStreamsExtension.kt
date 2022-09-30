@@ -51,7 +51,7 @@ fun <K, L, R> KStream<K, L>.join(
  * @param buffer: When race condition is a problem, buffer values in memory in between streams
  * @return A stream with left and right values joined in a Pair
  */
-fun <K, L, R : Bufferable> KStream<K, L>.join(
+fun <K, L, R : Bufferable<R>> KStream<K, L>.join(
     joined: Joined<K, L, R>,
     table: KTable<K, R>,
     buffer: RaceConditionBuffer<K, R>,
@@ -94,7 +94,7 @@ fun <K, L, R, LR> KStream<K, L>.join(
  * @param buffer: When race condition is a problem, buffer values in memory in between streams
  * @param joiner: Function to perform the join with the object
  */
-fun <K, L, R : Bufferable, LR> KStream<K, L>.join(
+fun <K, L, R : Bufferable<R>, LR> KStream<K, L>.join(
     joined: Joined<K, L, R>,
     table: KTable<K, R>,
     buffer: RaceConditionBuffer<K, R>,
@@ -164,7 +164,7 @@ fun <K, L, R> KStream<K, L>.leftJoin(
  * @param buffer: When race condition is a problem, buffer values in memory in between streams
  * @return A stream with left and right values joined in a Pair
  */
-fun <K, L, R : Bufferable> KStream<K, L>.leftJoin(
+fun <K, L, R : Bufferable<R>> KStream<K, L>.leftJoin(
     joined: Joined<K, L, R>,
     table: KTable<K, R>,
     buffer: RaceConditionBuffer<K, R>
@@ -207,7 +207,7 @@ fun <K, L, R, LR> KStream<K, L>.leftJoin(
  * @param buffer: When race condition is a problem, buffer values in memory in between streams
  * @param joiner: Function to perform the join with the object
  */
-fun <K, L, R : Bufferable, LR> KStream<K, L>.leftJoin(
+fun <K, L, R : Bufferable<R>, LR> KStream<K, L>.leftJoin(
     joined: Joined<K, L, R>,
     table: KTable<K, R>,
     buffer: RaceConditionBuffer<K, R>,
@@ -319,7 +319,7 @@ fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String, logValue: Bool
     .logProduced(topic, named("log-$name"), logValue)
     .to(topic.name, topic.produced(name))
 
-fun <V : Bufferable> KStream<String, V>.produce(
+fun <V : Bufferable<V>> KStream<String, V>.produce(
     topic: Topic<V>,
     buffer: RaceConditionBuffer<String, V>,
     name: String,
