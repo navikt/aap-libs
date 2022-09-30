@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import no.nav.aap.kafka.streams.*
+import no.nav.aap.kafka.streams.concurrency.Bufferable
+import no.nav.aap.kafka.streams.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.transformer.LogConsumeTopic
 import no.nav.aap.kafka.streams.transformer.LogProduceTable
 import no.nav.aap.kafka.streams.transformer.LogProduceTopic
@@ -43,6 +45,27 @@ fun <K, L, R> KStream<K, L>.join(
  * @param K key
  * @param L left value
  * @param R right value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @param buffer: When race condition is a problem, buffer values in memory in between streams
+ * @return A stream with left and right values joined in a Pair
+ */
+fun <K, L, R : Bufferable> KStream<K, L>.join(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+    buffer: RaceConditionBuffer<K, R>,
+): KStream<K, Pair<L, R>> = join(joined, table, buffer, ::Pair)
+
+/**
+ * Inner join a KStream (left side) with a KTable (right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key
+ * @param L left value
+ * @param R right value
  * @param LR joined value
  * @receiver Left side of the join
  * @param joined: Key serde and value serdes used to deserialize both sides of the join
@@ -54,6 +77,37 @@ fun <K, L, R, LR> KStream<K, L>.join(
     table: KTable<K, R>,
     joiner: (L, R) -> LR,
 ): KStream<K, LR> = join(table, joiner, joined)
+
+/**
+ * Inner join a KStream (left side) with a KTable (right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key
+ * @param L left value
+ * @param R right value
+ * @param LR joined value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @param buffer: When race condition is a problem, buffer values in memory in between streams
+ * @param joiner: Function to perform the join with the object
+ */
+fun <K, L, R : Bufferable, LR> KStream<K, L>.join(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+    buffer: RaceConditionBuffer<K, R>,
+    joiner: (L, R) -> LR,
+): KStream<K, LR> =
+    join(
+        table,
+        { key, left, right ->
+            val rightOrBuffered = buffer.velgNyeste(key, right)
+            joiner(left, rightOrBuffered)
+        },
+        joined
+    )
 
 /**
  * Inner join a KStream (left side) with a KTable (right side)
@@ -104,6 +158,27 @@ fun <K, L, R> KStream<K, L>.leftJoin(
  * @param K key.
  * @param L left value
  * @param R right value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @param buffer: When race condition is a problem, buffer values in memory in between streams
+ * @return A stream with left and right values joined in a Pair
+ */
+fun <K, L, R : Bufferable> KStream<K, L>.leftJoin(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+    buffer: RaceConditionBuffer<K, R>
+): KStream<K, Pair<L, R?>> = leftJoin(joined, table, buffer, ::Pair)
+
+/**
+ * Left join a KStream (left side) with a KTable (optional right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key.
+ * @param L left value
+ * @param R right value
  * @param LR joined value
  * @receiver Left side of the join
  * @param joined: Key serde and value serdes used to deserialize both sides of the join
@@ -115,6 +190,37 @@ fun <K, L, R, LR> KStream<K, L>.leftJoin(
     table: KTable<K, R>,
     joiner: (L, R?) -> LR,
 ): KStream<K, LR> = leftJoin(table, joiner, joined)
+
+/**
+ * Left join a KStream (left side) with a KTable (optional right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key.
+ * @param L left value
+ * @param R right value
+ * @param LR joined value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @param buffer: When race condition is a problem, buffer values in memory in between streams
+ * @param joiner: Function to perform the join with the object
+ */
+fun <K, L, R : Bufferable, LR> KStream<K, L>.leftJoin(
+    joined: Joined<K, L, R>,
+    table: KTable<K, R>,
+    buffer: RaceConditionBuffer<K, R>,
+    joiner: (L, R?) -> LR,
+): KStream<K, LR> =
+    leftJoin(
+        table,
+        { key, left, right ->
+            val bufferedOrRight = right?.let { buffer.velgNyeste(key, it) }
+            joiner(left, bufferedOrRight)
+        },
+        joined
+    )
 
 /**
  * Left join a KStream (left side) with a KTable (optional right side)
@@ -212,6 +318,17 @@ fun <K, V, KR> KStream<K, V>.selectKey(
 fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String, logValue: Boolean = false) = this
     .logProduced(topic, named("log-$name"), logValue)
     .to(topic.name, topic.produced(name))
+
+fun <V : Bufferable> KStream<String, V>.produce(
+    topic: Topic<V>,
+    buffer: RaceConditionBuffer<String, V>,
+    name: String,
+    logValue: Boolean = false
+) {
+    val stream = logProduced(topic, named("log-$name"), logValue)
+    stream.to(topic.name, topic.produced(name))
+    stream.foreach(buffer::lagre)
+}
 
 /**
  * Produser records inkludert tombstones til en ktable
