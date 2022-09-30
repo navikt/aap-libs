@@ -56,7 +56,7 @@ data class KStreamsConfig(
         this[StreamsConfig.producerPrefix(ProducerConfig.LINGER_MS_CONFIG)] = 0 // send immediately
 
         // Max waiting time for correcting order
-        this[StreamsConfig.MAX_TASK_IDLE_MS_CONFIG] = 10
+//        this[StreamsConfig.MAX_TASK_IDLE_MS_CONFIG] = 10
 
 //        this[StreamsConfig.producerPrefix(ProducerConfig.COMPRESSION_TYPE_CONFIG)] = "snappy"
 
