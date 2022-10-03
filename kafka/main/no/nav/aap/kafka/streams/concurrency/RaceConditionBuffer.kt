@@ -7,7 +7,7 @@ interface Bufferable<V> {
     fun erNyere(other: V): Boolean
 }
 
-class RaceConditionBuffer<K, V: Bufferable<V>> {
+class RaceConditionBuffer<K, V : Bufferable<V>>(private val levetidSekunder: Long = 10) {
     private val buffer = ConcurrentHashMap<K, BufferElement<V>>()
 
     fun lagre(key: K, value: V) {
@@ -27,12 +27,12 @@ class RaceConditionBuffer<K, V: Bufferable<V>> {
     private fun slettGamle() {
         buffer.keys.forEach { key ->
             buffer.computeIfPresent(key) { _, v ->
-                v.takeIf { it.timestamp.plusSeconds(10) > Instant.now() }
+                v.takeIf { it.timestamp.plusSeconds(levetidSekunder) > Instant.now() }
             }
         }
     }
 
-    private class BufferElement<V: Bufferable<V>>(
+    private class BufferElement<V : Bufferable<V>>(
         val timestamp: Instant,
         val value: V,
     )
