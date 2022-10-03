@@ -9,9 +9,9 @@ import java.io.File
  */
 object PlantUML {
     fun create(topology: Topology, filePath: String = "../doc/topology.puml"): File =
-        File(filePath).apply { writeText(plantUML(topology)) }
+        File(filePath).apply { writeText(generate(topology)) }
 
-    private fun plantUML(topology: Topology): String = topology.describe().let { description ->
+    fun generate(topology: Topology): String = topology.describe().let { description ->
         val stores = description.globalStores().map { processStore(it) }.toSet()
         val subtopologies = description.subtopologies().map { processSubtopology(it) }
         val queues = description.getTopics().map { formatTopicToUmlQueue(it) }.toSet()

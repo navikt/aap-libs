@@ -16,7 +16,7 @@ class RaceConditionBuffer<K, V : Bufferable<V>>(
     private val buffer = ConcurrentHashMap<K, BufferElement<V>>()
     private val logger = LoggerFactory.getLogger("secureLog")
 
-    fun lagre(key: K, value: V) {
+    internal fun lagre(key: K, value: V) {
         buffer[key] = BufferElement(Instant.now(), value)
 
         if (logDebug) {
@@ -27,7 +27,7 @@ class RaceConditionBuffer<K, V : Bufferable<V>>(
         slettGamle()
     }
 
-    fun velgNyeste(key: K, other: V): V {
+    internal fun velgNyeste(key: K, other: V): V {
         slettGamle()
 
         return buffer[key]

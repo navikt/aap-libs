@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import no.nav.aap.kafka.streams.*
 import no.nav.aap.kafka.streams.concurrency.Bufferable
+import no.nav.aap.kafka.streams.concurrency.BufferableJoined
 import no.nav.aap.kafka.streams.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.transformer.LogConsumeTopic
 import no.nav.aap.kafka.streams.transformer.LogProduceTable
@@ -47,16 +48,14 @@ fun <K, L, R> KStream<K, L>.join(
  * @param L left value
  * @param R right value
  * @receiver Left side of the join
- * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param joined: Join with topic serdes and buffer right side (table) of the join
  * @param table: Right side of the join
- * @param buffer: When race condition is a problem, buffer values in memory in between streams
  * @return A stream with left and right values joined in a Pair
  */
 fun <K, L, R : Bufferable<R>> KStream<K, L>.join(
-    joined: Joined<K, L, R>,
+    joined: BufferableJoined<K, L, R>,
     table: KTable<K, R>,
-    buffer: RaceConditionBuffer<K, R>,
-): KStream<K, Pair<L, R>> = join(joined, table, buffer, ::Pair)
+): KStream<K, Pair<L, R>> = join(joined, table, ::Pair)
 
 /**
  * Inner join a KStream (left side) with a KTable (right side)
@@ -90,24 +89,22 @@ fun <K, L, R, LR> KStream<K, L>.join(
  * @param R right value
  * @param LR joined value
  * @receiver Left side of the join
- * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param joined: Join with configured topic serdes and buffer right side of the join
  * @param table: Right side of the join
- * @param buffer: When race condition is a problem, buffer values in memory in between streams
  * @param joiner: Function to perform the join with the object
  */
 fun <K, L, R : Bufferable<R>, LR> KStream<K, L>.join(
-    joined: Joined<K, L, R>,
+    joined: BufferableJoined<K, L, R>,
     table: KTable<K, R>,
-    buffer: RaceConditionBuffer<K, R>,
     joiner: (L, R) -> LR,
 ): KStream<K, LR> =
     join(
         table,
         { key, left, right ->
-            val rightOrBuffered = buffer.velgNyeste(key, right)
+            val rightOrBuffered = joined.velgNyeste(key, right)
             joiner(left, rightOrBuffered)
         },
-        joined
+        joined.joined
     )
 
 /**
@@ -160,16 +157,14 @@ fun <K, L, R> KStream<K, L>.leftJoin(
  * @param L left value
  * @param R right value
  * @receiver Left side of the join
- * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param joined: Topic configured serdes with buffered right side (ktable)
  * @param table: Right side of the join
- * @param buffer: When race condition is a problem, buffer values in memory in between streams
  * @return A stream with left and right values joined in a Pair
  */
 fun <K, L, R : Bufferable<R>> KStream<K, L>.leftJoin(
-    joined: Joined<K, L, R>,
+    joined: BufferableJoined<K, L, R>,
     table: KTable<K, R>,
-    buffer: RaceConditionBuffer<K, R>
-): KStream<K, Pair<L, R?>> = leftJoin(joined, table, buffer, ::Pair)
+): KStream<K, Pair<L, R?>> = leftJoin(joined, table, ::Pair)
 
 /**
  * Left join a KStream (left side) with a KTable (optional right side)
@@ -205,22 +200,20 @@ fun <K, L, R, LR> KStream<K, L>.leftJoin(
  * @receiver Left side of the join
  * @param joined: Key serde and value serdes used to deserialize both sides of the join
  * @param table: Right side of the join
- * @param buffer: When race condition is a problem, buffer values in memory in between streams
  * @param joiner: Function to perform the join with the object
  */
 fun <K, L, R : Bufferable<R>, LR> KStream<K, L>.leftJoin(
-    joined: Joined<K, L, R>,
+    joined: BufferableJoined<K, L, R>,
     table: KTable<K, R>,
-    buffer: RaceConditionBuffer<K, R>,
     joiner: (L, R?) -> LR,
 ): KStream<K, LR> =
     leftJoin(
         table,
         { key, left, right ->
-            val bufferedOrRight = right?.let { buffer.velgNyeste(key, it) }
+            val bufferedOrRight = right?.let { joined.velgNyeste(key, it) }
             joiner(left, bufferedOrRight)
         },
-        joined
+        joined.joined
     )
 
 /**
@@ -321,14 +314,13 @@ fun <V> KStream<String, V>.produce(topic: Topic<V>, name: String, logValue: Bool
     .to(topic.name, topic.produced(name))
 
 fun <V : Bufferable<V>> KStream<String, V>.produce(
-    topic: Topic<V>,
-    buffer: RaceConditionBuffer<String, V>,
+    topic: BufferableTopic<V>,
     name: String,
     logValue: Boolean = false
 ) {
     val stream = logProduced(topic, named("log-$name"), logValue)
     stream.to(topic.name, topic.produced(name))
-    stream.foreach(buffer::lagre)
+    stream.foreach(topic::lagreBuffer)
 }
 
 /**
