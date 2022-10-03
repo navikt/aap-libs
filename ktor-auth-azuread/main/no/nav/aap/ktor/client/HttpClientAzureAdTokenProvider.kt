@@ -1,5 +1,6 @@
 package no.nav.aap.ktor.client
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -9,10 +10,10 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.Application.FormUrlEncoded
 import io.ktor.serialization.jackson.*
-import java.net.URL
 import java.time.Instant
 
-data class AzureConfig(val tokenEndpoint: URL, val clientId: String, val clientSecret: String)
+const val GRANT_TYPE = "client_credentials"
+const val LEEWAY_SECONDS = 60
 
 class HttpClientAzureAdTokenProvider(
     private val config: AzureConfig,
@@ -20,25 +21,33 @@ class HttpClientAzureAdTokenProvider(
 ) {
     private val cache = mutableMapOf<String, Token>()
     private val client = HttpClient(CIO) {
-        install(ContentNegotiation) { jackson {
-            registerModule(JavaTimeModule()) }
-
+        install(ContentNegotiation) {
+            jackson {
+                registerModule(JavaTimeModule())
+                disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            }
         }
     }
 
-    suspend fun getToken() = (cache[scope]?.takeUnless(Token::isExpired) ?: fetchToken(scope)).access_token
+    suspend fun getToken(): String {
+        val token = cache[scope]?.takeUnless(Token::hasExpired) ?: fetchToken(scope)
+        return token.access_token
+    }
 
     private suspend fun fetchToken(scope: String): Token =
         client.post(config.tokenEndpoint) {
             contentType(FormUrlEncoded)
-            setBody("client_id=${config.clientId}&client_secret=${config.clientSecret}&scope=$scope&grant_type=client_credentials")
+            setBody("client_id=${config.clientId}&client_secret=${config.clientSecret}&scope=$scope&grant_type=$GRANT_TYPE")
         }.body<Token>().also { token ->
             cache[scope] = token
         }
 
-    private data class Token(val token_type: String, val expires_in: Long, val ext_expires_in: Long, val access_token: String) {
-        private val expiresOn = Instant.now().plusSeconds(expires_in - 60)
+    private data class Token(
+        val expires_in: Long,
+        val access_token: String
+    ) {
+        private val expiry = Instant.now().plusSeconds(expires_in - LEEWAY_SECONDS)
 
-        val isExpired get() = expiresOn < Instant.now()
+        fun hasExpired() = expiry < Instant.now()
     }
 }
