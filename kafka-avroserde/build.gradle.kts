@@ -6,7 +6,7 @@ dependencies {
     implementation(project(":kafka"))
 
     api("org.apache.kafka:kafka-streams:3.3.0")
-    api("io.confluent:kafka-streams-avro-serde:7.2.1")
+    api("io.confluent:kafka-streams-avro-serde:7.2.2")
 
     implementation("ch.qos.logback:logback-classic:1.4.1")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
