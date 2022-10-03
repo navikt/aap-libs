@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 
 class BufferableJoinedTest {
     @Test
-    fun `Buffrer og henter ut buffret versjon da den er nyest`() {
+    fun `leser og skriver til buffer når input- og output-topic er bufferable`() {
         val buffer = RaceConditionBuffer<String, TestBufferable>()
         val right = BufferableTopic("right", JsonSerde.jackson(), buffer)
         val table = Table("right", right)
