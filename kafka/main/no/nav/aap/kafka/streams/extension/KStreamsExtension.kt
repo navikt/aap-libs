@@ -12,6 +12,7 @@ import no.nav.aap.kafka.streams.transformer.LogConsumeTopic
 import no.nav.aap.kafka.streams.transformer.LogProduceTable
 import no.nav.aap.kafka.streams.transformer.LogProduceTopic
 import org.apache.kafka.streams.kstream.*
+import org.apache.kafka.streams.processor.api.FixedKeyProcessorSupplier
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
 import org.slf4j.LoggerFactory
 
@@ -345,8 +346,8 @@ fun <V> KStream<String, V?>.produce(table: Table<V>, logValue: Boolean = false):
 internal fun <K, V> KStream<K, V?>.logConsumed(
     topic: Topic<V>,
     logValue: Boolean = false,
-): KStream<K, V?> = transformValues(
-    ValueTransformerWithKeySupplier { LogConsumeTopic("Konsumerer Topic", logValue) },
+): KStream<K, V?> = processValues(
+    { LogConsumeTopic("Konsumerer Topic", logValue) },
     named("log-consume-${topic.name}")
 )
 
@@ -357,8 +358,8 @@ internal fun <K, V> KStream<K, V>.logProduced(
     topic: Topic<V>,
     named: Named,
     logValue: Boolean = false,
-): KStream<K, V> = transformValues(
-    ValueTransformerWithKeySupplier { LogProduceTopic("Produserer til Topic", topic, logValue) },
+): KStream<K, V> = processValues(
+    { LogProduceTopic("Produserer til Topic", topic, logValue) },
     named
 )
 
@@ -369,8 +370,8 @@ internal fun <K, V> KStream<K, V?>.logProduced(
     table: Table<V>,
     named: Named,
     logValue: Boolean = false,
-): KStream<K, V?> = transformValues(
-    ValueTransformerWithKeySupplier { LogProduceTable<K, V>("Produserer til KTable", table, logValue) },
+): KStream<K, V?> = processValues(
+    FixedKeyProcessorSupplier { LogProduceTable<K, V>("Produserer til KTable", table, logValue) },
     named
 )
 

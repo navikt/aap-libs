@@ -1,8 +1,9 @@
 package no.nav.aap.kafka.streams.transformer
 
 import net.logstash.logback.argument.StructuredArguments.kv
-import org.apache.kafka.streams.kstream.ValueTransformerWithKey
-import org.apache.kafka.streams.processor.ProcessorContext
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor
+import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext
+import org.apache.kafka.streams.processor.api.FixedKeyRecord
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -11,18 +12,19 @@ private val log: Logger = LoggerFactory.getLogger("secureLog")
 internal class LogConsumeTopic<K, V>(
     private val message: String,
     private val logValue: Boolean = false,
-) : ValueTransformerWithKey<K, V, V> {
-    private lateinit var context: ProcessorContext
-    override fun init(ctxt: ProcessorContext) = let { context = ctxt }
+) : FixedKeyProcessor<K, V, V> {
+    private lateinit var context: FixedKeyProcessorContext<K, V>
+    override fun init(ctxt: FixedKeyProcessorContext<K, V>) = let { context = ctxt }
     override fun close() {}
-    override fun transform(key: K, value: V): V = value.also {
+    override fun process(record: FixedKeyRecord<K, V>) {
         log.trace(
             message,
-            kv("key", key),
-            kv("topic", context.topic()),
-            kv("partition", context.partition()),
-            kv("offset", context.offset()),
-            if (logValue) kv("value", value) else null,
+            kv("key", record.key()),
+            kv("topic", context.recordMetadata().get().topic()),
+            kv("partition", context.recordMetadata().get().partition()),
+            kv("offset", context.recordMetadata().get().offset()),
+            if (logValue) kv("value", record.value()) else null,
         )
+        context.forward(record)
     }
 }

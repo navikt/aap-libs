@@ -2,8 +2,9 @@ package no.nav.aap.kafka.streams.transformer
 
 import net.logstash.logback.argument.StructuredArguments.kv
 import no.nav.aap.kafka.streams.Table
-import org.apache.kafka.streams.kstream.ValueTransformerWithKey
-import org.apache.kafka.streams.processor.ProcessorContext
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor
+import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext
+import org.apache.kafka.streams.processor.api.FixedKeyRecord
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -13,18 +14,19 @@ internal class LogProduceTable<K, V>(
     private val message: String,
     private val table: Table<V>,
     private val logValue: Boolean = false,
-) : ValueTransformerWithKey<K, V, V> {
-    private lateinit var context: ProcessorContext
-    override fun init(ctxt: ProcessorContext) = let { context = ctxt }
+) : FixedKeyProcessor<K, V, V> {
+    private lateinit var context: FixedKeyProcessorContext<K, V>
+    override fun init(ctxt: FixedKeyProcessorContext<K, V>) = let { context = ctxt }
     override fun close() {}
-    override fun transform(key: K, value: V): V = value.also {
+    override fun process(record: FixedKeyRecord<K, V>) {
         log.trace(
             message,
-            kv("key", key),
+            kv("key", record.key()),
             kv("table", table.name),
             kv("store", table.stateStoreName),
-            kv("partition", context.partition()),
-            if (logValue) kv("value", value) else null,
+            kv("partition", context.recordMetadata().get().partition()),
+            if (logValue) kv("value", record.value()) else null,
         )
+        context.forward(record)
     }
 }

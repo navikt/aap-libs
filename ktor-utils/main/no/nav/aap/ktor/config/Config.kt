@@ -2,7 +2,7 @@ package no.nav.aap.ktor.config
 
 import com.sksamuel.hoplite.ConfigLoader
 import com.sksamuel.hoplite.ConfigLoaderBuilder
-import com.sksamuel.hoplite.MapPropertySource
+import com.sksamuel.hoplite.sources.MapPropertySource
 import com.sksamuel.hoplite.yaml.YamlParser
 import io.ktor.server.application.*
 import io.ktor.server.config.*
