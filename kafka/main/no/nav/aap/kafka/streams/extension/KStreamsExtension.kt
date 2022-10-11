@@ -8,7 +8,6 @@ import kotlinx.coroutines.withTimeout
 import no.nav.aap.kafka.streams.*
 import no.nav.aap.kafka.streams.concurrency.Bufferable
 import no.nav.aap.kafka.streams.concurrency.BufferableJoined
-import no.nav.aap.kafka.streams.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.transformer.LogConsumeTopic
 import no.nav.aap.kafka.streams.transformer.LogProduceTable
 import no.nav.aap.kafka.streams.transformer.LogProduceTopic
@@ -97,15 +96,32 @@ fun <K, L, R : Bufferable<R>, LR> KStream<K, L>.join(
     joined: BufferableJoined<K, L, R>,
     table: KTable<K, R>,
     joiner: (L, R) -> LR,
-): KStream<K, LR> =
-    join(
-        table,
-        { key, left, right ->
-            val rightOrBuffered = joined.velgNyeste(key, right)
-            joiner(left, rightOrBuffered)
-        },
-        joined.joined
-    )
+): KStream<K, LR> = join(joined, table) { _, left, right -> joiner(left, right) }
+
+/**
+ * Inner join a KStream (left side) with a KTable (right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key
+ * @param L left value
+ * @param R right value
+ * @param KLR joined value
+ * @receiver Left side of the join
+ * @param joined: Join with configured topic serdes and buffer right side of the join
+ * @param table: Right side of the join
+ * @param joiner: Function to perform the join with the object
+ */
+fun <K, L, R : Bufferable<R>, KLR> KStream<K, L>.join(
+    joined: BufferableJoined<K, L, R>,
+    table: KTable<K, R>,
+    joiner: (K, L, R) -> KLR,
+): KStream<K, KLR> =
+    join(joined.joined, table) { key, left, right ->
+        val rightOrBuffered = joined.velgNyeste(key, right)
+        joiner(key, left, rightOrBuffered)
+    }
 
 /**
  * Inner join a KStream (left side) with a KTable (right side)
@@ -207,14 +223,32 @@ fun <K, L, R : Bufferable<R>, LR> KStream<K, L>.leftJoin(
     table: KTable<K, R>,
     joiner: (L, R?) -> LR,
 ): KStream<K, LR> =
-    leftJoin(
-        table,
-        { key, left, right ->
-            val bufferedOrRight = right?.let { joined.velgNyeste(key, it) }
-            joiner(left, bufferedOrRight)
-        },
-        joined.joined
-    )
+    leftJoin(joined, table) { _, left, right -> joiner(left, right) }
+
+/**
+ * Left join a KStream (left side) with a KTable (optional right side)
+ *
+ * Default timestamp extractor is [FailOnInvalidTimestamp][org.apache.kafka.streams.processor.FailOnInvalidTimestamp]
+ * Fails when a [timestamp][org.apache.kafka.clients.consumer.ConsumerRecord] decreases
+ *
+ * @param K key.
+ * @param L left value
+ * @param R right value
+ * @param KLR joined value
+ * @receiver Left side of the join
+ * @param joined: Key serde and value serdes used to deserialize both sides of the join
+ * @param table: Right side of the join
+ * @param joiner: Function to perform the join with the object
+ */
+fun <K, L, R : Bufferable<R>, KLR> KStream<K, L>.leftJoin(
+    joined: BufferableJoined<K, L, R>,
+    table: KTable<K, R>,
+    joiner: (K, L, R?) -> KLR,
+): KStream<K, KLR> =
+    leftJoin(joined.joined, table) { key, left, right ->
+        val bufferedOrRight = right?.let { joined.velgNyeste(key, it) }
+        joiner(key, left, bufferedOrRight)
+    }
 
 /**
  * Left join a KStream (left side) with a KTable (optional right side)
