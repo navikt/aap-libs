@@ -30,11 +30,27 @@ class KafkaStreamsMock : KStreams {
         KtorKafkaMetrics(registry, streams::metrics)
     }
 
+    @Deprecated("Replaced", replaceWith = ReplaceWith("testTopic(topic)"))
     inline fun <reified V : Any> inputTopic(topic: Topic<V>): TestInputTopic<String, V> =
         streams.createInputTopic(topic.name, topic.keySerde.serializer(), topic.valueSerde.serializer())
 
+    @Deprecated("Replaced", replaceWith = ReplaceWith("testTopic(topic)"))
     inline fun <reified V : Any> outputTopic(topic: Topic<V>): TestOutputTopic<String, V> =
         streams.createOutputTopic(topic.name, topic.keySerde.deserializer(), topic.valueSerde.deserializer())
+
+    inline fun <reified V : Any> testTopic(topic: Topic<V>): TestTopic<V> =
+        TestTopic(
+            input = streams.createInputTopic(
+                topic.name,
+                topic.keySerde.serializer(),
+                topic.valueSerde.serializer()
+            ),
+            output = streams.createOutputTopic(
+                topic.name,
+                topic.keySerde.deserializer(),
+                topic.valueSerde.deserializer()
+            )
+        )
 
     override fun isReady() = true
 
