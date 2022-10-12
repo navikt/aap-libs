@@ -4,10 +4,6 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
-interface Bufferable<V> {
-    fun erNyere(other: V): Boolean
-}
-
 class RaceConditionBuffer<K, V : Bufferable<V>>(
     private val levetidSekunder: Long = 10,
     private val logRecordValues: Boolean = false,

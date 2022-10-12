@@ -59,11 +59,6 @@ class JacksonDeserializer<T : Any>(private val kclass: KClass<T>) : Deserializer
     override fun deserialize(topic: String, data: ByteArray?): T? = data?.let { jackson.readValue(it, kclass.java) }
 }
 
-interface Migratable {
-    fun markerSomMigrertAkkuratNå()
-    fun erMigrertAkkuratNå(): Boolean
-}
-
 class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
     private val prevKClass: KClass<T_PREV>,
     private val kclass: KClass<T>,

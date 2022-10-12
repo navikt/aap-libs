@@ -1,4 +1,6 @@
 dependencies {
+    api(project(":kafka-interfaces"))
+
     api("org.apache.kafka:kafka-streams:3.3.0")
 
     implementation("ch.qos.logback:logback-classic:1.4.3")
