@@ -1,20 +1,4 @@
-package no.nav.aap.ktor.auth.maskinporten
-
-import com.nimbusds.jose.jwk.RSAKey
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.auth.*
-import io.ktor.http.*
-import io.ktor.serialization.jackson.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.testing.*
-import no.nav.aap.ktor.auth.maskinporten.client.MaskinportenConfig
-import no.nav.aap.ktor.auth.maskinporten.ktor.MaskinportenAuthProvider
-import org.junit.Ignore
-import org.junit.jupiter.api.Test
+package no.nav.aap.ktor.client.maskinporten
 
 //class MaskinportenTest {
 

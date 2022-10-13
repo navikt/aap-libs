@@ -1,11 +1,11 @@
-package no.nav.aap.ktor.auth.maskinporten.ktor
+package no.nav.aap.ktor.client.maskinporten.ktor
 
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.auth.*
-import no.nav.aap.ktor.auth.maskinporten.client.HttpClientMaskinportenTokenProvider
-import no.nav.aap.ktor.auth.maskinporten.client.MaskinportenConfig
+import no.nav.aap.ktor.client.maskinporten.client.HttpClientMaskinportenTokenProvider
+import no.nav.aap.ktor.client.maskinporten.client.MaskinportenConfig
 
 class MaskinportenAuthProvider(
     config: MaskinportenConfig,

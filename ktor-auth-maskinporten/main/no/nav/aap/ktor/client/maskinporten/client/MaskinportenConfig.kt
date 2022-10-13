@@ -1,4 +1,4 @@
-package no.nav.aap.ktor.auth.maskinporten.client
+package no.nav.aap.ktor.client.maskinporten.client
 
 import com.nimbusds.jose.jwk.RSAKey
 
