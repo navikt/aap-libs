@@ -1,5 +1,5 @@
 dependencies {
-    api("org.apache.kafka:kafka-streams-test-utils:3.3.0") {
+    api("org.apache.kafka:kafka-streams-test-utils:3.3.1") {
         exclude("org.apache.kafka", "kafka-clients")
     }
 
@@ -7,7 +7,7 @@ dependencies {
 
     implementation(kotlin("test"))
 
-    implementation("io.micrometer:micrometer-registry-prometheus:1.9.4")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.9.5")
 
     testImplementation(kotlin("test"))
 }
