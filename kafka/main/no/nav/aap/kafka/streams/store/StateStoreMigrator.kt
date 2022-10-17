@@ -15,7 +15,7 @@ import org.apache.kafka.streams.state.KeyValueStore
 import org.apache.kafka.streams.state.ValueAndTimestamp
 import org.slf4j.LoggerFactory
 
-internal class StateStoreMigrator<K, V : Migratable>(
+private class StateStoreMigrator<K, V : Migratable>(
     private val table: Table<V>,
     private val producer: Producer<K, V>,
     private val logValue: Boolean,
@@ -56,7 +56,7 @@ internal class StateStoreMigrator<K, V : Migratable>(
     }
 }
 
-internal fun <K, V : Migratable> KTable<K, V>.migrateStateStore(
+fun <K, V : Migratable> KTable<K, V>.migrateStateStore(
     table: Table<V>,
     migrationProducer: Producer<K, V>,
     logValue: Boolean = false,
