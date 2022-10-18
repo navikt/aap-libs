@@ -5,9 +5,10 @@ include(
     "kafka-interfaces",
     "kafka-avroserde",
     "kafka-test",
-    "ktor-auth-maskinporten",
     "ktor-auth-azuread",
-    "ktor-auth-config",
     "ktor-auth-behalfof",
+    "ktor-auth-config",
+    "ktor-auth-maskinporten",
+    "ktor-auth-userlogin",
     "ktor-utils",
 )
