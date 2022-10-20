@@ -37,7 +37,7 @@ class HttpClientUserLoginTokenProvider(
     private suspend fun fetchToken(username: String, password: String): Token =
         client.post(config.tokenEndpoint) {
             contentType(FormUrlEncoded)
-            setBody("client_id=${config.clientId}&scope=$config&username=$username&password=$password&grant_type=$GRANT_TYPE")
+            setBody("client_id=${config.clientId}&scope=$scope&username=$username&password=$password&grant_type=$GRANT_TYPE")
         }.body<Token>().also { token ->
             cache[username] = token
         }
