@@ -7,7 +7,6 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 
@@ -31,22 +30,16 @@ class AzureAdTokenProvider(
     private val tokenCache = mutableMapOf<String, Token>()
 
     private suspend fun getAccessToken(cacheKey: String, body: () -> String): String {
-//        val token = tokenCache[cacheKey]?.takeUnless(Token::hasExpired)
-//            ?: client.post(config.tokenEndpoint) {
-//                accept(ContentType.Application.Json)
-//                contentType(ContentType.Application.FormUrlEncoded)
-//                setBody(body())
-//            }.body<Token>().also { fetchedToken ->
-//                tokenCache[cacheKey] = fetchedToken
-//            }
-        val token = client.post(config.tokenEndpoint) {
-            accept(ContentType.Application.Json)
-            contentType(ContentType.Application.FormUrlEncoded)
-            setBody(body())
-        }
-        println(token.contentType())
-        return token.bodyAsText()
-//        return token.access_token
+        val token = tokenCache[cacheKey]?.takeUnless(Token::hasExpired)
+            ?: client.post(config.tokenEndpoint) {
+                accept(ContentType.Application.Json)
+                contentType(ContentType.Application.FormUrlEncoded)
+                setBody(body())
+            }.body<Token>().also { fetchedToken ->
+                tokenCache[cacheKey] = fetchedToken
+            }
+
+        return token.access_token
     }
 
     companion object {
