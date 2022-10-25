@@ -1,6 +1,4 @@
 dependencies {
-    api(project(":ktor-auth-config"))
-
     implementation("io.ktor:ktor-client-content-negotiation:2.1.2")
     implementation("io.ktor:ktor-client-cio:2.1.2")
     implementation("io.ktor:ktor-client-auth:2.1.2")

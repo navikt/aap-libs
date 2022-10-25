@@ -6,7 +6,6 @@ include(
     "kafka-avroserde",
     "kafka-test",
     "ktor-auth-azuread",
-    "ktor-auth-config",
     "ktor-auth-maskinporten",
     "ktor-utils",
 )
