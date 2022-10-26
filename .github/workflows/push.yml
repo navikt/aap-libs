@@ -16,7 +16,7 @@ jobs:
           check-latest: true
       - uses: gradle/gradle-build-action@v2
         with:
-          arguments: build --continue --no-daemon
+          arguments: test --continue --no-daemon --configuration-cache
       - uses: dorny/test-reporter@v1.6.0
         if: always()
         with:
@@ -57,3 +57,7 @@ jobs:
           body: |
             Changes in this Release
             ${{ steps.notes.outputs.CHANGELOG }}
+
+      - uses: gradle/gradle-build-action@v2
+        with:
+          arguments: -Pversion=${{ steps.tag.outputs.version }} publish

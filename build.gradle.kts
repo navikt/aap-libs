@@ -9,14 +9,12 @@ plugins {
 
 allprojects {
     repositories {
-        maven("https://jitpack.io")
         mavenCentral()
     }
 }
 
 subprojects {
     group = "com.github.navikt"
-    version = "1.0.0-SNAPSHOT"
 
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "maven-publish")
@@ -27,7 +25,7 @@ subprojects {
             kotlinOptions.jvmTarget = "18"
         }
         withType<Jar> {
-           duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }
         withType<Test> {
             useJUnitPlatform()
@@ -43,7 +41,19 @@ subprojects {
         publications {
             create<MavenPublication>("mavenJava") {
                 artifactId = project.name
+                version = project.findProperty("version")?.toString() ?: "0.0.0"
                 from(components["java"])
+            }
+        }
+
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/navikt/aap-libs")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
             }
         }
     }
