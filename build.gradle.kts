@@ -51,7 +51,7 @@ subprojects {
                 name = "GitHubPackages"
                 url = uri("https://maven.pkg.github.com/navikt/aap-libs")
                 credentials {
-                    username = System.getenv("GITHUB_ACTOR")
+                    username = "x-access-token"
                     password = System.getenv("GITHUB_TOKEN")
                 }
             }
