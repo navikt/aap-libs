@@ -12,4 +12,6 @@ data class TestTopic<V: Any>(
     fun tombstone(key: String) = input.pipeInput(key, null)
 
     fun assertThat() = output.readAndAssert()
+
+    fun readValue() = output.readValue()
 }
