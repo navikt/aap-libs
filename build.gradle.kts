@@ -10,11 +10,12 @@ plugins {
 allprojects {
     repositories {
         mavenCentral()
+        maven("https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
     }
 }
 
 subprojects {
-    group = "com.github.navikt"
+    group = "com.github.navikt.aap-libs"
 
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "maven-publish")
