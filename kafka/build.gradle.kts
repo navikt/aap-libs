@@ -1,4 +1,5 @@
 dependencies {
+    implementation(project(":cache"))
     api(project(":kafka-interfaces"))
 
     api("org.apache.kafka:kafka-streams:3.3.1")

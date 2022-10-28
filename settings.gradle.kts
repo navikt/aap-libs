@@ -1,6 +1,7 @@
 rootProject.name = "aap-libs"
 
 include(
+    "cache",
     "kafka",
     "kafka-interfaces",
     "kafka-avroserde",
