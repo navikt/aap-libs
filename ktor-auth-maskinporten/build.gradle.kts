@@ -2,7 +2,7 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-val ktorVersion = "2.1.2"
+val ktorVersion = "2.1.3"
 
 dependencies {
     implementation("io.ktor:ktor-client-auth:$ktorVersion")
