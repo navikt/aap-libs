@@ -9,6 +9,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
+import no.nav.aap.cache.Cache
 
 class AzureAdTokenProvider(
     private val config: AzureConfig,
@@ -27,22 +28,22 @@ class AzureAdTokenProvider(
         "client_id=${config.clientId}&client_secret=${config.clientSecret}&assertion=$accessToken&scope=$scope&grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&requested_token_use=on_behalf_of"
     }
 
-    private val tokenCache = mutableMapOf<String, Token>()
+    private val tokenCache = Cache<String, Token>()
 
     private suspend fun getAccessToken(cacheKey: String, body: () -> String): String {
-        val token = tokenCache[cacheKey]?.takeUnless(Token::hasExpired)
+        val token = tokenCache[cacheKey]
             ?: client.post(config.tokenEndpoint) {
                 accept(ContentType.Application.Json)
                 contentType(ContentType.Application.FormUrlEncoded)
                 setBody(body())
             }.body<Token>().also { fetchedToken ->
-                tokenCache[cacheKey] = fetchedToken
+                fetchedToken.addToCache(tokenCache, cacheKey)
             }
 
         return token.access_token
     }
 
-    companion object {
+    private companion object {
         private val defaultHttpClient = HttpClient(CIO) {
             install(ContentNegotiation) {
                 jackson {
