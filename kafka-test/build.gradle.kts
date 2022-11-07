@@ -1,5 +1,5 @@
 dependencies {
-    api("org.apache.kafka:kafka-streams-test-utils:3.3.1") {
+    api("org.apache.kafka:kafka-streams-test-utils:7.3.0-ce") {
         exclude("org.apache.kafka", "kafka-clients")
     }
 

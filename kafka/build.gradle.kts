@@ -13,7 +13,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
 
     testImplementation(kotlin("test"))
-    testImplementation("org.apache.kafka:kafka-streams-test-utils:3.3.1") {
+    testImplementation("org.apache.kafka:kafka-streams-test-utils:7.3.0-ce") {
         exclude("org.apache.kafka", "kafka-clients")
     }
 }
