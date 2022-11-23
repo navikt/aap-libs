@@ -14,7 +14,7 @@ dependencies {
 
     implementation("com.nimbusds:nimbus-jose-jwt:9.25.6")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.0")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.1")
 
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
