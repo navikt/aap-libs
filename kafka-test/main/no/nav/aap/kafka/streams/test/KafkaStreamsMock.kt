@@ -6,11 +6,13 @@ import no.nav.aap.kafka.streams.KStreams
 import no.nav.aap.kafka.streams.KStreamsConfig
 import no.nav.aap.kafka.streams.Store
 import no.nav.aap.kafka.streams.Topic
+import no.nav.aap.kafka.streams.handler.ProcessingExceptionHandler
 import no.nav.aap.kafka.vanilla.KafkaConfig
 import org.apache.kafka.clients.consumer.MockConsumer
 import org.apache.kafka.clients.consumer.OffsetResetStrategy.EARLIEST
 import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.streams.*
+import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler
 import java.util.*
 
 class KafkaStreamsMock : KStreams {
@@ -20,6 +22,15 @@ class KafkaStreamsMock : KStreams {
     lateinit var streams: TopologyTestDriver
 
     override fun connect(config: KStreamsConfig, registry: MeterRegistry, topology: Topology) {
+        connect(config, registry, ProcessingExceptionHandler(), topology)
+    }
+
+    override fun connect(
+        config: KStreamsConfig,
+        registry: MeterRegistry,
+        errorHandler: StreamsUncaughtExceptionHandler,
+        topology: Topology
+    ) {
         val testProperties = config.streamsProperties().apply {
             this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state"
             this[StreamsConfig.MAX_TASK_IDLE_MS_CONFIG] = StreamsConfig.MAX_TASK_IDLE_MS_DISABLED

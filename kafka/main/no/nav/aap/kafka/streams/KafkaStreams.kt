@@ -6,9 +6,13 @@ import no.nav.aap.kafka.streams.handler.ProcessingExceptionHandler
 import no.nav.aap.kafka.streams.store.RestoreListener
 import no.nav.aap.kafka.vanilla.KafkaFactory
 import org.apache.kafka.common.utils.Bytes
-import org.apache.kafka.streams.KafkaStreams.State.*
+import org.apache.kafka.streams.KafkaStreams.State.CREATED
+import org.apache.kafka.streams.KafkaStreams.State.ERROR
+import org.apache.kafka.streams.KafkaStreams.State.REBALANCING
+import org.apache.kafka.streams.KafkaStreams.State.RUNNING
 import org.apache.kafka.streams.StoreQueryParameters.fromNameAndType
 import org.apache.kafka.streams.Topology
+import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler
 import org.apache.kafka.streams.kstream.Materialized
 import org.apache.kafka.streams.kstream.Named
 import org.apache.kafka.streams.state.KeyValueStore
@@ -20,6 +24,14 @@ typealias Store<V> = ReadOnlyKeyValueStore<String, V>
 
 interface KStreams : KafkaFactory, AutoCloseable {
     fun connect(config: KStreamsConfig, registry: MeterRegistry, topology: Topology)
+
+    fun connect(
+        config: KStreamsConfig,
+        registry: MeterRegistry,
+        errorHandler: StreamsUncaughtExceptionHandler,
+        topology: Topology
+    )
+
     fun isReady(): Boolean
     fun isLive(): Boolean
     fun <V> getStore(name: String): Store<V>
@@ -30,8 +42,22 @@ object KafkaStreams : KStreams {
     private var isInitiallyStarted: Boolean = false
 
     override fun connect(config: KStreamsConfig, registry: MeterRegistry, topology: Topology) {
+        connect(
+            config = config,
+            registry = registry,
+            errorHandler = ProcessingExceptionHandler(),
+            topology = topology,
+        )
+    }
+
+    override fun connect(
+        config: KStreamsConfig,
+        registry: MeterRegistry,
+        errorHandler: StreamsUncaughtExceptionHandler,
+        topology: Topology,
+    ) {
         streams = ApacheKafkaStreams(topology, config.streamsProperties()).apply {
-            setUncaughtExceptionHandler(ProcessingExceptionHandler())
+            setUncaughtExceptionHandler(errorHandler)
             setStateListener { state, _ -> if (state == RUNNING) isInitiallyStarted = true }
             setGlobalStateRestoreListener(RestoreListener())
             KafkaStreamsMetrics(this).bindTo(registry)
