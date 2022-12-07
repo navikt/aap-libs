@@ -22,15 +22,6 @@ class KafkaStreamsMock : KStreams {
     lateinit var streams: TopologyTestDriver
 
     override fun connect(config: KStreamsConfig, registry: MeterRegistry, topology: Topology) {
-        connect(config, registry, ProcessingExceptionHandler(), topology)
-    }
-
-    override fun connect(
-        config: KStreamsConfig,
-        registry: MeterRegistry,
-        errorHandler: StreamsUncaughtExceptionHandler,
-        topology: Topology
-    ) {
         val testProperties = config.streamsProperties().apply {
             this[StreamsConfig.STATE_DIR_CONFIG] = "build/kafka-streams/state"
             this[StreamsConfig.MAX_TASK_IDLE_MS_CONFIG] = StreamsConfig.MAX_TASK_IDLE_MS_DISABLED
