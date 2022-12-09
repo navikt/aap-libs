@@ -1,6 +1,7 @@
 package no.nav.aap.kafka.serde.json
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -28,6 +29,9 @@ object JsonSerde {
     inline fun <reified V : Migratable, reified V_PREV : Any> jackson(
         dtoVersion: Int,
         noinline migrate: (V_PREV) -> V,
+        noinline versionSupplier: (JsonNode) -> Int? = { json ->
+            json.get("version")?.takeIf { it.isNumber }?.intValue()
+        },
     ) = object : Serde<V> {
         override fun serializer(): Serializer<V> = JacksonSerializer()
 
@@ -37,6 +41,7 @@ object JsonSerde {
                 kclass = V::class,
                 dtoVersion = dtoVersion,
                 migrate = migrate,
+                versionSupplier = versionSupplier,
             )
     }
 }
@@ -64,19 +69,20 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
     private val kclass: KClass<T>,
     private val dtoVersion: Int,
     private val migrate: (T_PREV) -> T,
+    private val versionSupplier: (JsonNode) -> Int?,
 ) : Deserializer<T> {
     private val previousDtoVersion = dtoVersion - 1
 
     override fun deserialize(topic: String, data: ByteArray?): T? =
         data?.let { byteArray ->
             val json = jackson.readTree(byteArray)
-            val version = json.get("version")
+            val version = versionSupplier(json)
 
             runCatching {
-                require(version.intValue() == dtoVersion) { "dto er ikke siste version $dtoVersion" }
+                require(version == dtoVersion) { "dto er ikke siste version $dtoVersion" }
                 jackson.readValue(byteArray, kclass.java)
             }.getOrElse {
-                require(version == null || version.intValue() == previousDtoVersion) {
+                require(version == null || version == previousDtoVersion) {
                     "forrige dto er ikke forrige version $previousDtoVersion"
                 }
 
