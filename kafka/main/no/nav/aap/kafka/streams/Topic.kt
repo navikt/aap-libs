@@ -22,5 +22,12 @@ open class Topic<V>(
         "$name-joined-${right.name}",
     )
 
+    infix fun <R> withNullable(right: Topic<R>): Joined<String, V, R?> = Joined.with(
+        keySerde,
+        valueSerde,
+        right.valueSerde,
+        "$name-joined-${right.name}",
+    )
+
     infix fun <R : Bufferable<R>> with(right: BufferableTopic<R>) = right.withBuffer(this)
 }
