@@ -3,12 +3,12 @@ package no.nav.aap.kafka.streams.v2
 import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.streams.Table
 import no.nav.aap.kafka.streams.Topic
-import org.apache.kafka.common.serialization.Serdes.StringSerde
 import org.apache.kafka.streams.TestInputTopic
 import org.apache.kafka.streams.TestOutputTopic
 import org.apache.kafka.streams.TopologyTestDriver
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
@@ -23,16 +23,6 @@ class KafkaStreamsTest {
     private object Tables {
         val B = Table("table", Topics.B)
     }
-    private fun <V> TopologyTestDriver.inputTopic(topic: Topic<V>): TestInputTopic<String, V> =
-        createInputTopic(topic.name, topic.keySerde.serializer(), topic.valueSerde.serializer())
-
-    private fun <V> TopologyTestDriver.outputTopic(topic: Topic<V>): TestOutputTopic<String, V> =
-        createOutputTopic(topic.name, topic.keySerde.deserializer(), topic.valueSerde.deserializer())
-
-    private fun <V> TestInputTopic<String, V>.produce(key: String, value: V): TestInputTopic<String, V> =
-        pipeInput(key, value).let { this }
-
-    private fun topologyTestDriver(topology: Topology) = TopologyTestDriver(topology.build())
 
     @Test
     fun `consume and produce to a topic`() {
@@ -112,7 +102,39 @@ class KafkaStreamsTest {
 
         @Test
         fun `left join topic with table`() {
+            val kafka = topology {
+                val table = consume(Topics.B).produce(Tables.B)
+                consume(Topics.A)
+                    .leftJoinWith(table)
+                    .map { left, _ -> left }
+                    .produce(Topics.C)
+            }.let(::topologyTestDriver)
 
+            kafka.inputTopic(Topics.B).produce("1", "B")
+            kafka.inputTopic(Topics.A).produce("1", "A")
+
+            val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+            assertEquals(1, result.size)
+            assertEquals("A", result["1"])
+        }
+
+        @Test
+        @Ignore // todo
+        fun `left join topic with table with no match`() {
+            val kafka = topology {
+                val table = consume(Topics.B).produce(Tables.B)
+                consume(Topics.A)
+                    .leftJoinWith(table)
+                    .map { left, _ -> left }
+                    .produce(Topics.C)
+            }.let(::topologyTestDriver)
+
+//            kafka.inputTopic(Topics.B).produce("1", "B")
+            kafka.inputTopic(Topics.A).produce("1", "A")
+
+            val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+            assertEquals(1, result.size)
+            assertEquals("A", result["1"])
         }
     }
 
@@ -156,7 +178,27 @@ class KafkaStreamsTest {
     inner class Map {
         @Test
         fun `map a joined stream`() {
+            val kafka = topology {
+                val table = consume(Topics.B).produce(Tables.B)
+                consume(Topics.A)
+                    .joinWith(table)
+                    .map { a, b -> b + a }
+                    .produce(Topics.C)
+            }.let(::topologyTestDriver)
 
+            kafka.inputTopic(Topics.B)
+                .produce("1", "awesome")
+                .produce("2", "nice")
+
+            kafka.inputTopic(Topics.A)
+                .produce("1", "sauce")
+                .produce("2", "price")
+
+            val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+            assertEquals(2, result.size)
+            assertEquals("awesomesauce", result["1"])
+            assertEquals("niceprice", result["2"])
         }
 
         @Test
@@ -169,7 +211,28 @@ class KafkaStreamsTest {
     inner class MapFiltered {
         @Test
         fun `map a filtered joined stream`() {
+            val kafka = topology {
+                val table = consume(Topics.B).produce(Tables.B)
+                consume(Topics.A)
+                    .joinWith(table)
+                    .filter { (a, _) -> a == "sauce" }
+                    .map { a, b -> b + a }
+                    .produce(Topics.C)
+            }.let(::topologyTestDriver)
 
+            kafka.inputTopic(Topics.B)
+                .produce("1", "awesome")
+                .produce("2", "nice")
+
+            kafka.inputTopic(Topics.A)
+                .produce("1", "sauce")
+                .produce("2", "price")
+
+            val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+            assertEquals(1, result.size)
+            assertEquals("awesomesauce", result["1"])
+            assertNull(result["2"])
         }
 
         @Test
@@ -182,7 +245,28 @@ class KafkaStreamsTest {
     inner class FilterMapped {
         @Test
         fun `filter a mapped joined stream`() {
+            val kafka = topology {
+                val table = consume(Topics.B).produce(Tables.B)
+                consume(Topics.A)
+                    .joinWith(table)
+                    .map { a, b -> b + a }
+                    .filter { it == "niceprice" }
+                    .produce(Topics.C)
+            }.let(::topologyTestDriver)
 
+            kafka.inputTopic(Topics.B)
+                .produce("1", "awesome")
+                .produce("2", "nice")
+
+            kafka.inputTopic(Topics.A)
+                .produce("1", "sauce")
+                .produce("2", "price")
+
+            val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+            assertEquals(1, result.size)
+            assertNull(result["1"])
+            assertEquals("niceprice", result["2"])
         }
 
         @Test
@@ -191,49 +275,14 @@ class KafkaStreamsTest {
         }
     }
 
-    @Test
-    fun test() {
-        val otherTopic = Topic("otherTopic", JsonSerde.jackson<String>())
-        val domainTopic = Topic("domainTopic", JsonSerde.jackson<String>())
-        val utbetaling = Topic("utbetaling", JsonSerde.jackson<Int>())
+    private fun <V> TopologyTestDriver.inputTopic(topic: Topic<V>): TestInputTopic<String, V> =
+        createInputTopic(topic.name, topic.keySerde.serializer(), topic.valueSerde.serializer())
 
-        val domainTable = Table("domainTable", domainTopic)
+    private fun <V> TopologyTestDriver.outputTopic(topic: Topic<V>): TestOutputTopic<String, V> =
+        createOutputTopic(topic.name, topic.keySerde.deserializer(), topic.valueSerde.deserializer())
 
-        val topology = Topology()
+    private fun <V> TestInputTopic<String, V>.produce(key: String, value: V): TestInputTopic<String, V> =
+        pipeInput(key, value).let { this }
 
-        val rightTable = topology.consume(domainTopic).produce(domainTable)
-
-        fun joinAndMapToDomain(left: String, right: String): Pair<String, String> =
-            left.removePrefix("opplysning ") to right.removePrefix("sum ")
-
-        topology
-            .consume(otherTopic)
-            .rekey { it + "lol" }
-            .filter { it == "response" }
-            .joinWith(rightTable)
-            .filter { (left, right) -> left.startsWith("opplysning ") && right.startsWith("sum ") }
-            .map(::joinAndMapToDomain)
-            .filter { (left, right) -> left.isNotEmpty() && right.isNotEmpty() }
-            .map { (left, right) -> left.toInt() + right.toInt() }
-            .filter { it > 1 }
-            .produce(utbetaling)
-
-        topology
-            .consume(utbetaling)
-            .leftJoinWith(rightTable)
-            .map { left, right -> right + left }
-            .produce(domainTopic)
-
-        val kafka = TopologyTestDriver(topology.build())
-
-        val otherTestTopic =
-            kafka.createInputTopic("otherTopic", StringSerde().serializer(), JsonSerde.jackson<String>().serializer())
-        val domainTestTopic =
-            kafka.createInputTopic("domainTopic", StringSerde().serializer(), JsonSerde.jackson<String>().serializer())
-        val utbetalingTestTopic =
-            kafka.createOutputTopic("utbetaling", StringSerde().deserializer(), JsonSerde.jackson<Int>().deserializer())
-
-        otherTestTopic.pipeInput("1-", "opplysning")
-        domainTestTopic.pipeInput("1-lol", "sum 3")
-    }
+    private fun topologyTestDriver(topology: Topology) = TopologyTestDriver(topology.build())
 }
