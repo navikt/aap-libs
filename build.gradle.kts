@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.7.22"
-    kotlin("plugin.serialization") version "1.7.22" apply false
+    kotlin("jvm") version "1.8.0"
+    kotlin("plugin.serialization") version "1.8.0" apply false
     `maven-publish`
     `java-library`
 }
@@ -22,7 +22,7 @@ subprojects {
 
     tasks {
         withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "18"
+            kotlinOptions.jvmTarget = "19"
         }
         withType<Jar> {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
