@@ -69,37 +69,80 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
     private val kclass: KClass<T>,
     private val dtoVersion: Int,
     private val migrate: (T_PREV) -> T,
+    private val logValues: Boolean = false,
     private val versionSupplier: (JsonNode) -> Int?,
 ) : Deserializer<T> {
     private val previousDtoVersion = dtoVersion - 1
 
     override fun deserialize(topic: String, data: ByteArray?): T? =
         data?.let { byteArray ->
-            val json = jackson.readTree(byteArray)
-            val version = versionSupplier(json)
+            val json: JsonNode = jackson.readTree(byteArray)
 
-            runCatching {
-                require(version == dtoVersion) { "dto er ikke siste version $dtoVersion" }
-                jackson.readValue(byteArray, kclass.java)
-            }.getOrElse {
-                require(version == null || version == previousDtoVersion) {
-                    "forrige dto er ikke forrige version $previousDtoVersion"
-                }
-
-                migrate(jackson.readValue(byteArray, prevKClass.java))
-                    .also { it.markerSomMigrertAkkuratNå() }
-                    .also {
-                        secureLog.trace(
-                            "Migrerte ved deserialisering",
-                            kv("topic", topic),
-                            kv("fra_versjon", version),
-                            kv("til_versjon", dtoVersion),
-                            raw("fra_data", byteArray.decodeToString()),
-                            raw("til_data", jackson.writeValueAsString(it)) // fjern for optimalisering
-                        )
-                    }
+            when (val version = versionSupplier(json)) {
+                null, previousDtoVersion -> deserializeForMigration(byteArray, topic, version)
+                dtoVersion -> deserializeDto(topic, byteArray, json)
+                else -> serdeError(
+                    """
+                      Klarte ikke deserialisere data på topic $topic
+                      Gjeldende versjon: $dtoVersion
+                      Forrige versjon: $previousDtoVersion
+                      Versjon i data: $version
+                    """.trimIndent()
+                )
             }
         }
+
+    private fun deserializeDto(topic: String, bytes: ByteArray, json: JsonNode): T =
+        try {
+            jackson.readValue(bytes, kclass.java)
+        } catch (e: Exception) {
+            secureLog.error(
+                """
+                    Klarte ikke deserializere data på topic $topic
+                    Versjon i data og dataklasse ${kclass.java.name} = $dtoVersion
+                    Migrering kan være nødvendig.
+                    Data: $json
+                """.trimIndent()
+            )
+            serdeError("Klarte ikke deserializere data på topic $topic", e)
+        }
+
+    private fun deserializeForMigration(bytes: ByteArray, topic: String, version: Int?): T {
+        val previousDto = try {
+            jackson.readValue(bytes, prevKClass.java)
+        } catch (e: Exception) {
+            secureLog.error(
+                """
+                    Klarte ikke deserializere data på topic $topic til forrige dto
+                    Forrige versjon = $previousDtoVersion
+                    Versjon i data = $version
+                """.trimIndent()
+            )
+            serdeError("Klarte ikke deserializere data på topic $topic til forrige dto", e)
+        }
+
+        return migrate(previousDto)
+            .apply { markerSomMigrertAkkuratNå() }
+            .also { migratedDto ->
+                if (logValues) {
+                    secureLog.trace(
+                        "Migrerte ved deserialisering",
+                        kv("topic", topic),
+                        kv("fra_versjon", version),
+                        kv("til_versjon", dtoVersion),
+                        raw("fra_data", bytes.decodeToString()),
+                        raw("til_data", jackson.writeValueAsString(migratedDto))
+                    )
+                } else {
+                    secureLog.trace(
+                        "Migrerte ved deserialisering",
+                        kv("topic", topic),
+                        kv("fra_versjon", version),
+                        kv("til_versjon", dtoVersion),
+                    )
+                }
+            }
+    }
 
     private companion object {
         private val secureLog = LoggerFactory.getLogger("secureLog")
@@ -109,3 +152,8 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
         }
     }
 }
+
+class JsonSerdeException(msg: String, cause: Throwable) : RuntimeException(msg, cause)
+
+private fun serdeError(message: Any): Nothing = throw JsonSerdeException(message.toString(), RuntimeException())
+private fun serdeError(message: Any, cause: Throwable): Nothing = throw JsonSerdeException(message.toString(), cause)
