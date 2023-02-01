@@ -1,6 +1,5 @@
-package no.nav.aap.kafka.streams
+package no.nav.aap.kafka.streams.v2
 
-import no.nav.aap.kafka.streams.concurrency.Bufferable
 import org.apache.kafka.common.serialization.Serde
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.kstream.Consumed
@@ -15,12 +14,17 @@ open class Topic<V>(
     internal fun consumed(named: String): Consumed<String, V> = Consumed.with(keySerde, valueSerde).withName(named)
     internal open fun produced(named: String): Produced<String, V> = Produced.with(keySerde, valueSerde).withName(named)
 
-    infix fun <R : Any> with(right: Topic<R>): Joined<String, V, R> = Joined.with(
+    internal infix fun <R> join(right: KTable<R>): Joined<String, V, R> = Joined.with(
         keySerde,
         valueSerde,
-        right.valueSerde,
-        "$name-joined-${right.name}",
+        right.topic.valueSerde,
+        "$name-join-${right.topic.name}",
     )
 
-    infix fun <R : Bufferable<R>> with(right: BufferableTopic<R>) = right.withBuffer(this)
+    internal infix fun <R> leftJoin(right: KTable<R>): Joined<String, V, R> = Joined.with(
+        keySerde,
+        valueSerde,
+        right.topic.valueSerde,
+        "$name-left-join-${right.topic.name}",
+    )
 }
