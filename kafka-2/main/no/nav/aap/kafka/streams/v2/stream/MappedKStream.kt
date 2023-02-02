@@ -22,6 +22,11 @@ class MappedKStream<L, LR : Any>(
         return MappedKStream(source, mappedStream)
     }
 
+    fun <V : Any> map(mapper: (key: String, value: LR) -> V): MappedKStream<L, V> {
+        val fusedStream = stream.mapValues { key, value -> mapper(key, value) }
+        return MappedKStream(source, fusedStream)
+    }
+
     fun filter(lambda: (LR) -> Boolean): MappedKStream<L, LR> {
         val stream = stream.filter { _, value -> lambda(value) }
         return MappedKStream(source, stream)

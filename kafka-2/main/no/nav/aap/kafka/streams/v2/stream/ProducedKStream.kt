@@ -3,7 +3,7 @@ package no.nav.aap.kafka.streams.v2.stream
 import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.extension.skipTombstone
-import no.nav.aap.kafka.streams.v2.logger.logProduced
+import no.nav.aap.kafka.streams.v2.processor.logProduced
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Materialized
@@ -23,7 +23,7 @@ internal fun <V> KStream<String, V>.produceToTopic(
     named: String,
     logValues: Boolean,
 ) = this
-    .logProduced(topic = topic, named = named, logValues = logValues)
+    .logProduced(named = named, logValues = logValues)
     .to(topic.name, topic.produced(named))
 
 internal fun <V> materialized(storeName: String, topic: Topic<V>): Materialized<String, V?, KeyValueStore<Bytes, ByteArray>> =

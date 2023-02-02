@@ -31,7 +31,7 @@ internal class RekeyTest {
     fun `rekey with mapKeyValue`() {
         val topology = topology {
             consume(Topics.A)
-                .mapKeyValue{ key, value -> KeyValue(key = "test:$key", value = "$value$value")}
+                .mapKeyAndValue{ key, value -> KeyValue(key = "test:$key", value = "$value$value")}
                 .produce(Topics.C)
         }
 

@@ -1,7 +1,6 @@
-package no.nav.aap.kafka.streams.v2.logger
+package no.nav.aap.kafka.streams.v2.processor
 
 import net.logstash.logback.argument.StructuredArguments.kv
-import no.nav.aap.kafka.streams.v2.Topic
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
 import org.apache.kafka.streams.processor.api.FixedKeyProcessor
@@ -36,7 +35,6 @@ internal class LogProduceTopicProcessor<K, V>(
 private val log: Logger = LoggerFactory.getLogger("secureLog")
 
 internal fun <K, V> KStream<K, V>.logProduced(
-    topic: Topic<V>,
     named: String,
     logValues: Boolean,
 ): KStream<K, V> = processValues(

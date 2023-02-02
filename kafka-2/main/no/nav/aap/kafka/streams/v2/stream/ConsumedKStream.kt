@@ -6,6 +6,7 @@ import no.nav.aap.kafka.streams.v2.extension.leftJoin
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
 import no.nav.aap.kafka.streams.v2.logger.log
 import org.apache.kafka.streams.kstream.KStream
+import org.apache.kafka.streams.kstream.Repartitioned
 
 class ConsumedKStream<L : Any>(
     private val topic: Topic<L>,
@@ -35,12 +36,17 @@ class ConsumedKStream<L : Any>(
         return ConsumedKStream(topic, stream)
     }
 
-    fun <LR : Any> map(mapper: (L) -> LR): MappedKStream<L, LR> {
+    fun <LR : Any> map(mapper: (value: L) -> LR): MappedKStream<L, LR> {
         val fusedStream = stream.mapValues { value -> mapper(value) }
         return MappedKStream(topic, fusedStream)
     }
 
-    fun <LR : Any> mapKeyValue(mapper: (String, L) -> KeyValue<String, LR>): MappedKStream<L, LR> {
+    fun <LR : Any> map(mapper: (key: String, value: L) -> LR): MappedKStream<L, LR> {
+        val fusedStream = stream.mapValues { key, value -> mapper(key, value) }
+        return MappedKStream(topic, fusedStream)
+    }
+
+    fun <LR : Any> mapKeyAndValue(mapper: (key: String, value: L) -> KeyValue<String, LR>): MappedKStream<L, LR> {
         val fusedStream = stream.map { key, value -> mapper(key, value).toInternalKeyValue() }
         return MappedKStream(topic, fusedStream)
     }
@@ -67,8 +73,18 @@ class ConsumedKStream<L : Any>(
             )
         )
 
+    fun branch(predicate: (L) -> Boolean, consumed: (ConsumedKStream<L>) -> Unit): BranchedKStream<L> {
+        return BranchedKStream(topic, stream.split())
+            .branch(predicate, consumed)
+    }
+
     fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, L) -> Any): ConsumedKStream<L> {
         stream.log(level, keyValue)
         return this
+    }
+
+    fun repartition(partitions: Int = 12): ConsumedKStream<L> {
+        val repartition = Repartitioned.with(topic.keySerde, topic.valueSerde).withNumberOfPartitions(partitions)
+        return ConsumedKStream(topic, stream.repartition(repartition))
     }
 }

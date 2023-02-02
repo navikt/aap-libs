@@ -1,7 +1,7 @@
 package no.nav.aap.kafka.streams.v2.extension
 
 import no.nav.aap.kafka.streams.v2.Topic
-import no.nav.aap.kafka.streams.v2.logger.logConsumed
+import no.nav.aap.kafka.streams.v2.processor.logConsumed
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.KStream
 

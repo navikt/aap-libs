@@ -3,7 +3,7 @@ package no.nav.aap.kafka.streams.v2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
- class ConsumeTest {
+class ConsumeTest {
     @Test
     fun `consume and produce to a topic`() {
         val topology = topology {
