@@ -5,9 +5,9 @@ import no.nav.aap.kafka.streams.v2.processor.logConsumed
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.KStream
 
-fun <V> StreamsBuilder.consume(
-    topic: Topic<V>,
+internal fun <T> StreamsBuilder.consume(
+    topic: Topic<T>,
     logValue: Boolean = false
-): KStream<String, V?> = this
+): KStream<String, T?> = this
     .stream(topic.name, topic.consumed("consume-${topic.name}"))
     .logConsumed(topic, logValue)

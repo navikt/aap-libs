@@ -9,8 +9,8 @@ import org.apache.kafka.streams.kstream.KStream
 class Topology internal constructor() {
     private val builder = StreamsBuilder()
 
-    fun <V : Any> consume(topic: Topic<V>): ConsumedKStream<V> {
-        val consumeNotNulls: KStream<String, V> = builder
+    fun <T : Any> consume(topic: Topic<T>): ConsumedKStream<T> {
+        val consumeNotNulls: KStream<String, T> = builder
             .consume(topic)
             .skipTombstone(topic)
 

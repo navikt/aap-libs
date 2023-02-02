@@ -8,17 +8,17 @@ import no.nav.aap.kafka.streams.v2.logger.log
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Repartitioned
 
-class ConsumedKStream<L : Any> internal constructor(
-    private val topic: Topic<L>,
-    private val stream: KStream<String, L>,
+class ConsumedKStream<T : Any> internal constructor(
+    private val topic: Topic<T>,
+    private val stream: KStream<String, T>,
 ) {
-    fun produce(table: Table<L>, logValues: Boolean = false): KTable<L> =
+    fun produce(table: Table<T>, logValues: Boolean = false): KTable<T> =
         KTable(
             topic = topic,
             table = stream.produceToTable(table, logValues)
         )
 
-    fun produce(destination: Topic<L>, logValues: Boolean = false) {
+    fun produce(destination: Topic<T>, logValues: Boolean = false) {
         stream.produceToTopic(
             topic = destination,
             named = "produced-${destination.name}-from-${topic.name}",
@@ -26,35 +26,34 @@ class ConsumedKStream<L : Any> internal constructor(
         )
     }
 
-    fun rekey(selectKeyFromValue: (L) -> String): ConsumedKStream<L> {
+    fun rekey(selectKeyFromValue: (T) -> String): ConsumedKStream<T> {
         val stream = stream.selectKey { _, value -> selectKeyFromValue(value) }
         return ConsumedKStream(topic, stream)
     }
 
-    fun filter(lambda: (L) -> Boolean): ConsumedKStream<L> {
+    fun filter(lambda: (T) -> Boolean): ConsumedKStream<T> {
         val stream = stream.filter { _, value -> lambda(value) }
         return ConsumedKStream(topic, stream)
     }
 
-    fun <LR : Any> map(mapper: (value: L) -> LR): MappedKStream<L, LR> {
+    fun <R : Any> map(mapper: (value: T) -> R): MappedKStream<R> {
         val fusedStream = stream.mapValues { value -> mapper(value) }
-        return MappedKStream(topic, fusedStream)
+        return MappedKStream(topic.name, fusedStream)
     }
 
-    fun <LR : Any> map(mapper: (key: String, value: L) -> LR): MappedKStream<L, LR> {
+    fun <R : Any> map(mapper: (key: String, value: T) -> R): MappedKStream<R> {
         val fusedStream = stream.mapValues { key, value -> mapper(key, value) }
-        return MappedKStream(topic, fusedStream)
+        return MappedKStream(topic.name, fusedStream)
     }
 
-    fun <LR : Any> mapKeyAndValue(mapper: (key: String, value: L) -> KeyValue<String, LR>): MappedKStream<L, LR> {
+    fun <R : Any> mapKeyAndValue(mapper: (key: String, value: T) -> KeyValue<String, R>): MappedKStream<R> {
         val fusedStream = stream.map { key, value -> mapper(key, value).toInternalKeyValue() }
-        return MappedKStream(topic, fusedStream)
+        return MappedKStream(topic.name, fusedStream)
     }
 
-    fun <R : Any> joinWith(table: KTable<R>): JoinedKStream<L, R> =
+    fun <U : Any> joinWith(table: KTable<U>): JoinedKStream<T, U> =
         JoinedKStream(
-            left = topic,
-            right = table.topic,
+            sourceTopicName = topic.name,
             stream = stream.join(
                 left = topic,
                 right = table,
@@ -62,10 +61,9 @@ class ConsumedKStream<L : Any> internal constructor(
             )
         )
 
-    fun <R : Any> leftJoinWith(table: KTable<R>): LeftJoinedKStream<L, R> =
+    fun <U : Any> leftJoinWith(table: KTable<U>): LeftJoinedKStream<T, U> =
         LeftJoinedKStream(
-            left = topic,
-            right = table.topic,
+            sourceTopicName = topic.name,
             stream = stream.leftJoin(
                 left = topic,
                 right = table,
@@ -73,17 +71,17 @@ class ConsumedKStream<L : Any> internal constructor(
             )
         )
 
-    fun branch(predicate: (L) -> Boolean, consumed: (MappedKStream<L, L>) -> Unit): BranchedKStream<L, L> {
-        return BranchedKStream(topic, stream.split())
+    fun branch(predicate: (T) -> Boolean, consumed: (MappedKStream<T>) -> Unit): BranchedKStream<T> {
+        return BranchedKStream(topic.name, stream.split())
             .branch(predicate, consumed)
     }
 
-    fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, L) -> Any): ConsumedKStream<L> {
+    fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, T) -> Any): ConsumedKStream<T> {
         stream.log(level, keyValue)
         return this
     }
 
-    fun repartition(partitions: Int = 12): ConsumedKStream<L> {
+    fun repartition(partitions: Int = 12): ConsumedKStream<T> {
         val repartition = Repartitioned.with(topic.keySerde, topic.valueSerde).withNumberOfPartitions(partitions)
         return ConsumedKStream(topic, stream.repartition(repartition))
     }

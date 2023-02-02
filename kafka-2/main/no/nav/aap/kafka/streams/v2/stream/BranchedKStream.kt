@@ -1,21 +1,20 @@
 package no.nav.aap.kafka.streams.v2.stream
 
-import no.nav.aap.kafka.streams.v2.Topic
 import org.apache.kafka.streams.kstream.Branched
 
-class BranchedKStream<T, S : Any> internal constructor(
-    private val topic: Topic<T>,
-    private val stream: org.apache.kafka.streams.kstream.BranchedKStream<String, S>,
+class BranchedKStream<T : Any> internal constructor(
+    private val sourceTopicName: String,
+    private val stream: org.apache.kafka.streams.kstream.BranchedKStream<String, T>,
 ) {
 
     fun branch(
-        predicate: (S) -> Boolean,
-        consumed: (MappedKStream<T, S>) -> Unit
-    ): BranchedKStream<T, S> {
+        predicate: (T) -> Boolean,
+        consumed: (MappedKStream<T>) -> Unit
+    ): BranchedKStream<T> {
         stream.branch(
             { _, value -> predicate(value) },
             Branched.withConsumer {
-                consumed(MappedKStream(topic, it))
+                consumed(MappedKStream(sourceTopicName, it))
             }
         )
         return this

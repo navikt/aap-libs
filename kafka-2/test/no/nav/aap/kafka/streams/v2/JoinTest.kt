@@ -110,6 +110,9 @@ internal class JoinTest {
 
         val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
 
+        listOf("").map {
+
+        }
         assertEquals(1, result.size)
         assertEquals("A", result["1"])
 

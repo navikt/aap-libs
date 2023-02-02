@@ -10,23 +10,23 @@ import org.apache.kafka.streams.kstream.Materialized
 import org.apache.kafka.streams.kstream.Named
 import org.apache.kafka.streams.state.KeyValueStore
 
-internal fun <V> KStream<String, V>.produceToTable(
-    table: Table<V>,
+internal fun <T> KStream<String, T>.produceToTable(
+    table: Table<T>,
     logValues: Boolean,
-): org.apache.kafka.streams.kstream.KTable<String, V & Any> = this
+): org.apache.kafka.streams.kstream.KTable<String, T & Any> = this
     .logProduced(table, logValues)
     .toTable(Named.`as`("${table.name}-to-table"), materialized(table.stateStoreName, table.source))
     .skipTombstone(table)
 
-internal fun <V> KStream<String, V>.produceToTopic(
-    topic: Topic<V>,
+internal fun <T> KStream<String, T>.produceToTopic(
+    topic: Topic<T>,
     named: String,
     logValues: Boolean,
 ) = this
     .logProduced(named = named, logValues = logValues)
     .to(topic.name, topic.produced(named))
 
-internal fun <V> materialized(storeName: String, topic: Topic<V>): Materialized<String, V?, KeyValueStore<Bytes, ByteArray>> =
-    Materialized.`as`<String, V, KeyValueStore<Bytes, ByteArray>>(storeName)
+internal fun <T> materialized(storeName: String, topic: Topic<T>): Materialized<String, T?, KeyValueStore<Bytes, ByteArray>> =
+    Materialized.`as`<String, T, KeyValueStore<Bytes, ByteArray>>(storeName)
         .withKeySerde(topic.keySerde)
         .withValueSerde(topic.valueSerde)
