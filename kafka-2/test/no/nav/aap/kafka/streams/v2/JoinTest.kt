@@ -113,7 +113,7 @@ internal class JoinTest {
         assertEquals(1, result.size)
         assertEquals("A", result["1"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test

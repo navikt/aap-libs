@@ -9,6 +9,7 @@ internal object Topics {
     val A = Topic("A", StringSerde())
     val B = Topic("B", StringSerde())
     val C = Topic("C", StringSerde())
+    val D = Topic("D", StringSerde())
 }
 
 internal object Tables {

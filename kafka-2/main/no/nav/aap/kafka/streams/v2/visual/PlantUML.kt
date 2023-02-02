@@ -1,11 +1,11 @@
 package no.nav.aap.kafka.streams.v2.visual
 
-import no.nav.aap.kafka.streams.v2.Topology
+import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.TopologyDescription
 
 object PlantUML {
 
-    fun generate(topology: Topology): String = topology.build().describe().let { description ->
+    fun generate(topology: Topology): String = topology.describe().let { description ->
         val stores = description.globalStores().map { processStore(it) }.toSet()
         val subtopologies = description.subtopologies().map { processSubtopology(it) }
         val queues = description.getTopics().map { formatTopicToUmlQueue(it) }.toSet()

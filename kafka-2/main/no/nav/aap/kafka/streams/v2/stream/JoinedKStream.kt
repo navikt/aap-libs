@@ -8,7 +8,7 @@ import no.nav.aap.kafka.streams.v2.logger.LogLevel
 import no.nav.aap.kafka.streams.v2.logger.log
 import org.apache.kafka.streams.kstream.KStream
 
-class JoinedKStream<L, R>(
+class JoinedKStream<L, R> internal constructor(
     private val left: Topic<L>, // source
     private val right: Topic<R>,
     private val stream: KStream<String, KStreamPair<L, R>>,
@@ -22,9 +22,17 @@ class JoinedKStream<L, R>(
         val stream = stream.filter { _, value -> lambda(value) }
         return JoinedKStream(left, right, stream)
     }
+
+    fun branch(
+        predicate: (KStreamPair<L, R>) -> Boolean,
+        consumed: (MappedKStream<L, KStreamPair<L, R>>) -> Unit,
+    ): BranchedKStream<L, KStreamPair<L, R>> {
+        return BranchedKStream(left, stream.split())
+            .branch(predicate, consumed)
+    }
 }
 
-class LeftJoinedKStream<L, R>(
+class LeftJoinedKStream<L, R> internal constructor(
     private val left: Topic<L>, // source
     private val right: Topic<R>,
     private val stream: KStream<String, NullableKStreamPair<L, R>>,
@@ -35,13 +43,22 @@ class LeftJoinedKStream<L, R>(
     }
 
     fun <LR : Any> mapKeyValue(mapper: (String, L, R?) -> KeyValue<String, LR>): MappedKStream<L, LR> {
-        val fusedStream = stream.map { key, (leftValue, rightValue) -> mapper(key, leftValue, rightValue).toInternalKeyValue() }
+        val fusedStream =
+            stream.map { key, (leftValue, rightValue) -> mapper(key, leftValue, rightValue).toInternalKeyValue() }
         return MappedKStream(left, fusedStream)
     }
 
     fun filter(lambda: (NullableKStreamPair<L, R>) -> Boolean): LeftJoinedKStream<L, R> {
         val stream = stream.filter { _, value -> lambda(value) }
         return LeftJoinedKStream(left, right, stream)
+    }
+
+    fun branch(
+        predicate: (NullableKStreamPair<L, R>) -> Boolean,
+        consumed: (MappedKStream<L, NullableKStreamPair<L, R>>) -> Unit,
+    ): BranchedKStream<L, NullableKStreamPair<L, R>> {
+        return BranchedKStream(left, stream.split())
+            .branch(predicate, consumed)
     }
 
     fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, L, R?) -> Any): LeftJoinedKStream<L, R> {

@@ -5,12 +5,14 @@ import io.micrometer.core.instrument.binder.kafka.KafkaStreamsMetrics
 import no.nav.aap.kafka.streams.v2.config.KStreamsConfig
 import no.nav.aap.kafka.streams.v2.exception.ProcessingExceptionHandler
 import no.nav.aap.kafka.streams.v2.listener.RestoreListener
+import no.nav.aap.kafka.streams.v2.visual.PlantUML
 import org.apache.kafka.streams.KafkaStreams.State.*
 
 interface KStreams {
     fun connect()
     fun ready(): Boolean
     fun live(): Boolean
+    fun toUML(): String
 }
 
 class KafkaStreams(
@@ -38,4 +40,5 @@ class KafkaStreams(
 
     override fun ready(): Boolean = initiallyStarted && internalStreams.state() in listOf(CREATED, REBALANCING, RUNNING)
     override fun live(): Boolean = initiallyStarted && internalStreams.state() != ERROR
+    override fun toUML(): String = PlantUML.generate(internalTopology)
 }

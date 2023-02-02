@@ -8,7 +8,7 @@ import no.nav.aap.kafka.streams.v2.logger.log
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Repartitioned
 
-class ConsumedKStream<L : Any>(
+class ConsumedKStream<L : Any> internal constructor(
     private val topic: Topic<L>,
     private val stream: KStream<String, L>,
 ) {
@@ -73,7 +73,7 @@ class ConsumedKStream<L : Any>(
             )
         )
 
-    fun branch(predicate: (L) -> Boolean, consumed: (ConsumedKStream<L>) -> Unit): BranchedKStream<L> {
+    fun branch(predicate: (L) -> Boolean, consumed: (MappedKStream<L, L>) -> Unit): BranchedKStream<L, L> {
         return BranchedKStream(topic, stream.split())
             .branch(predicate, consumed)
     }
