@@ -6,7 +6,6 @@ import no.nav.aap.kafka.streams.v2.extension.leftJoin
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
 import no.nav.aap.kafka.streams.v2.logger.log
 import org.apache.kafka.streams.kstream.KStream
-import org.apache.kafka.streams.kstream.Named
 import org.apache.kafka.streams.kstream.Repartitioned
 import org.apache.kafka.streams.processor.api.FixedKeyProcessor
 
@@ -48,7 +47,25 @@ class ConsumedKStream<T : Any> internal constructor(
         return MappedKStream(topic.name, fusedStream)
     }
 
-    // TODO: flatmap
+    fun flatMapPreserveType(mapper: (key: String, value: T) -> Iterable<T>): ConsumedKStream<T> {
+        val fusedStream = stream.flatMapValues { key, value -> mapper(key, value) }
+        return ConsumedKStream(topic, fusedStream)
+    }
+
+    fun flatMapKeyAndValuePreserveType(mapper: (key: String, value: T) -> Iterable<KeyValue<String, T>>): ConsumedKStream<T> {
+        val fusedStream = stream.flatMap { key, value -> mapper(key, value).map(KeyValue<String, T>::toInternalKeyValue) }
+        return ConsumedKStream(topic, fusedStream)
+    }
+
+    fun <R : Any> flatMap(mapper: (key: String, value: T) -> Iterable<R>): MappedKStream<R> {
+        val fusedStream = stream.flatMapValues { key, value -> mapper(key, value) }
+        return MappedKStream(topic.name, fusedStream)
+    }
+
+    fun <R : Any> flatMapKeyAndValue(mapper: (key: String, value: T) -> Iterable<KeyValue<String, R>>): MappedKStream<R> {
+        val fusedStream = stream.flatMap { key, value -> mapper(key, value).map(KeyValue<String, R>::toInternalKeyValue) }
+        return MappedKStream(topic.name, fusedStream)
+    }
 
     fun <R : Any> mapKeyAndValue(mapper: (key: String, value: T) -> KeyValue<String, R>): MappedKStream<R> {
         val fusedStream = stream.map { key, value -> mapper(key, value).toInternalKeyValue() }
