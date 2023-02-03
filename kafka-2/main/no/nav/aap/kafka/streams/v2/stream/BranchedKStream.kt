@@ -19,4 +19,12 @@ class BranchedKStream<T : Any> internal constructor(
         )
         return this
     }
+
+    fun default(consumed: (MappedKStream<T>) -> Unit) {
+        stream.defaultBranch(
+            Branched.withConsumer {
+                consumed(MappedKStream(sourceTopicName, it))
+            }
+        )
+    }
 }
