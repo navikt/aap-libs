@@ -152,4 +152,48 @@ internal class MapTest {
 
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
+
+    @Test
+    fun `map and use custom processor`() {
+        val topology = topology {
+            consume(Topics.A)
+                .map { v -> v }
+                .processor(::CustomProcessor)
+                .produce(Topics.C)
+        }
+
+        val kafka = kafka(topology)
+
+        kafka.inputTopic(Topics.A).produce("1", "a")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(1, result.size)
+        assertEquals("a.v2", result["1"])
+
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+    }
+
+    @Test
+    fun `map and use custom processor with table`() {
+        val topology = topology {
+            val table = consume(Topics.B).produce(Tables.B)
+            consume(Topics.A)
+                .map { v -> v }
+                .processor(table) { CustomProcessorWithTable(Tables.B) }
+                .produce(Topics.C)
+        }
+
+        val kafka = kafka(topology)
+
+        kafka.inputTopic(Topics.B).produce("1", ".v2")
+        kafka.inputTopic(Topics.A).produce("1", "a")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(1, result.size)
+        assertEquals("a.v2", result["1"])
+
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+    }
 }

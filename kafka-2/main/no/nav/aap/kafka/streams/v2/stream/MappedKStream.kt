@@ -1,9 +1,12 @@
 package no.nav.aap.kafka.streams.v2.stream
 
+import no.nav.aap.kafka.streams.v2.KTable
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
 import no.nav.aap.kafka.streams.v2.logger.log
 import org.apache.kafka.streams.kstream.KStream
+import org.apache.kafka.streams.kstream.Named
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor
 
 class MappedKStream<T : Any> internal constructor(
     private val sourceTopicName: String,
@@ -41,4 +44,21 @@ class MappedKStream<T : Any> internal constructor(
         stream.log(level, keyValue)
         return this
     }
+
+    // todo: REPARTITION
+
+    fun <U : Any> processor(processor: () -> FixedKeyProcessor<String, T, U>): MappedKStream<U> =
+        MappedKStream(
+            sourceTopicName = sourceTopicName,
+            stream = stream.processValues(processor)
+        )
+
+    fun <U : Any> processor(
+        table: KTable<T>,
+        processor: () -> FixedKeyProcessor<String, T, U>,
+    ): MappedKStream<U> =
+        MappedKStream(
+            sourceTopicName = sourceTopicName,
+            stream = stream.processValues(processor, table.table.stateStoreName)
+        )
 }

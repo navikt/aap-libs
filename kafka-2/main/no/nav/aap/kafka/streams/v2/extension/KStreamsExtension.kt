@@ -12,7 +12,7 @@ fun <L, R, LR> KStream<String, L>.leftJoin(
     joiner: (L, R?) -> LR,
 ): KStream<String, LR> =
     leftJoin(
-        right.table,
+        right.internalTable,
         joiner,
         left leftJoin right
     )
@@ -23,7 +23,7 @@ fun <L, R, LR> KStream<String, L>.join(
     joiner: (L, R) -> LR,
 ): KStream<String, LR> =
     join(
-        right.table,
+        right.internalTable,
         joiner,
         left join right
     )

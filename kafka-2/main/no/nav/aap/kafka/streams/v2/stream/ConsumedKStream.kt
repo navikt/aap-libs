@@ -6,7 +6,9 @@ import no.nav.aap.kafka.streams.v2.extension.leftJoin
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
 import no.nav.aap.kafka.streams.v2.logger.log
 import org.apache.kafka.streams.kstream.KStream
+import org.apache.kafka.streams.kstream.Named
 import org.apache.kafka.streams.kstream.Repartitioned
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor
 
 class ConsumedKStream<T : Any> internal constructor(
     private val topic: Topic<T>,
@@ -14,8 +16,8 @@ class ConsumedKStream<T : Any> internal constructor(
 ) {
     fun produce(table: Table<T>, logValues: Boolean = false): KTable<T> =
         KTable(
-            topic = topic,
-            table = stream.produceToTable(table, logValues)
+            table = table,
+            internalTable = stream.produceToTable(table, logValues)
         )
 
     fun produce(destination: Topic<T>, logValues: Boolean = false) {
@@ -45,6 +47,8 @@ class ConsumedKStream<T : Any> internal constructor(
         val fusedStream = stream.mapValues { key, value -> mapper(key, value) }
         return MappedKStream(topic.name, fusedStream)
     }
+
+    // TODO: flatmap
 
     fun <R : Any> mapKeyAndValue(mapper: (key: String, value: T) -> KeyValue<String, R>): MappedKStream<R> {
         val fusedStream = stream.map { key, value -> mapper(key, value).toInternalKeyValue() }
@@ -85,4 +89,19 @@ class ConsumedKStream<T : Any> internal constructor(
         val repartition = Repartitioned.with(topic.keySerde, topic.valueSerde).withNumberOfPartitions(partitions)
         return ConsumedKStream(topic, stream.repartition(repartition))
     }
+
+    fun <U : Any> processor(processor: () -> FixedKeyProcessor<String, T, U>): MappedKStream<U> =
+        MappedKStream(
+            sourceTopicName = topic.name,
+            stream = stream.processValues(processor)
+        )
+
+    fun <U : Any> processor(
+        table: KTable<T>,
+        processor: () -> FixedKeyProcessor<String, T, U>,
+    ): MappedKStream<U> =
+        MappedKStream(
+            sourceTopicName = topic.name,
+            stream = stream.processValues(processor, table.table.stateStoreName)
+        )
 }
