@@ -1,11 +1,13 @@
 package no.nav.aap.kafka.streams.v2.stream
 
-import no.nav.aap.kafka.streams.v2.KTable
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
 import no.nav.aap.kafka.streams.v2.logger.log
+import no.nav.aap.kafka.streams.v2.processor.KProcessor
+import no.nav.aap.kafka.streams.v2.processor.KProcessor.Companion.addProcessor
+import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor
+import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor.Companion.addProcessor
 import org.apache.kafka.streams.kstream.KStream
-import org.apache.kafka.streams.processor.api.FixedKeyProcessor
 
 class MappedKStream<T : Any> internal constructor(
     private val sourceTopicName: String,
@@ -44,18 +46,15 @@ class MappedKStream<T : Any> internal constructor(
         return this
     }
 
-    fun <U : Any> processor(processor: () -> FixedKeyProcessor<String, T, U>): MappedKStream<U> =
+    fun <U : Any> processor(processor: KProcessor<T, U>): MappedKStream<U> =
         MappedKStream(
             sourceTopicName = sourceTopicName,
-            stream = stream.processValues(processor)
+            stream = stream.addProcessor(processor)
         )
 
-    fun <U : Any> processor(
-        table: KTable<T>,
-        processor: () -> FixedKeyProcessor<String, T, U>,
-    ): MappedKStream<U> =
+    fun <U : Any> processor(processor: KStoreProcessor<T, U>): MappedKStream<U> =
         MappedKStream(
             sourceTopicName = sourceTopicName,
-            stream = stream.processValues(processor, table.table.stateStoreName)
+            stream = stream.addProcessor(processor)
         )
 }

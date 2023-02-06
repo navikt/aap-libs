@@ -5,9 +5,12 @@ import no.nav.aap.kafka.streams.v2.extension.join
 import no.nav.aap.kafka.streams.v2.extension.leftJoin
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
 import no.nav.aap.kafka.streams.v2.logger.log
+import no.nav.aap.kafka.streams.v2.processor.KProcessor
+import no.nav.aap.kafka.streams.v2.processor.KProcessor.Companion.addProcessor
+import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor
+import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor.Companion.addProcessor
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Repartitioned
-import org.apache.kafka.streams.processor.api.FixedKeyProcessor
 
 class ConsumedKStream<T : Any> internal constructor(
     private val topic: Topic<T>,
@@ -53,7 +56,8 @@ class ConsumedKStream<T : Any> internal constructor(
     }
 
     fun flatMapKeyAndValuePreserveType(mapper: (key: String, value: T) -> Iterable<KeyValue<String, T>>): ConsumedKStream<T> {
-        val fusedStream = stream.flatMap { key, value -> mapper(key, value).map(KeyValue<String, T>::toInternalKeyValue) }
+        val fusedStream =
+            stream.flatMap { key, value -> mapper(key, value).map(KeyValue<String, T>::toInternalKeyValue) }
         return ConsumedKStream(topic, fusedStream)
     }
 
@@ -63,7 +67,8 @@ class ConsumedKStream<T : Any> internal constructor(
     }
 
     fun <R : Any> flatMapKeyAndValue(mapper: (key: String, value: T) -> Iterable<KeyValue<String, R>>): MappedKStream<R> {
-        val fusedStream = stream.flatMap { key, value -> mapper(key, value).map(KeyValue<String, R>::toInternalKeyValue) }
+        val fusedStream =
+            stream.flatMap { key, value -> mapper(key, value).map(KeyValue<String, R>::toInternalKeyValue) }
         return MappedKStream(topic.name, fusedStream)
     }
 
@@ -107,18 +112,15 @@ class ConsumedKStream<T : Any> internal constructor(
         return ConsumedKStream(topic, stream.repartition(repartition))
     }
 
-    fun <U : Any> processor(processor: () -> FixedKeyProcessor<String, T, U>): MappedKStream<U> =
+    fun <U : Any> processor(processor: KProcessor<T, U>): MappedKStream<U> =
         MappedKStream(
             sourceTopicName = topic.name,
-            stream = stream.processValues(processor)
+            stream = stream.addProcessor(processor)
         )
 
-    fun <U : Any> processor(
-        table: KTable<T>,
-        processor: () -> FixedKeyProcessor<String, T, U>,
-    ): MappedKStream<U> =
+    fun <U : Any> processor(processor: KStoreProcessor<T, U>): MappedKStream<U> =
         MappedKStream(
             sourceTopicName = topic.name,
-            stream = stream.processValues(processor, table.table.stateStoreName)
+            stream = stream.addProcessor(processor)
         )
 }

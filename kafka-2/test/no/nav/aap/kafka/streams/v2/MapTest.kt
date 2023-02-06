@@ -158,7 +158,7 @@ internal class MapTest {
         val topology = topology {
             consume(Topics.A)
                 .map { v -> v }
-                .processor(::CustomProcessor)
+                .processor(CustomProcessor())
                 .produce(Topics.C)
         }
 
@@ -180,7 +180,7 @@ internal class MapTest {
             val table = consume(Topics.B).produce(Tables.B)
             consume(Topics.A)
                 .map { v -> v }
-                .processor(table) { CustomProcessorWithTable(Tables.B) }
+                .processor(CustomProcessorWithTable(table))
                 .produce(Topics.C)
         }
 

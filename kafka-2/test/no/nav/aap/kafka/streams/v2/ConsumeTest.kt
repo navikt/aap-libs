@@ -1,8 +1,8 @@
 package no.nav.aap.kafka.streams.v2
 
-import org.apache.kafka.streams.processor.api.FixedKeyProcessor
-import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext
-import org.apache.kafka.streams.processor.api.FixedKeyRecord
+import no.nav.aap.kafka.streams.v2.processor.KMetadata
+import no.nav.aap.kafka.streams.v2.processor.KProcessor
+import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor
 import org.apache.kafka.streams.state.TimestampedKeyValueStore
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -33,7 +33,7 @@ internal class ConsumeTest {
     fun `consume and use custom processor`() {
         val topology = topology {
             consume(Topics.A)
-                .processor(::CustomProcessor)
+                .processor(CustomProcessor())
                 .produce(Topics.C)
         }
 
@@ -46,7 +46,7 @@ internal class ConsumeTest {
         assertEquals(1, result.size)
         assertEquals("a.v2", result["1"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test
@@ -54,7 +54,7 @@ internal class ConsumeTest {
         val topology = topology {
             val table = consume(Topics.B).produce(Tables.B)
             consume(Topics.A)
-                .processor(table) { CustomProcessorWithTable(Tables.B) }
+                .processor(CustomProcessorWithTable(table))
                 .produce(Topics.C)
         }
 
@@ -68,34 +68,18 @@ internal class ConsumeTest {
         assertEquals(1, result.size)
         assertEquals("a.v2", result["1"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 }
 
-class CustomProcessorWithTable<T>(private val table: Table<T>) : CustomProcessor() {
-    private lateinit var store: TimestampedKeyValueStore<String, String>
-
-    override fun init(context: FixedKeyProcessorContext<String, String>) {
-        super.init(context)
-        this.store = context.getStateStore(table.stateStoreName)
-    }
-
-    override fun process(record: FixedKeyRecord<String, String>) {
-        val storedValue = store[record.key()].value()
-        context.forward(record.withValue("${record.value()}$storedValue"))
-    }
+class CustomProcessorWithTable(table: KTable<String>) : KStoreProcessor<String, String>("custom-join", table) {
+    override fun process(
+        metadata: KMetadata,
+        store: TimestampedKeyValueStore<String, String>,
+        keyValue: KeyValue<String, String>
+    ): String = "${keyValue.value}${store[keyValue.key].value()}"
 }
 
-open class CustomProcessor : FixedKeyProcessor<String, String, String> {
-    protected lateinit var context: FixedKeyProcessorContext<String, String>
-
-    override fun init(context: FixedKeyProcessorContext<String, String>) {
-        this.context = context
-    }
-
-    override fun process(record: FixedKeyRecord<String, String>) {
-        context.forward(record.withValue("${record.value()}.v2"))
-    }
-
-    override fun close() {}
+open class CustomProcessor : KProcessor<String, String>("add-v2-prefix") {
+    override fun process(metadata: KMetadata, keyValue: KeyValue<String, String>): String = "${keyValue.value}.v2"
 }
