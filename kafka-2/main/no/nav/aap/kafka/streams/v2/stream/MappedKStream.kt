@@ -36,10 +36,14 @@ class MappedKStream<T : Any> internal constructor(
         return MappedKStream(sourceTopicName, stream)
     }
 
-    fun branch(predicate: (T) -> Boolean, consumed: (MappedKStream<T>) -> Unit): BranchedKStream<T> {
-        return BranchedKStream(sourceTopicName, stream.split())
-            .branch(predicate, consumed)
-    }
+    fun branch(predicate: (T) -> Boolean, consumed: (MappedKStream<T>) -> Unit): BranchedMappedKStream<T> =
+        BranchedMappedKStream(
+            sourceTopicName = sourceTopicName,
+            stream = stream.split()
+        ).branch(
+            predicate = predicate,
+            consumed = consumed,
+        )
 
     fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, T) -> Any): MappedKStream<T> {
         stream.log(level, keyValue)

@@ -1,6 +1,7 @@
 package no.nav.aap.kafka.streams.v2.stream
 
 import no.nav.aap.kafka.streams.v2.*
+import no.nav.aap.kafka.streams.v2.extension.filterNotNull
 import no.nav.aap.kafka.streams.v2.extension.join
 import no.nav.aap.kafka.streams.v2.extension.leftJoin
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
@@ -50,6 +51,14 @@ class ConsumedKStream<T : Any> internal constructor(
         return MappedKStream(topic.name, fusedStream)
     }
 
+    fun <R> mapNotNull(mapper: (key: String, value: T) -> R): MappedKStream<R & Any> =
+        MappedKStream(
+            sourceTopicName = topic.name,
+            stream = stream
+                .mapValues { key, value -> mapper(key, value) }
+                .filterNotNull()
+        )
+
     fun flatMapPreserveType(mapper: (key: String, value: T) -> Iterable<T>): ConsumedKStream<T> {
         val fusedStream = stream.flatMapValues { key, value -> mapper(key, value) }
         return ConsumedKStream(topic, fusedStream)
@@ -97,9 +106,8 @@ class ConsumedKStream<T : Any> internal constructor(
             )
         )
 
-    fun branch(predicate: (T) -> Boolean, consumed: (MappedKStream<T>) -> Unit): BranchedKStream<T> {
-        return BranchedKStream(topic.name, stream.split())
-            .branch(predicate, consumed)
+    fun branch(predicate: (T) -> Boolean, consumed: (ConsumedKStream<T>) -> Unit): BranchedKStream<T> {
+        return BranchedKStream(topic, stream.split()).branch(predicate, consumed)
     }
 
     fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, T) -> Any): ConsumedKStream<T> {

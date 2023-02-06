@@ -24,8 +24,8 @@ class JoinedKStream<L, R> internal constructor(
     fun branch(
         predicate: (KStreamPair<L, R>) -> Boolean,
         consumed: (MappedKStream<KStreamPair<L, R>>) -> Unit,
-    ): BranchedKStream<KStreamPair<L, R>> {
-        return BranchedKStream(sourceTopicName, stream.split())
+    ): BranchedMappedKStream<KStreamPair<L, R>> {
+        return BranchedMappedKStream(sourceTopicName, stream.split())
             .branch(predicate, consumed)
     }
 }
@@ -53,8 +53,8 @@ class LeftJoinedKStream<L, R> internal constructor(
     fun branch(
         predicate: (NullableKStreamPair<L, R>) -> Boolean,
         consumed: (MappedKStream<NullableKStreamPair<L, R>>) -> Unit,
-    ): BranchedKStream<NullableKStreamPair<L, R>> {
-        return BranchedKStream(sourceTopicName, stream.split())
+    ): BranchedMappedKStream<NullableKStreamPair<L, R>> {
+        return BranchedMappedKStream(sourceTopicName, stream.split())
             .branch(predicate, consumed)
     }
 

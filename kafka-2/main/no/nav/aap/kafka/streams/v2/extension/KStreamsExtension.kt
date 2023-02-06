@@ -29,6 +29,10 @@ fun <L, R, LR> KStream<String, L>.join(
     )
 
 @Suppress("UNCHECKED_CAST")
+internal fun <K, V> KStream<K, V>.filterNotNull(
+): KStream<K, V & Any> = filter { _, value -> value != null } as KStream<K, V & Any>
+
+@Suppress("UNCHECKED_CAST")
 internal fun <K, V> org.apache.kafka.streams.kstream.KTable<K, V>.skipTombstone(
     table: Table<V>,
 ): org.apache.kafka.streams.kstream.KTable<K, V & Any> = filter(

@@ -93,6 +93,27 @@ internal class MapTest {
         assertEquals("niceprice", result["2"])
 
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+    }    @Test
+    fun `mapNotNull a branched stream`() {
+        val topology = topology {
+            consume(Topics.A, true)
+                .mapNotNull{ key, value -> if (key == "1") null else value }
+                .produce(Topics.C)
+        }
+
+        val kafka = kafka(topology)
+
+        kafka.inputTopic(Topics.A)
+            .produce("1", "sauce")
+            .produce("2", "price")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(1, result.size)
+
+        assertEquals("price", result["2"])
+
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
