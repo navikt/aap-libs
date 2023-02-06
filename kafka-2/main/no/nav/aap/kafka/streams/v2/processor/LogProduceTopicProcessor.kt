@@ -25,14 +25,3 @@ internal class LogProduceTopicProcessor<T> internal constructor(
 }
 
 private val log: Logger = LoggerFactory.getLogger("secureLog")
-
-internal fun <V> KStream<String, V>.logProduced(
-    named: String,
-    logValues: Boolean,
-): KStream<String, V> =
-    addProcessor(
-        LogProduceTopicProcessor(
-            named = "log-${named}",
-            logValue = logValues,
-        )
-    )

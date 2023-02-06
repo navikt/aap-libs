@@ -1,6 +1,7 @@
 package no.nav.aap.kafka.streams.v2.processor
 
 import net.logstash.logback.argument.StructuredArguments.kv
+import no.nav.aap.kafka.streams.v2.KeyValue
 import no.nav.aap.kafka.streams.v2.Table
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
@@ -12,38 +13,21 @@ import org.slf4j.LoggerFactory
 
 private val log: Logger = LoggerFactory.getLogger("secureLog")
 
-internal class LogProduceTableProcessor<K, V>(
-    private val table: Table<V>,
+internal class LogProduceTableProcessor<T>(
+    named: String,
+    private val table: Table<T>,
     private val logValue: Boolean,
-) : FixedKeyProcessor<K, V, V> {
-    private lateinit var context: FixedKeyProcessorContext<K, V>
-    override fun init(ctxt: FixedKeyProcessorContext<K, V>) = let { context = ctxt }
-    override fun close() {}
-    override fun process(record: FixedKeyRecord<K, V>) {
-        context.recordMetadata().ifPresentOrElse(
-            { metadata ->
-                log.trace(
-                    "Produserer til KTable ${table.name}",
-                    kv("key", record.key()),
-                    kv("table", table.name),
-                    kv("store", table.stateStoreName),
-                    kv("partition", metadata.partition()),
-                    if (logValue) kv("value", record.value()) else null,
-                )
-            },
-            {
-                log.warn("No metadata found for context in LogProduceTableProcessor node: $context")
-            }
-        )
+) : KProcessor<T, T>(named) {
 
-        context.forward(record)
+    override fun process(metadata: KMetadata, keyValue: KeyValue<String, T>): T {
+        log.trace(
+            "Produserer til KTable ${table.name}",
+            kv("key", keyValue.key),
+            kv("table", table.name),
+            kv("store", table.stateStoreName),
+            kv("partition", metadata.partition),
+            if (logValue) kv("value", keyValue.value) else null,
+        )
+        return keyValue.value
     }
 }
-
-internal fun <K, V> KStream<K, V>.logProduced(
-    table: Table<V>,
-    logValues: Boolean,
-): KStream<K, V> = processValues(
-    { LogProduceTableProcessor<K, V>(table, logValues) },
-    Named.`as`("log-produced-${table.name}")
-)
