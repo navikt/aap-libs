@@ -1,7 +1,8 @@
-package no.nav.aap.kafka.streams.v2.processor
+package no.nav.aap.kafka.streams.v2.processor.state
 
 import no.nav.aap.kafka.streams.v2.KTable
 import no.nav.aap.kafka.streams.v2.KeyValue
+import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
 import org.apache.kafka.streams.processor.api.FixedKeyProcessor
@@ -10,23 +11,23 @@ import org.apache.kafka.streams.processor.api.FixedKeyRecord
 import org.apache.kafka.streams.state.TimestampedKeyValueStore
 import kotlin.jvm.optionals.getOrNull
 
-internal interface KStoreProcess<T, U> {
+internal interface KStateProcessor<T, U> {
     fun process(
-        metadata: KMetadata,
+        metadata: ProcessorMetadata,
         store: TimestampedKeyValueStore<String, T>,
         keyValue: KeyValue<String, T>,
     ): U
 }
 
-abstract class KStoreProcessor<T, U>(
+abstract class StateProcessor<T, U>(
     private val named: String,
     private val table: KTable<T>,
-) : KStoreProcess<T, U> {
+) : KStateProcessor<T, U> {
     internal companion object {
         internal fun <T, U> KStream<String, T>.addProcessor(
-            processor: KStoreProcessor<T, U>
+            processor: StateProcessor<T, U>
         ): KStream<String, U> = processValues(
-            { processor.run(KStoreProcessor<T, U>::InternalProcessor) },
+            { processor.run(StateProcessor<T, U>::InternalProcessor) },
             Named.`as`(processor.named),
             processor.table.table.stateStoreName,
         )
@@ -46,7 +47,7 @@ abstract class KStoreProcessor<T, U>(
                 "Denne er bare null når man bruker punctuators. Det er feil å bruke denne klassen til punctuation."
             }
 
-            val metadata = KMetadata(
+            val metadata = ProcessorMetadata(
                 topic = recordMeta.topic(),
                 partition = recordMeta.partition(),
                 offset = recordMeta.offset()

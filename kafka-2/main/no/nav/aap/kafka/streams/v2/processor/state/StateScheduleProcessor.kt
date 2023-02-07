@@ -1,4 +1,4 @@
-package no.nav.aap.kafka.streams.v2.processor
+package no.nav.aap.kafka.streams.v2.processor.state
 
 import no.nav.aap.kafka.streams.v2.KTable
 import org.apache.kafka.streams.kstream.KStream
@@ -11,17 +11,17 @@ import org.apache.kafka.streams.state.TimestampedKeyValueStore
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
-internal interface KStoreProcessScheduler<T> {
+internal interface KStateScheduleProcessor<T> {
     fun schedule(timestamp: Long, store: TimestampedKeyValueStore<String, T>)
 }
 
-abstract class KStoreProcessorScheduler<T>(
+abstract class StateScheduleProcessor<T>(
     private val named: String,
     private val table: KTable<T>,
     private val interval: Duration,
-) : KStoreProcessScheduler<T> {
+) : KStateScheduleProcessor<T> {
     internal companion object {
-        internal fun <T> initInternalProcessor(scheduler: KStoreProcessorScheduler<T>): KStream<String, T> {
+        internal fun <T> initInternalProcessor(scheduler: StateScheduleProcessor<T>): KStream<String, T> {
             val stateStoreName = scheduler.table.table.stateStoreName
             val internalStream = scheduler.table.internalTable.toStream()
             return internalStream.processValues(

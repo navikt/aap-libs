@@ -3,7 +3,7 @@ package no.nav.aap.kafka.streams.v2.stream
 import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.extension.skipTombstone
-import no.nav.aap.kafka.streams.v2.processor.KProcessor.Companion.addProcessor
+import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.LogProduceTableProcessor
 import no.nav.aap.kafka.streams.v2.processor.LogProduceTopicProcessor
 import org.apache.kafka.common.utils.Bytes

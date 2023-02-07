@@ -1,8 +1,8 @@
 package no.nav.aap.kafka.streams.v2
 
-import no.nav.aap.kafka.streams.v2.processor.KMetadata
-import no.nav.aap.kafka.streams.v2.processor.KProcessor
-import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor
+import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
+import no.nav.aap.kafka.streams.v2.processor.Processor
+import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
 import org.apache.kafka.streams.state.TimestampedKeyValueStore
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -72,14 +72,14 @@ internal class ConsumeTest {
     }
 }
 
-class CustomProcessorWithTable(table: KTable<String>) : KStoreProcessor<String, String>("custom-join", table) {
+class CustomProcessorWithTable(table: KTable<String>) : StateProcessor<String, String>("custom-join", table) {
     override fun process(
-        metadata: KMetadata,
+        metadata: ProcessorMetadata,
         store: TimestampedKeyValueStore<String, String>,
         keyValue: KeyValue<String, String>
     ): String = "${keyValue.value}${store[keyValue.key].value()}"
 }
 
-open class CustomProcessor : KProcessor<String, String>("add-v2-prefix") {
-    override fun process(metadata: KMetadata, keyValue: KeyValue<String, String>): String = "${keyValue.value}.v2"
+open class CustomProcessor : Processor<String, String>("add-v2-prefix") {
+    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, String>): String = "${keyValue.value}.v2"
 }

@@ -1,4 +1,4 @@
-package no.nav.aap.kafka.streams.v2.processor
+package no.nav.aap.kafka.streams.v2.processor.state
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
@@ -7,12 +7,12 @@ import org.apache.kafka.streams.state.TimestampedKeyValueStore
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 
-class StateStoreMetricScheduler<T>(
+class GaugeStoreEntriesStateScheduleProcessor<T>(
     named: String,
     table: KTable<T>,
     interval: Duration,
     registry: MeterRegistry
-) : KStoreProcessorScheduler<T>(
+) : StateScheduleProcessor<T>(
     named = named,
     table = table,
     interval = interval,

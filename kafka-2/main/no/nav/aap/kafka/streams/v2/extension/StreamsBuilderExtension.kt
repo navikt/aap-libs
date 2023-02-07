@@ -1,7 +1,7 @@
 package no.nav.aap.kafka.streams.v2.extension
 
 import no.nav.aap.kafka.streams.v2.Topic
-import no.nav.aap.kafka.streams.v2.processor.KProcessor.Companion.addProcessor
+import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.LogConsumeTopicProcessor
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.KStream

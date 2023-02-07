@@ -6,10 +6,10 @@ import no.nav.aap.kafka.streams.v2.extension.join
 import no.nav.aap.kafka.streams.v2.extension.leftJoin
 import no.nav.aap.kafka.streams.v2.extension.log
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
-import no.nav.aap.kafka.streams.v2.processor.KProcessor
-import no.nav.aap.kafka.streams.v2.processor.KProcessor.Companion.addProcessor
-import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor
-import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor.Companion.addProcessor
+import no.nav.aap.kafka.streams.v2.processor.Processor
+import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
+import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
+import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor.Companion.addProcessor
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Repartitioned
 
@@ -120,13 +120,13 @@ class ConsumedKStream<T : Any> internal constructor(
         return ConsumedKStream(topic, stream.repartition(repartition))
     }
 
-    fun <U : Any> processor(processor: KProcessor<T, U>): MappedKStream<U> =
+    fun <U : Any> processor(processor: Processor<T, U>): MappedKStream<U> =
         MappedKStream(
             sourceTopicName = topic.name,
             stream = stream.addProcessor(processor)
         )
 
-    fun <U : Any> processor(processor: KStoreProcessor<T, U>): MappedKStream<U> =
+    fun <U : Any> processor(processor: StateProcessor<T, U>): MappedKStream<U> =
         MappedKStream(
             sourceTopicName = topic.name,
             stream = stream.addProcessor(processor)

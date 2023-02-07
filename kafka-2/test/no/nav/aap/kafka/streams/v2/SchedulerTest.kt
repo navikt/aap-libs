@@ -1,7 +1,7 @@
 package no.nav.aap.kafka.streams.v2
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import no.nav.aap.kafka.streams.v2.processor.StateStoreMetricScheduler
+import no.nav.aap.kafka.streams.v2.processor.state.GaugeStoreEntriesStateScheduleProcessor
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.time.DurationUnit
@@ -18,7 +18,7 @@ internal class SchedulerTest {
             val table = consume(Topics.B).produce(Tables.B)
 
             schedule(
-                StateStoreMetricScheduler(
+                GaugeStoreEntriesStateScheduleProcessor(
                     named = "metrikker",
                     table = table,
                     interval = 2.toDuration(DurationUnit.MINUTES),

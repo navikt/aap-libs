@@ -8,13 +8,13 @@ import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext
 import org.apache.kafka.streams.processor.api.FixedKeyRecord
 import kotlin.jvm.optionals.getOrNull
 
-internal interface KProcess<T, U> {
-    fun process(metadata: KMetadata, keyValue: KeyValue<String, T>): U
+internal interface KProcessor<T, U> {
+    fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T>): U
 }
 
-abstract class KProcessor<T, U>(private val named: String) : KProcess<T, U> {
+abstract class Processor<T, U>(private val named: String) : KProcessor<T, U> {
     internal companion object {
-        internal fun <T, U> KStream<String, T>.addProcessor(processor: KProcessor<T, U>): KStream<String, U> =
+        internal fun <T, U> KStream<String, T>.addProcessor(processor: Processor<T, U>): KStream<String, U> =
             processValues(
                 { processor.run { InternalProcessor() } },
                 Named.`as`(processor.named),
@@ -33,7 +33,7 @@ abstract class KProcessor<T, U>(private val named: String) : KProcess<T, U> {
                 "Denne er bare null når man bruker punctuators. Det er feil å bruke denne klassen til punctuation."
             }
 
-            val metadata = KMetadata(
+            val metadata = ProcessorMetadata(
                 topic = recordMeta.topic(),
                 partition = recordMeta.partition(),
                 offset = recordMeta.offset()
