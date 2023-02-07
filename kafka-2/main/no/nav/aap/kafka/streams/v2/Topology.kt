@@ -2,6 +2,7 @@ package no.nav.aap.kafka.streams.v2
 
 import no.nav.aap.kafka.streams.v2.extension.consume
 import no.nav.aap.kafka.streams.v2.extension.skipTombstone
+import no.nav.aap.kafka.streams.v2.processor.KStoreProcessorScheduler
 import no.nav.aap.kafka.streams.v2.stream.ConsumedKStream
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.KStream
@@ -15,6 +16,10 @@ class Topology internal constructor() {
             .skipTombstone(topic)
 
         return ConsumedKStream(topic, consumeNotNulls)
+    }
+
+    fun <T> schedule(scheduler: KStoreProcessorScheduler<T>) {
+        KStoreProcessorScheduler.initInternalProcessor(scheduler)
     }
 
     internal fun build(): org.apache.kafka.streams.Topology = builder.build()

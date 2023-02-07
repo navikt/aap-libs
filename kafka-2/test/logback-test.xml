@@ -19,9 +19,9 @@
         <appender-ref ref="pretty"/>
     </logger>
 
-    <logger name="secureLog" level="TRACE">
-        <appender-ref ref="json"/>
-    </logger>
+<!--    <logger name="secureLog" level="TRACE">-->
+<!--        <appender-ref ref="json"/>-->
+<!--    </logger>-->
 
     <root level="INFO">
         <appender-ref ref="pretty"/>

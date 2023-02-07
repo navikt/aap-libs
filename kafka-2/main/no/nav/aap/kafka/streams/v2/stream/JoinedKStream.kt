@@ -3,8 +3,8 @@ package no.nav.aap.kafka.streams.v2.stream
 import no.nav.aap.kafka.streams.v2.KStreamPair
 import no.nav.aap.kafka.streams.v2.KeyValue
 import no.nav.aap.kafka.streams.v2.NullableKStreamPair
+import no.nav.aap.kafka.streams.v2.extension.log
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
-import no.nav.aap.kafka.streams.v2.logger.log
 import org.apache.kafka.streams.kstream.KStream
 
 class JoinedKStream<L, R> internal constructor(

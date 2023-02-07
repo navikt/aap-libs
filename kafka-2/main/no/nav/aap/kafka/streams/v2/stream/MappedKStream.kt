@@ -1,8 +1,8 @@
 package no.nav.aap.kafka.streams.v2.stream
 
 import no.nav.aap.kafka.streams.v2.Topic
+import no.nav.aap.kafka.streams.v2.extension.log
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
-import no.nav.aap.kafka.streams.v2.logger.log
 import no.nav.aap.kafka.streams.v2.processor.KProcessor
 import no.nav.aap.kafka.streams.v2.processor.KProcessor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor

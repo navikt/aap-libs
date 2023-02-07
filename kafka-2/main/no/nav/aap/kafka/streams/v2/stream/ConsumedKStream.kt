@@ -4,8 +4,8 @@ import no.nav.aap.kafka.streams.v2.*
 import no.nav.aap.kafka.streams.v2.extension.filterNotNull
 import no.nav.aap.kafka.streams.v2.extension.join
 import no.nav.aap.kafka.streams.v2.extension.leftJoin
+import no.nav.aap.kafka.streams.v2.extension.log
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
-import no.nav.aap.kafka.streams.v2.logger.log
 import no.nav.aap.kafka.streams.v2.processor.KProcessor
 import no.nav.aap.kafka.streams.v2.processor.KProcessor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.KStoreProcessor
