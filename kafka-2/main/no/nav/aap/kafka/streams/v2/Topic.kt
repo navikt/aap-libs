@@ -17,14 +17,14 @@ open class Topic<T>(
     internal infix fun <U> join(right: KTable<U>): Joined<String, T, U> = Joined.with(
         keySerde,
         valueSerde,
-        right.table.source.valueSerde,
-        "$name-join-${right.table.source.name}",
+        right.table.sourceTopic.valueSerde,
+        "$name-join-${right.table.sourceTopic.name}",
     )
 
     internal infix fun <U> leftJoin(right: KTable<U>): Joined<String, T, U> = Joined.with(
         keySerde,
         valueSerde,
-        right.table.source.valueSerde,
-        "$name-left-join-${right.table.source.name}",
+        right.table.sourceTopic.valueSerde,
+        "$name-left-join-${right.table.sourceTopic.name}",
     )
 }

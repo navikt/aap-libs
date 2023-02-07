@@ -16,9 +16,9 @@ internal class LogProduceTableProcessor<T>(
 
     override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T>): T {
         log.trace(
-            "Produserer til KTable ${table.name}",
+            "Produserer til KTable ${table.sourceTopicName}",
             kv("key", keyValue.key),
-            kv("table", table.name),
+            kv("table", table.sourceTopicName),
             kv("store", table.stateStoreName),
             kv("partition", metadata.partition),
             if (logValue) kv("value", keyValue.value) else null,

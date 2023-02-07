@@ -123,7 +123,9 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
         }
 
         return migrate(previousDto)
-            .apply { markerSomMigrertAkkuratNå() }
+            .apply {
+                markerSomMigrertAkkuratNå()
+            }
             .also { migratedDto ->
                 if (logValues) {
                     secureLog.trace(

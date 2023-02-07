@@ -18,12 +18,12 @@ internal fun <T> KStream<String, T>.produceToTable(
 ): org.apache.kafka.streams.kstream.KTable<String, T & Any> = this
     .addProcessor(
         LogProduceTableProcessor(
-            named = "log-produced-${table.name}",
+            named = "log-produced-${table.sourceTopicName}",
             table = table,
             logValue = logValues
         )
     )
-    .toTable(Named.`as`("${table.name}-to-table"), materialized(table.stateStoreName, table.source))
+    .toTable(Named.`as`("${table.sourceTopicName}-to-table"), materialized(table.stateStoreName, table.sourceTopic))
     .skipTombstone(table)
 
 internal fun <T> KStream<String, T>.produceToTopic(

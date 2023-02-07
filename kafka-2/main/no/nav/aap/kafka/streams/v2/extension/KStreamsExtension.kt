@@ -57,7 +57,7 @@ internal fun <K, V> org.apache.kafka.streams.kstream.KTable<K, V>.skipTombstone(
 ): org.apache.kafka.streams.kstream.KTable<K, V & Any> = this
     .filter(
         { _, value -> value != null },
-        Named.`as`("skip-table-${table.name}-tombstone")
+        Named.`as`("skip-table-${table.sourceTopicName}-tombstone")
     ) as org.apache.kafka.streams.kstream.KTable<K, V & Any>
 
 @Suppress("UNCHECKED_CAST")
