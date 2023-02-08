@@ -56,7 +56,7 @@ class MappedKStream<T : Any> internal constructor(
             stream = stream.addProcessor(processor)
         )
 
-    fun <U : Any> processor(processor: StateProcessor<T, U>): MappedKStream<U> =
+    fun <TABLE, U : Any> processor(processor: StateProcessor<TABLE, T, U>): MappedKStream<U> =
         MappedKStream(
             sourceTopicName = sourceTopicName,
             stream = stream.addProcessor(processor)

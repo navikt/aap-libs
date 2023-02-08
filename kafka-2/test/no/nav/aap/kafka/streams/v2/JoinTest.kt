@@ -29,7 +29,7 @@ internal class JoinTest {
         assertEquals("BA", result[key])
         assertNull(result["2"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test

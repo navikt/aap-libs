@@ -68,5 +68,7 @@ internal class SchedulerTest {
         kafka.advanceWallClockTime(2.toDuration(DurationUnit.MINUTES).toJavaDuration())
 
         assertEquals(2, producer.history().last().value().version)
+
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 }

@@ -68,11 +68,11 @@ internal class ConsumeTest {
         assertEquals(1, result.size)
         assertEquals("a.v2", result["1"])
 
-        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 }
 
-class CustomProcessorWithTable(table: KTable<String>) : StateProcessor<String, String>("custom-join", table) {
+class CustomProcessorWithTable(table: KTable<String>) : StateProcessor<String, String, String>("custom-join", table) {
     override fun process(
         metadata: ProcessorMetadata,
         store: TimestampedKeyValueStore<String, String>,
