@@ -8,6 +8,7 @@ import no.nav.aap.kafka.streams.v2.Topology
 import no.nav.aap.kafka.streams.v2.config.KStreamsConfig
 import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.TopologyTestDriver
+import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
 
 class KStreamsMock : KStreams, AutoCloseable {
     private lateinit var internalStreams: TopologyTestDriver
@@ -33,6 +34,8 @@ class KStreamsMock : KStreams, AutoCloseable {
     override fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology) {
         this.internalTopology = internalTopology
     }
+
+    fun <T: Any> getStore(name: String): ReadOnlyKeyValueStore<String, T> = internalStreams.getKeyValueStore(name)
 
     fun <V : Any> testTopic(topic: Topic<V>): TestTopic<V> =
         TestTopic(
