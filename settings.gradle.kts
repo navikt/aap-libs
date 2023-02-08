@@ -7,6 +7,7 @@ include(
     "kafka-interfaces",
     "kafka-avroserde",
     "kafka-test",
+    "kafka-test-2",
     "ktor-auth-azuread",
     "ktor-auth-maskinporten",
     "ktor-utils",

@@ -18,6 +18,7 @@ interface KStreams {
     fun ready(): Boolean
     fun live(): Boolean
     fun toUML(): String
+    fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology)
 }
 
 class KafkaStreams : KStreams {
@@ -31,11 +32,9 @@ class KafkaStreams : KStreams {
         config: KStreamsConfig,
         registry: MeterRegistry,
     ) {
-        internalTopology = topology.build()
-        internalStreams = org.apache.kafka.streams.KafkaStreams(
-            internalTopology,
-            config.streamsProperties()
-        )
+        topology.registerInternalTopology(this)
+
+        internalStreams = org.apache.kafka.streams.KafkaStreams(internalTopology, config.streamsProperties())
         KafkaStreamsMetrics(internalStreams).bindTo(registry)
         internalStreams.setUncaughtExceptionHandler(ProcessingExceptionHandler())
         internalStreams.setStateListener { state, _ -> if (state == RUNNING) initiallyStarted = true }
@@ -46,4 +45,7 @@ class KafkaStreams : KStreams {
     override fun ready(): Boolean = initiallyStarted && internalStreams.state() in listOf(CREATED, REBALANCING, RUNNING)
     override fun live(): Boolean = initiallyStarted && internalStreams.state() != ERROR
     override fun toUML(): String = PlantUML.generate(internalTopology)
+    override fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology) {
+        this.internalTopology = internalTopology
+    }
 }

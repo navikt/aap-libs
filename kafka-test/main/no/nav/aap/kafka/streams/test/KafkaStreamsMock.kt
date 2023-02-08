@@ -58,6 +58,7 @@ class KafkaStreamsMock : KStreams {
 
     override fun isLive() = true
     override fun <V> getStore(name: String): Store<V> = streams.getKeyValueStore(name)
+
     private val producers: MutableMap<Topic<*>, MockProducer<String, *>> = mutableMapOf()
 
     override fun <V : Any> createConsumer(config: KafkaConfig, topic: Topic<V>) = MockConsumer<String, V>(EARLIEST)

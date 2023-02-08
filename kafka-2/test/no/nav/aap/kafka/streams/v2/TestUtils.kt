@@ -47,4 +47,4 @@ internal fun <V> TopologyTestDriver.outputTopic(topic: Topic<V>): TestOutputTopi
 internal fun <V> TestInputTopic<String, V>.produce(key: String, value: V): TestInputTopic<String, V> =
     pipeInput(key, value).let { this }
 
-internal fun kafka(topology: Topology) = TopologyTestDriver(topology.build())
+internal fun kafka(topology: Topology) = TopologyTestDriver(topology.buildInternalTopology())

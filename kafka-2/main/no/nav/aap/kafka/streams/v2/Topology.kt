@@ -17,7 +17,11 @@ class Topology internal constructor() {
         return ConsumedKStream(topic, consumeNotNulls) { "from-${topic.name}" }
     }
 
-    internal fun build(): org.apache.kafka.streams.Topology = builder.build()
+    fun registerInternalTopology(stream: KStreams) {
+        stream.registerInternalTopology(builder.build())
+    }
+
+    internal fun buildInternalTopology() = builder.build()
 }
 
 fun topology(init: Topology.() -> Unit): Topology = Topology().apply(init)

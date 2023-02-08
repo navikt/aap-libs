@@ -91,8 +91,8 @@ internal class BranchTest {
                 .map { i -> i }
                 .branch({ v -> v == "lol" }, {
                     it
-                        .branch({true}) {b -> b.produce(Topics.C) }
-                        .branch({false}) {b -> b.produce(Topics.B) }
+                        .branch({ true }) { b -> b.produce(Topics.C) }
+                        .branch({ false }) { b -> b.produce(Topics.B) }
                 })
                 .branch({ v -> v != "lol" }, {
                     it.produce(Topics.B)
@@ -172,8 +172,6 @@ internal class BranchTest {
 
         assertEquals("lollol", resultC["1"])
         assertEquals("lollol", resultD["2"])
-
-        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test
