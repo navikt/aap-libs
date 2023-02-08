@@ -1,5 +1,6 @@
 package no.nav.aap.kafka.streams.v2.stream
 
+import no.nav.aap.kafka.streams.v2.KeyValue
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.extension.log
 import no.nav.aap.kafka.streams.v2.logger.LogLevel
@@ -28,6 +29,11 @@ class MappedKStream<T : Any> internal constructor(
 
     fun <R : Any> map(mapper: (key: String, value: T) -> R): MappedKStream<R> {
         val fusedStream = stream.mapValues { key, value -> mapper(key, value) }
+        return MappedKStream(sourceTopicName, fusedStream)
+    }
+
+    fun <R : Any> mapKeyAndValue(mapper: (key: String, value: T) -> KeyValue<String, R>): MappedKStream<R> {
+        val fusedStream = stream.map { key, value -> mapper(key, value).toInternalKeyValue() }
         return MappedKStream(sourceTopicName, fusedStream)
     }
 
