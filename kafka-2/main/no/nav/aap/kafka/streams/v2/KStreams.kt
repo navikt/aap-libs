@@ -9,23 +9,28 @@ import no.nav.aap.kafka.streams.v2.visual.PlantUML
 import org.apache.kafka.streams.KafkaStreams.State.*
 
 interface KStreams {
-    fun connect()
+    fun connect(
+        topology: Topology,
+        config: KStreamsConfig,
+        registry: MeterRegistry,
+    )
+
     fun ready(): Boolean
     fun live(): Boolean
     fun toUML(): String
 }
 
-class KafkaStreams(
-    private val topology: Topology,
-    private val config: KStreamsConfig,
-    private val registry: MeterRegistry,
-) : KStreams {
+class KafkaStreams : KStreams {
     private var initiallyStarted: Boolean = false
 
     private lateinit var internalStreams: org.apache.kafka.streams.KafkaStreams
     private lateinit var internalTopology: org.apache.kafka.streams.Topology
 
-    override fun connect() {
+    override fun connect(
+        topology: Topology,
+        config: KStreamsConfig,
+        registry: MeterRegistry,
+    ) {
         internalTopology = topology.build()
         internalStreams = org.apache.kafka.streams.KafkaStreams(
             internalTopology,

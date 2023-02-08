@@ -81,7 +81,36 @@ internal class BranchTest {
         assertEquals("lol", resultC["1"])
         assertEquals("ikke lol", resultB["2"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
+    }
+
+    @Test
+    fun `branch en branched stream from mapped`() {
+        val topology = topology {
+            consume(Topics.A)
+                .map { i -> i }
+                .branch({ v -> v == "lol" }, {
+                    it
+                        .branch({true}) {b -> b.produce(Topics.C) }
+                        .branch({false}) {b -> b.produce(Topics.B) }
+                })
+                .branch({ v -> v != "lol" }, {
+                    it.produce(Topics.B)
+                })
+        }
+
+        val kafka = kafka(topology)
+
+        kafka.inputTopic(Topics.A).produce("1", "lol")
+        kafka.inputTopic(Topics.A).produce("2", "ikke lol")
+
+        val resultC = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+        val resultB = kafka.outputTopic(Topics.B).readKeyValuesToMap()
+
+        assertEquals("lol", resultC["1"])
+        assertEquals("ikke lol", resultB["2"])
+
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test
@@ -144,7 +173,7 @@ internal class BranchTest {
         assertEquals("lollol", resultC["1"])
         assertEquals("lollol", resultD["2"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test

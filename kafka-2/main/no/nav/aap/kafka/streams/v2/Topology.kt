@@ -14,7 +14,7 @@ class Topology internal constructor() {
             .consume(topic, logValue)
             .skipTombstone(topic)
 
-        return ConsumedKStream(topic, consumeNotNulls)
+        return ConsumedKStream(topic, consumeNotNulls) { "from-${topic.name}" }
     }
 
     internal fun build(): org.apache.kafka.streams.Topology = builder.build()
