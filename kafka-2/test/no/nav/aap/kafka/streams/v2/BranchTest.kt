@@ -110,7 +110,7 @@ internal class BranchTest {
         assertEquals("lol", resultC["1"])
         assertEquals("ikke lol", resultB["2"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.buildInternalTopology()))
     }
 
     @Test

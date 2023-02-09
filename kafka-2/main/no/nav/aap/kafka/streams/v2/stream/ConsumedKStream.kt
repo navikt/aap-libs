@@ -19,18 +19,14 @@ class ConsumedKStream<T : Any> internal constructor(
     private val stream: KStream<String, T>,
     private val namedSupplier: () -> String
 ) {
-    fun produce(table: Table<T>, logValues: Boolean = false): KTable<T> =
-        KTable(
-            table = table,
-            internalTable = stream.produceToTable(table, logValues)
-        )
+    fun produce(table: Table<T>, logValues: Boolean = false): KTable<T> {
+        val internalKTable = stream.produceToTable(table, logValues)
+        return KTable(table, internalKTable)
+    }
 
     fun produce(destination: Topic<T>, logValues: Boolean = false) {
-        stream.produceToTopic(
-            topic = destination,
-            named = "produced-${destination.name}-${namedSupplier()}",
-            logValues = logValues,
-        )
+        val named = "produced-${destination.name}-${namedSupplier()}"
+        stream.produceToTopic(destination, named, logValues)
     }
 
     fun rekey(selectKeyFromValue: (T) -> String): ConsumedKStream<T> {
@@ -53,14 +49,10 @@ class ConsumedKStream<T : Any> internal constructor(
         return MappedKStream(topic.name, fusedStream, namedSupplier)
     }
 
-    fun <R> mapNotNull(mapper: (key: String, value: T) -> R): MappedKStream<R & Any> =
-        MappedKStream(
-            sourceTopicName = topic.name,
-            stream = stream
-                .mapValues { key, value -> mapper(key, value) }
-                .filterNotNull(),
-            namedSupplier
-        )
+    fun <R> mapNotNull(mapper: (key: String, value: T) -> R): MappedKStream<R & Any> {
+        val valuedStream = stream.mapValues { key, value -> mapper(key, value) }.filterNotNull()
+        return MappedKStream(topic.name, valuedStream, namedSupplier)
+    }
 
     fun flatMapPreserveType(mapper: (key: String, value: T) -> Iterable<T>): ConsumedKStream<T> {
         val fusedStream = stream.flatMapValues { key, value -> mapper(key, value) }
@@ -68,8 +60,7 @@ class ConsumedKStream<T : Any> internal constructor(
     }
 
     fun flatMapKeyAndValuePreserveType(mapper: (key: String, value: T) -> Iterable<KeyValue<String, T>>): ConsumedKStream<T> {
-        val fusedStream =
-            stream.flatMap { key, value -> mapper(key, value).map(KeyValue<String, T>::toInternalKeyValue) }
+        val fusedStream = stream.flatMap { key, value -> mapper(key, value).map { it.toInternalKeyValue() } }
         return ConsumedKStream(topic, fusedStream, namedSupplier)
     }
 
@@ -79,8 +70,7 @@ class ConsumedKStream<T : Any> internal constructor(
     }
 
     fun <R : Any> flatMapKeyAndValue(mapper: (key: String, value: T) -> Iterable<KeyValue<String, R>>): MappedKStream<R> {
-        val fusedStream =
-            stream.flatMap { key, value -> mapper(key, value).map(KeyValue<String, R>::toInternalKeyValue) }
+        val fusedStream = stream.flatMap { key, value -> mapper(key, value).map { it.toInternalKeyValue() } }
         return MappedKStream(topic.name, fusedStream, namedSupplier)
     }
 
@@ -89,37 +79,22 @@ class ConsumedKStream<T : Any> internal constructor(
         return MappedKStream(topic.name, fusedStream, namedSupplier)
     }
 
-    fun <U : Any> joinWith(ktable: KTable<U>): JoinedKStream<T, U> =
-        JoinedKStream(
-            sourceTopicName = topic.name,
-            stream = stream.join(
-                left = topic,
-                right = ktable,
-                joiner = ::KStreamPair,
-            ),
-            namedSupplier = { "${topic.name}-join-${ktable.table.sourceTopic.name}" }
-        )
+    fun <U : Any> joinWith(ktable: KTable<U>): JoinedKStream<T, U> {
+        val joinedStream = stream.join(topic, ktable, ::KStreamPair)
+        val named = { "${topic.name}-join-${ktable.table.sourceTopic.name}" }
+        return JoinedKStream(topic.name, joinedStream, named)
+    }
 
-    fun <U : Any> leftJoinWith(ktable: KTable<U>): LeftJoinedKStream<T, U> =
-        LeftJoinedKStream(
-            sourceTopicName = topic.name,
-            stream = stream.leftJoin(
-                left = topic,
-                right = ktable,
-                joiner = ::NullableKStreamPair,
-            ),
-            namedSupplier = { "${topic.name}-join-${ktable.table.sourceTopic.name}" }
-        )
+    fun <U : Any> leftJoinWith(ktable: KTable<U>): LeftJoinedKStream<T, U> {
+        val joinedStream = stream.leftJoin(topic, ktable, ::NullableKStreamPair)
+        val named = { "${topic.name}-join-${ktable.table.sourceTopic.name}" }
+        return LeftJoinedKStream(topic.name, joinedStream, named)
+    }
 
-    fun branch(predicate: (T) -> Boolean, consumed: (ConsumedKStream<T>) -> Unit): BranchedKStream<T> =
-        BranchedKStream(
-            topic = topic,
-            stream = stream.split(Named.`as`("split-${namedSupplier()}")),
-            named = namedSupplier(),
-        ).branch(
-            predicate = predicate,
-            consumed = consumed
-        )
+    fun branch(predicate: (T) -> Boolean, consumed: (ConsumedKStream<T>) -> Unit): BranchedKStream<T> {
+        val splittedStream = stream.split(Named.`as`("split-${namedSupplier()}"))
+        return BranchedKStream(topic, splittedStream, namedSupplier).branch(predicate, consumed)
+    }
 
     fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, T) -> Any): ConsumedKStream<T> {
         stream.log(level, keyValue)
@@ -131,17 +106,13 @@ class ConsumedKStream<T : Any> internal constructor(
         return ConsumedKStream(topic, stream.repartition(repartition), namedSupplier)
     }
 
-    fun <U : Any> processor(processor: Processor<T, U>): MappedKStream<U> =
-        MappedKStream(
-            sourceTopicName = topic.name,
-            stream = stream.addProcessor(processor),
-            namedSupplier
-        )
+    fun <U : Any> processor(processor: Processor<T, U>): MappedKStream<U> {
+        val processorStream = stream.addProcessor(processor)
+        return MappedKStream(topic.name, processorStream, namedSupplier)
+    }
 
-    fun <TABLE, U : Any> processor(processor: StateProcessor<TABLE, T, U>): MappedKStream<U> =
-        MappedKStream(
-            sourceTopicName = topic.name,
-            stream = stream.addProcessor(processor),
-            namedSupplier
-        )
+    fun <TABLE, U : Any> processor(processor: StateProcessor<TABLE, T, U>): MappedKStream<U> {
+        val processorStream = stream.addProcessor(processor)
+        return MappedKStream(topic.name, processorStream, namedSupplier)
+    }
 }

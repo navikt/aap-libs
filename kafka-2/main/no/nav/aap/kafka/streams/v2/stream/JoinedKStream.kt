@@ -19,20 +19,17 @@ class JoinedKStream<L, R> internal constructor(
     }
 
     fun filter(lambda: (KStreamPair<L, R>) -> Boolean): JoinedKStream<L, R> {
-        val stream = stream.filter { _, value -> lambda(value) }
-        return JoinedKStream(sourceTopicName, stream, namedSupplier)
+        val filteredStream = stream.filter { _, value -> lambda(value) }
+        return JoinedKStream(sourceTopicName, filteredStream, namedSupplier)
     }
 
     fun branch(
         predicate: (KStreamPair<L, R>) -> Boolean,
         consumed: (MappedKStream<KStreamPair<L, R>>) -> Unit,
-    ): BranchedMappedKStream<KStreamPair<L, R>> =
-        BranchedMappedKStream(
-            sourceTopicName = sourceTopicName,
-            stream = stream.split(Named.`as`("split-${namedSupplier()}")),
-            named = namedSupplier()
-        ).branch(predicate, consumed)
-
+    ): BranchedMappedKStream<KStreamPair<L, R>> {
+        val branchedStream = stream.split(Named.`as`("split-${namedSupplier()}"))
+        return BranchedMappedKStream(sourceTopicName, branchedStream, namedSupplier).branch(predicate, consumed)
+    }
 }
 
 class LeftJoinedKStream<L, R> internal constructor(
@@ -47,8 +44,7 @@ class LeftJoinedKStream<L, R> internal constructor(
     }
 
     fun <LR : Any> mapKeyValue(mapper: (String, L, R?) -> KeyValue<String, LR>): MappedKStream<LR> {
-        val fusedStream =
-            stream.map { key, (leftValue, rightValue) -> mapper(key, leftValue, rightValue).toInternalKeyValue() }
+        val fusedStream = stream.map { key, (left, right) -> mapper(key, left, right).toInternalKeyValue() }
         return MappedKStream(sourceTopicName, fusedStream, namedSupplier)
     }
 
@@ -61,11 +57,8 @@ class LeftJoinedKStream<L, R> internal constructor(
         predicate: (NullableKStreamPair<L, R>) -> Boolean,
         consumed: (MappedKStream<NullableKStreamPair<L, R>>) -> Unit,
     ): BranchedMappedKStream<NullableKStreamPair<L, R>> {
-        return BranchedMappedKStream(
-            sourceTopicName = sourceTopicName,
-            stream = stream.split(Named.`as`("split-${namedSupplier()}")),
-            named = namedSupplier(),
-        ).branch(predicate, consumed)
+        val branchedStream = stream.split(Named.`as`("split-${namedSupplier()}"))
+        return BranchedMappedKStream(sourceTopicName, branchedStream, namedSupplier).branch(predicate, consumed)
     }
 
     fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, L, R?) -> Any): LeftJoinedKStream<L, R> {

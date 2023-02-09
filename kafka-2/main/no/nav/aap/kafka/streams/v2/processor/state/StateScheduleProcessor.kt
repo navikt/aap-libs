@@ -21,7 +21,7 @@ abstract class StateScheduleProcessor<T>(
 ) : KStateScheduleProcessor<T> {
     internal fun addToStreams() {
         val stateStoreName = table.table.stateStoreName
-        val internalStream = table.internalTable.toStream()
+        val internalStream = table.internalKTable.toStream()
         internalStream.processValues(
             { InternalProcessor(stateStoreName) },
             Named.`as`(named),

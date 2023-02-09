@@ -3,9 +3,9 @@ package no.nav.aap.kafka.streams.v2.stream
 import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.extension.skipTombstone
-import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.LogProduceTableProcessor
 import no.nav.aap.kafka.streams.v2.processor.LogProduceTopicProcessor
+import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Materialized
@@ -16,13 +16,7 @@ internal fun <T> KStream<String, T>.produceToTable(
     table: Table<T>,
     logValues: Boolean,
 ): org.apache.kafka.streams.kstream.KTable<String, T & Any> = this
-    .addProcessor(
-        LogProduceTableProcessor(
-            named = "log-produced-${table.sourceTopicName}",
-            table = table,
-            logValue = logValues
-        )
-    )
+    .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
     .toTable(Named.`as`("${table.sourceTopicName}-to-table"), materialized(table.stateStoreName, table.sourceTopic))
     .skipTombstone(table)
 
@@ -31,12 +25,7 @@ internal fun <T> KStream<String, T>.produceToTopic(
     named: String,
     logValues: Boolean,
 ) = this
-    .addProcessor(
-        LogProduceTopicProcessor(
-            named = "log-${named}",
-            logValue = logValues
-        )
-    )
+    .addProcessor(LogProduceTopicProcessor("log-${named}", logValues))
     .to(topic.name, topic.produced(named))
 
 internal fun <T> materialized(

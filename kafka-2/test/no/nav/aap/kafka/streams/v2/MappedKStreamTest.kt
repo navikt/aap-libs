@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-internal class MapTest {
+internal class MappedKStreamTest {
     @Test
     fun `map a filtered joined stream`() {
         val topology = topology {
@@ -214,6 +214,26 @@ internal class MapTest {
 
         assertEquals(1, result.size)
         assertEquals("a.v2", result["1"])
+
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+    }
+    @Test
+    fun `rekey a mapped stream`() {
+        val topology = topology {
+            consume(Topics.A)
+                .map { v -> "${v}alue" }
+                .rekey { v -> v }
+                .produce(Topics.C)
+        }
+
+        val kafka = kafka(topology)
+
+        kafka.inputTopic(Topics.A).produce("k", "v")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(1, result.size)
+        assertEquals("value", result["value"])
 
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
