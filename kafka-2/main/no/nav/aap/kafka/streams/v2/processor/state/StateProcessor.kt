@@ -19,12 +19,12 @@ internal interface KStateProcessor<T, U, R> {
     ): R
 }
 
-abstract class StateProcessor<T, U, R>(
+abstract class StateProcessor<T : Any, U, R>(
     private val named: String,
     private val table: KTable<T>,
 ) : KStateProcessor<T, U, R> {
     internal companion object {
-        internal fun <T, U, R> KStream<String, U>.addProcessor(
+        internal fun <T : Any, U, R> KStream<String, U>.addProcessor(
             processor: StateProcessor<T, U, R>
         ): KStream<String, R> = processValues(
             { processor.run(StateProcessor<T, U, R>::InternalProcessor) },

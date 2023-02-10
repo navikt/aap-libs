@@ -101,15 +101,15 @@ class ConsumedKStream<T : Any> internal constructor(
         return JoinedKStream(topic.name, joinedStream, named)
     }
 
-    fun <U : Any> leftJoinWith(ktable: KTable<U>): LeftJoinedKStream<T, U> {
-        val joinedStream = stream.leftJoin(topic, ktable, ::NullableKStreamPair)
+    fun <U : Any> leftJoinWith(ktable: KTable<U>): LeftJoinedKStream<T, U?> {
+        val joinedStream = stream.leftJoin(topic, ktable, ::KStreamPair)
         val named = { "${topic.name}-left-join-${ktable.table.sourceTopic.name}" }
         return LeftJoinedKStream(topic.name, joinedStream, named)
     }
 
-    fun <U : Bufferable<U>> leftJoinWith(ktable: KTable<U>, buffer: RaceConditionBuffer<U>): LeftJoinedKStream<T, U> {
-        fun joiner(key: String, left: T, right: U?): NullableKStreamPair<T, U> {
-            return NullableKStreamPair(left, buffer.velgNyesteNullable(key, right))
+    fun <U : Bufferable<U>> leftJoinWith(ktable: KTable<U>, buffer: RaceConditionBuffer<U>): LeftJoinedKStream<T, U?> {
+        fun joiner(key: String, left: T, right: U?): KStreamPair<T, U?> {
+            return KStreamPair(left, buffer.velgNyesteNullable(key, right))
         }
 
         val joinedStream = stream.leftJoin(topic, ktable, ::joiner)
@@ -145,7 +145,7 @@ class ConsumedKStream<T : Any> internal constructor(
         return MappedKStream(topic.name, processorStream, namedSupplier)
     }
 
-    fun <TABLE, U : Any> processor(processor: StateProcessor<TABLE, T, U>): MappedKStream<U> {
+    fun <TABLE : Any, U : Any> processor(processor: StateProcessor<TABLE, T, U>): MappedKStream<U> {
         val processorStream = stream.addProcessor(processor)
         return MappedKStream(topic.name, processorStream, namedSupplier)
     }

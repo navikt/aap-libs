@@ -7,7 +7,7 @@ import org.apache.kafka.streams.state.TimestampedKeyValueStore
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 
-class GaugeStoreEntriesStateScheduleProcessor<T>(
+class GaugeStoreEntriesStateScheduleProcessor<T:Any>(
     ktable: KTable<T>,
     interval: Duration,
     registry: MeterRegistry

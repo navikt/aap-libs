@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 
 private val log: Logger = LoggerFactory.getLogger("secureLog")
 
-internal class LogProduceTableProcessor<T>(
+internal class LogProduceTableProcessor<T : Any>(
     named: String,
     private val table: Table<T>,
     private val logValue: Boolean,

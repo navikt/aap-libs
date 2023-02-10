@@ -4,17 +4,12 @@ import org.apache.kafka.streams.KeyValue
 
 data class KStreamPair<L, R>(
     val left: L,
-    val right: R
-)
-
-data class NullableKStreamPair<L, R>(
-    val left: L,
-    val right: R?
+    val right: R,
 )
 
 data class KeyValue<K, V>(
     val key: K,
-    val value: V
+    val value: V,
 ) {
     internal fun toInternalKeyValue(): KeyValue<K, V> = KeyValue(key, value)
 }

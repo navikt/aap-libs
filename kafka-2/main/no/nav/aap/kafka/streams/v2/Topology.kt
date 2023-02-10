@@ -32,7 +32,7 @@ class Topology internal constructor() {
         return ConsumedKStream(topic, consumedWithoutTombstones) { "from-${topic.name}" }
     }
 
-    private fun <T> consumeAll(topic: Topic<T>, logValue: Boolean): KStream<String, T?> =
+    private fun <T : Any> consumeAll(topic: Topic<T>, logValue: Boolean): KStream<String, T?> =
         builder
             .stream(topic.name, topic.consumed("consume-${topic.name}"))
             .addProcessor(
@@ -51,7 +51,7 @@ class Topology internal constructor() {
 
 fun topology(init: Topology.() -> Unit): Topology = Topology().apply(init)
 
-private class MetadataProcessor<T>(
+private class MetadataProcessor<T : Any>(
     topic: Topic<T>,
 ) : Processor<T?, Pair<KeyValue<String, T?>, ProcessorMetadata>>(
     "from-${topic.name}-enrich-metadata",

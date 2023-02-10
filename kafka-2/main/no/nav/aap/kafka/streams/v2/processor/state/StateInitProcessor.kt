@@ -13,7 +13,7 @@ internal interface KStateInitProcessor<T> {
     fun init(store: StateStore<T>)
 }
 
-abstract class StateInitProcessor<T>(
+abstract class StateInitProcessor<T: Any>(
     private val named: String,
     private val table: KTable<T>,
 ) : KStateInitProcessor<T> {
