@@ -53,17 +53,17 @@ class KStreamsMock : KStreams {
         internalStreams = TopologyTestDriver(internalTopology)
     }
 
-    internal fun <V> inputTopic(topic: Topic<V>): TestInputTopic<String, V> =
+    internal fun <V : Any> inputTopic(topic: Topic<V>): TestInputTopic<String, V> =
         internalStreams.createInputTopic(topic.name, topic.keySerde.serializer(), topic.valueSerde.serializer())
 
-    internal fun <V> outputTopic(topic: Topic<V>): TestOutputTopic<String, V> =
+    internal fun <V : Any> outputTopic(topic: Topic<V>): TestOutputTopic<String, V> =
         internalStreams.createOutputTopic(topic.name, topic.keySerde.deserializer(), topic.valueSerde.deserializer())
 
 
     internal fun advanceWallClockTime(duration: Duration) =
         internalStreams.advanceWallClockTime(duration.toJavaDuration())
 
-    internal fun <T> getTimestampedKeyValueStore(table: Table<T>) =
+    internal fun <T : Any> getTimestampedKeyValueStore(table: Table<T>) =
         internalStreams.getTimestampedKeyValueStore<String, T>(table.stateStoreName)
 
     override fun ready(): Boolean = true

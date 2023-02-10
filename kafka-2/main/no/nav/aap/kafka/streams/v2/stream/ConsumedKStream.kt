@@ -101,20 +101,20 @@ class ConsumedKStream<T : Any> internal constructor(
         return JoinedKStream(topic.name, joinedStream, named)
     }
 
-    fun <U : Any> leftJoinWith(ktable: KTable<U>): LeftJoinedKStream<T, U> {
-        val joinedStream = stream.leftJoin(topic, ktable, ::NullableKStreamPair)
+    fun <U : Any> leftJoinWith(ktable: KTable<U>): JoinedKStream<T, U?> {
+        val joinedStream = stream.leftJoin(topic, ktable, ::KStreamPair)
         val named = { "${topic.name}-left-join-${ktable.table.sourceTopic.name}" }
-        return LeftJoinedKStream(topic.name, joinedStream, named)
+        return JoinedKStream(topic.name, joinedStream, named)
     }
 
-    fun <U : Bufferable<U>> leftJoinWith(ktable: KTable<U>, buffer: RaceConditionBuffer<U>): LeftJoinedKStream<T, U> {
-        fun joiner(key: String, left: T, right: U?): NullableKStreamPair<T, U> {
-            return NullableKStreamPair(left, buffer.velgNyesteNullable(key, right))
+    fun <U : Bufferable<U>> leftJoinWith(ktable: KTable<U>, buffer: RaceConditionBuffer<U>): JoinedKStream<T, U?> {
+        fun joiner(key: String, left: T, right: U?): KStreamPair<T, U?> {
+            return KStreamPair(left, buffer.velgNyesteNullable(key, right))
         }
 
         val joinedStream = stream.leftJoin(topic, ktable, ::joiner)
         val named = { "${topic.name}-buffered-left-join-${ktable.table.sourceTopic.name}" }
-        return LeftJoinedKStream(topic.name, joinedStream, named)
+        return JoinedKStream(topic.name, joinedStream, named)
     }
 
     fun branch(predicate: (T) -> Boolean, consumed: (ConsumedKStream<T>) -> Unit): BranchedKStream<T> {
@@ -150,7 +150,7 @@ class ConsumedKStream<T : Any> internal constructor(
         return ConsumedKStream(topic, processorStream, namedSupplier)
     }
 
-    fun <TABLE, U : Any> processor(processor: StateProcessor<TABLE, T, U>): MappedKStream<U> {
+    fun <TABLE : Any, U : Any> processor(processor: StateProcessor<TABLE, T, U>): MappedKStream<U> {
         val processorStream = stream.addProcessor(processor)
         return MappedKStream(topic.name, processorStream, namedSupplier)
     }

@@ -12,15 +12,15 @@ import org.apache.kafka.streams.kstream.Materialized
 import org.apache.kafka.streams.kstream.Named
 import org.apache.kafka.streams.state.KeyValueStore
 
-internal fun <T> KStream<String, T>.produceToTable(
+internal fun <T : Any> KStream<String, T>.produceToTable(
     table: Table<T>,
     logValues: Boolean,
-): org.apache.kafka.streams.kstream.KTable<String, T & Any> = this
+): org.apache.kafka.streams.kstream.KTable<String, T> = this
     .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
     .toTable(Named.`as`("${table.sourceTopicName}-to-table"), materialized(table.stateStoreName, table.sourceTopic))
     .skipTombstone(table)
 
-internal fun <T> KStream<String, T>.produceToTopic(
+internal fun <T : Any> KStream<String, T>.produceToTopic(
     topic: Topic<T>,
     named: String,
     logValues: Boolean,
@@ -28,7 +28,7 @@ internal fun <T> KStream<String, T>.produceToTopic(
     .addProcessor(LogProduceTopicProcessor("log-${named}", logValues))
     .to(topic.name, topic.produced(named))
 
-internal fun <T> materialized(
+internal fun <T : Any> materialized(
     storeName: String,
     topic: Topic<T>
 ): Materialized<String, T?, KeyValueStore<Bytes, ByteArray>> =

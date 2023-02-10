@@ -15,7 +15,7 @@ internal interface KStateScheduleProcessor<T> {
     fun schedule(wallClockTime: Long, store: StateStore<T>)
 }
 
-abstract class StateScheduleProcessor<T>(
+abstract class StateScheduleProcessor<T : Any>(
     private val named: String,
     private val table: KTable<T>,
     private val interval: Duration,
