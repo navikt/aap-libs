@@ -54,8 +54,8 @@ class MappedKStream<T : Any> internal constructor(
     }
 
     fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, T) -> Any): MappedKStream<T> {
-        stream.log(level, keyValue)
-        return this
+        val loggedStream = stream.log(level, keyValue)
+        return MappedKStream(sourceTopicName, loggedStream, namedSupplier)
     }
 
     fun <U : Any> processor(processor: Processor<T, U>): MappedKStream<U> {

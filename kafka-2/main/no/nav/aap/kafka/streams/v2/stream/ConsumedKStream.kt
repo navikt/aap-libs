@@ -87,7 +87,7 @@ class ConsumedKStream<T : Any> internal constructor(
 
     fun <U : Any> leftJoinWith(ktable: KTable<U>): LeftJoinedKStream<T, U> {
         val joinedStream = stream.leftJoin(topic, ktable, ::NullableKStreamPair)
-        val named = { "${topic.name}-join-${ktable.table.sourceTopic.name}" }
+        val named = { "${topic.name}-left-join-${ktable.table.sourceTopic.name}" }
         return LeftJoinedKStream(topic.name, joinedStream, named)
     }
 
@@ -97,8 +97,8 @@ class ConsumedKStream<T : Any> internal constructor(
     }
 
     fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, T) -> Any): ConsumedKStream<T> {
-        stream.log(level, keyValue)
-        return this
+        val loggedStream = stream.log(level, keyValue)
+        return ConsumedKStream(topic, loggedStream, namedSupplier)
     }
 
     fun repartition(partitions: Int = 12): ConsumedKStream<T> {

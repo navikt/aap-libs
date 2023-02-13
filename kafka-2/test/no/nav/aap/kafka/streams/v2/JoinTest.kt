@@ -29,7 +29,8 @@ internal class JoinTest {
         assertEquals("BA", result[key])
         assertNull(result["2"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.buildInternalTopology()))
     }
 
     @Test
@@ -61,6 +62,7 @@ internal class JoinTest {
         assertEquals("awesomesauce", result["1"])
         assertEquals("niceprice", result["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
@@ -90,6 +92,7 @@ internal class JoinTest {
         assertEquals("awesomesauce", result["1"])
         assertEquals("niceprice", result["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
@@ -116,6 +119,7 @@ internal class JoinTest {
         assertEquals(1, result.size)
         assertEquals("A", result["1"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
@@ -138,6 +142,7 @@ internal class JoinTest {
         assertEquals(1, result.size)
         assertEquals("A", result["1"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
@@ -170,6 +175,7 @@ internal class JoinTest {
         assertEquals("awesomesauce", result["1"])
         assertEquals("niceprice", result["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
@@ -198,6 +204,7 @@ internal class JoinTest {
         assertEquals("sauce", result["1"])
         assertEquals("price", result["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 }

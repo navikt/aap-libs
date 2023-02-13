@@ -24,7 +24,8 @@ internal class RekeyTest {
         assertEquals("a", result["test:a"])
         assertEquals("b", result["test:b"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.buildInternalTopology()))
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
     }
 
     @Test
@@ -47,6 +48,7 @@ internal class RekeyTest {
         assertEquals("aa", result["test:1"])
         assertEquals("bb", result["test:2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 }

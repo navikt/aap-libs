@@ -28,6 +28,7 @@ internal class BranchTest {
         assertEquals("lol", resultC["1"])
         assertEquals("ikke lol", resultB["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
@@ -54,6 +55,7 @@ internal class BranchTest {
         assertEquals("lol", resultC["1"])
         assertEquals("ikke lol", resultB["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
@@ -81,6 +83,7 @@ internal class BranchTest {
         assertEquals("lol", resultC["1"])
         assertEquals("ikke lol", resultB["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
@@ -110,6 +113,7 @@ internal class BranchTest {
         assertEquals("lol", resultC["1"])
         assertEquals("ikke lol", resultB["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.buildInternalTopology()))
     }
 
@@ -137,6 +141,7 @@ internal class BranchTest {
         assertEquals("lol", resultC["1"])
         assertEquals("ikke lol", resultB["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
@@ -172,6 +177,8 @@ internal class BranchTest {
 
         assertEquals("lollol", resultC["1"])
         assertEquals("lollol", resultD["2"])
+
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
     }
 
     @Test
@@ -202,6 +209,7 @@ internal class BranchTest {
         assertEquals("lollol", resultC["1"])
         assertEquals("lollol", resultD["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
@@ -238,6 +246,7 @@ internal class BranchTest {
         assertEquals("lollol", resultC["1"])
         assertEquals("lollol", resultD["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
@@ -269,6 +278,7 @@ internal class BranchTest {
         assertEquals("lollol", resultC["1"])
         assertEquals("lollol", resultD["2"])
 
+//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 }
