@@ -4,12 +4,20 @@ package no.nav.aap.kafka.streams.v2.visual
 import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.TopologyDescription.*
 
-object Mermaid {
-    fun generate(
+internal object Mermaid {
+
+    internal fun generateCompleteGraph(
         topology: Topology,
         direction: Direction = Direction.LR,
-    ): List<String> = topology.describe().subtopologies().map { subtopology ->
-        val nodes = subtopology.nodes()
+    ): String = topology.describe()
+        .subtopologies()
+        .flatMap { it.nodes() }
+        .let { createGraph(it, direction) }
+
+    private fun createGraph(
+        nodes: Collection<Node>,
+        direction: Direction,
+    ): String {
         val sources = nodes.filterIsInstance<Source>()
         val processors = nodes.filterIsInstance<Processor>()
         val sinks = nodes.filterIsInstance<Sink>()
@@ -29,8 +37,7 @@ object Mermaid {
         val storeStyle = statefulStores.joinToString(EOL) { style(it, "#78369f") }
         val jobStyle = jobNames.joinToString(EOL) { style(it, "#78369f") }
 
-        template(
-            subtopology = subtopology.id(),
+        return template(
             direction = direction,
             topics = topicNames.joinToString(EOL + TAB) { it.topicShape },
             joins = statefulJoins.joinToString(EOL + TAB) { it.name().joinShape },
@@ -159,7 +166,6 @@ object Mermaid {
     }
 
     private fun template(
-        subtopology: Int,
         direction: Direction,
         topics: String,
         joins: String,
@@ -176,7 +182,7 @@ object Mermaid {
 
 graph ${direction.name}
 
-subgraph Stream $subtopology
+subgraph Topologi
     %% TOPICS
     $topics
 

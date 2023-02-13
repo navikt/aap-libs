@@ -1,11 +1,17 @@
 package no.nav.aap.kafka.streams.v2
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.serde.json.Migratable
+import no.nav.aap.kafka.streams.v2.config.KStreamsConfig
 import no.nav.aap.kafka.streams.v2.serde.JsonSerde
+import no.nav.aap.kafka.streams.v2.visual.TopologyVisulizer
 import org.apache.kafka.common.serialization.Serdes.StringSerde
 import org.apache.kafka.streams.TestInputTopic
 import org.apache.kafka.streams.TestOutputTopic
 import org.apache.kafka.streams.TopologyTestDriver
+import kotlin.time.Duration
+import kotlin.time.toJavaDuration
 
 internal object Topics {
     val A = Topic("A", StringSerde())
@@ -38,13 +44,39 @@ internal object Tables {
     val E = Table(Topics.E)
 }
 
-internal fun <V> TopologyTestDriver.inputTopic(topic: Topic<V>): TestInputTopic<String, V> =
-    createInputTopic(topic.name, topic.keySerde.serializer(), topic.valueSerde.serializer())
+class KStreamsMock : KStreams {
+    private lateinit var internalTopology: org.apache.kafka.streams.Topology
+    private lateinit var internalStreams: TopologyTestDriver
 
-internal fun <V> TopologyTestDriver.outputTopic(topic: Topic<V>): TestOutputTopic<String, V> =
-    createOutputTopic(topic.name, topic.keySerde.deserializer(), topic.valueSerde.deserializer())
+    override fun connect(topology: Topology, config: KStreamsConfig, registry: MeterRegistry) {
+        topology.registerInternalTopology(this)
+        internalStreams = TopologyTestDriver(internalTopology)
+    }
+
+    internal fun <V> inputTopic(topic: Topic<V>): TestInputTopic<String, V> =
+        internalStreams.createInputTopic(topic.name, topic.keySerde.serializer(), topic.valueSerde.serializer())
+
+    internal fun <V> outputTopic(topic: Topic<V>): TestOutputTopic<String, V> =
+        internalStreams.createOutputTopic(topic.name, topic.keySerde.deserializer(), topic.valueSerde.deserializer())
+
+
+    internal fun advanceWallClockTime(duration: Duration) =
+        internalStreams.advanceWallClockTime(duration.toJavaDuration())
+
+    internal fun <T> getTimestampedKeyValueStore(table: Table<T>) =
+        internalStreams.getTimestampedKeyValueStore<String, T>(table.stateStoreName)
+
+    override fun ready(): Boolean = true
+    override fun live(): Boolean = true
+    override fun visulize(): TopologyVisulizer = TopologyVisulizer(internalTopology)
+    override fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology) {
+        this.internalTopology = internalTopology
+    }
+}
 
 internal fun <V> TestInputTopic<String, V>.produce(key: String, value: V): TestInputTopic<String, V> =
     pipeInput(key, value).let { this }
 
-internal fun kafka(topology: Topology) = TopologyTestDriver(topology.buildInternalTopology())
+internal fun kafka(topology: Topology): KStreamsMock = KStreamsMock().apply {
+    connect(topology, KStreamsConfig("", ""), SimpleMeterRegistry())
+}

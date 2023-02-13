@@ -6,7 +6,7 @@ import no.nav.aap.kafka.streams.v2.KStreams
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.Topology
 import no.nav.aap.kafka.streams.v2.config.KStreamsConfig
-import no.nav.aap.kafka.streams.v2.visual.Mermaid
+import no.nav.aap.kafka.streams.v2.visual.TopologyVisulizer
 import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.TopologyTestDriver
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
@@ -31,8 +31,7 @@ class KStreamsMock : KStreams, AutoCloseable {
 
     override fun live(): Boolean = true
 
-    override fun toUML(): String = no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(internalTopology)
-    override fun toMermaid(): List<String> = Mermaid.generate(internalTopology)
+    override fun visulize(): TopologyVisulizer = TopologyVisulizer(internalTopology)
     override fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology) {
         this.internalTopology = internalTopology
     }

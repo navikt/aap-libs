@@ -6,13 +6,13 @@ import kotlin.test.assertEquals
 internal class RekeyTest {
     @Test
     fun `rekey consumed topic`() {
-        val topology = topology {
-            consume(Topics.A)
-                .rekey { "test:$it" }
-                .produce(Topics.C)
-        }
-
-        val kafka = kafka(topology)
+        val kafka = kafka(
+            topology {
+                consume(Topics.A)
+                    .rekey { "test:$it" }
+                    .produce(Topics.C)
+            }
+        )
 
         kafka.inputTopic(Topics.A)
             .produce("1", "a")
@@ -25,7 +25,7 @@ internal class RekeyTest {
         assertEquals("b", result["test:b"])
 
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.buildInternalTopology()))
-        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate(topology.buildInternalTopology()))
+        println(kafka.visulize().mermaid())
     }
 
     @Test

@@ -10,7 +10,6 @@ import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-import kotlin.time.toJavaDuration
 
 internal class SchedulerTest {
 
@@ -39,7 +38,7 @@ internal class SchedulerTest {
         assertEquals(0.0, gauge.value())
 
         // øker den interne kafka klokka for å simulere at det har gått 2 minutter, slik at scheduleren intreffer første runde.
-        kafka.advanceWallClockTime(2.toDuration(DurationUnit.MINUTES).toJavaDuration())
+        kafka.advanceWallClockTime(2.toDuration(DurationUnit.MINUTES))
         assertEquals(1.0, gauge.value())
     }
 
@@ -62,10 +61,10 @@ internal class SchedulerTest {
 
         val kafka = kafka(topology)
 
-        val stateStore = kafka.getTimestampedKeyValueStore<String, VersionedString>(Tables.E.stateStoreName)
+        val stateStore = kafka.getTimestampedKeyValueStore(Tables.E)
         stateStore.put("1", ValueAndTimestamp.make(VersionedString("E", 1), Instant.now().toEpochMilli()))
 
-        kafka.advanceWallClockTime(2.toDuration(DurationUnit.MINUTES).toJavaDuration())
+        kafka.advanceWallClockTime(2.toDuration(DurationUnit.MINUTES))
 
         assertEquals(2, producer.history().last().value().version)
 

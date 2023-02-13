@@ -43,7 +43,7 @@ internal class Test {
         val result = c.readValue()
         assertEquals("BA", result)
 
-        println(kafka.toUML())
+        println(kafka.visulize().uml())
     }
 
 }
