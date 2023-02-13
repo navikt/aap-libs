@@ -6,11 +6,10 @@ import org.apache.kafka.streams.TopologyDescription.*
 
 object Mermaid {
     fun generate(
-        appName: String,
         topology: Topology,
         direction: Direction = Direction.LR,
-    ): String {
-        val nodes = topology.describe().subtopologies().flatMap(Subtopology::nodes)
+    ): List<String> = topology.describe().subtopologies().map { subtopology ->
+        val nodes = subtopology.nodes()
         val sources = nodes.filterIsInstance<Source>()
         val processors = nodes.filterIsInstance<Processor>()
         val sinks = nodes.filterIsInstance<Sink>()
@@ -30,8 +29,8 @@ object Mermaid {
         val storeStyle = statefulStores.joinToString(EOL) { style(it, "#78369f") }
         val jobStyle = jobNames.joinToString(EOL) { style(it, "#78369f") }
 
-        return template(
-            appName = appName,
+        template(
+            subtopology = subtopology.id(),
             direction = direction,
             topics = topicNames.joinToString(EOL + TAB) { it.topicShape },
             joins = statefulJoins.joinToString(EOL + TAB) { it.name().joinShape },
@@ -160,7 +159,7 @@ object Mermaid {
     }
 
     private fun template(
-        appName: String,
+        subtopology: Int,
         direction: Direction,
         topics: String,
         joins: String,
@@ -177,7 +176,7 @@ object Mermaid {
 
 graph ${direction.name}
 
-subgraph $appName
+subgraph Stream $subtopology
     %% TOPICS
     $topics
 

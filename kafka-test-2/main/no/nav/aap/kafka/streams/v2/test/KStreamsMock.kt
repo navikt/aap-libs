@@ -32,12 +32,12 @@ class KStreamsMock : KStreams, AutoCloseable {
     override fun live(): Boolean = true
 
     override fun toUML(): String = no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(internalTopology)
-    override fun toMermaid(): String = Mermaid.generate("", internalTopology)
+    override fun toMermaid(): List<String> = Mermaid.generate(internalTopology)
     override fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology) {
         this.internalTopology = internalTopology
     }
 
-    fun <T: Any> getStore(name: String): ReadOnlyKeyValueStore<String, T> = internalStreams.getKeyValueStore(name)
+    fun <T : Any> getStore(name: String): ReadOnlyKeyValueStore<String, T> = internalStreams.getKeyValueStore(name)
 
     fun <V : Any> testTopic(topic: Topic<V>): TestTopic<V> =
         TestTopic(
