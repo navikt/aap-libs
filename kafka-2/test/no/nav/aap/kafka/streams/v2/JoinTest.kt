@@ -204,7 +204,6 @@ internal class JoinTest {
         assertEquals("sauce", result["1"])
         assertEquals("price", result["2"])
 
-//        println(no.nav.aap.kafka.streams.v2.visual.Mermaid.generate("test", topology))
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+//        println(kafka.visulize().mermaid().generateSubGraphs())
     }
 }

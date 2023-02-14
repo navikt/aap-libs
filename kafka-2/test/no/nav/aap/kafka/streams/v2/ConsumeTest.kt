@@ -26,6 +26,7 @@ internal class ConsumeTest {
         assertEquals("b", result["2"])
         assertEquals(2, result.size)
 
+//        println(kafka.visulize().mermaid())
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 

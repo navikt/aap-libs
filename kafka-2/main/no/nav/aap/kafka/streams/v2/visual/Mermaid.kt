@@ -4,91 +4,159 @@ package no.nav.aap.kafka.streams.v2.visual
 import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.TopologyDescription.*
 
-internal object Mermaid {
+class Mermaid(
+    private val topology: Topology,
+) {
+    fun generateDiagram(direction: Direction = Direction.LR): String =
+        createContent(topology)
+            .reduce { acc, mermaidContent -> acc.accumulate(mermaidContent) }
+            .diagram(direction)
 
-    internal fun generateCompleteGraph(
-        topology: Topology,
-        direction: Direction = Direction.LR,
-    ): String = topology.describe()
-        .subtopologies()
-        .flatMap { it.nodes() }
-        .let { createGraph(it, direction) }
+    fun generateSubDiagrams(direction: Direction = Direction.LR): List<String> =
+        createContent(topology)
+            .map { mermaidContent -> mermaidContent.diagram(direction) }
 
-    private fun createGraph(
-        nodes: Collection<Node>,
-        direction: Direction,
-    ): String {
-        val sources = nodes.filterIsInstance<Source>()
-        val processors = nodes.filterIsInstance<Processor>()
-        val sinks = nodes.filterIsInstance<Sink>()
+    private class MermaidContent(
+        private var sourcesToSinks: List<String> = emptyList(),
+        private var joins: List<String> = emptyList(),
+        private var stateProcessors: List<String> = emptyList(),
+        private var stores: List<String> = emptyList(),
+        private var jobs: List<String> = emptyList(),
+        private var jobStreams: List<String> = emptyList(),
+        private var joinStreams: List<String> = emptyList(),
+        private var customStateProcessorStreams: List<String> = emptyList(),
+        private var toTableStreams: List<String> = emptyList(),
+        private var repartitionStreams: List<String> = emptyList(),
+        private var topics: Set<String> = emptySet(),
+        private var branches: List<String> = emptyList(),
+    ) {
+        fun accumulate(other: MermaidContent): MermaidContent {
+            this.sourcesToSinks += other.sourcesToSinks
+            this.joins += other.joins
+            this.stateProcessors += other.stateProcessors
+            this.stores += other.stores
+            this.jobs += other.jobs
+            this.jobStreams += other.jobStreams
+            this.joinStreams += other.joinStreams
+            this.customStateProcessorStreams += other.customStateProcessorStreams
+            this.toTableStreams += other.toTableStreams
+            this.repartitionStreams += other.repartitionStreams
+            this.topics = topics union other.topics
+            this.branches += other.branches
+            return this
+        }
 
-        val statefulProcessors = processors.filter { it.stores().isNotEmpty() }
-        val statefulToTableProcessors = statefulProcessors.filter { it.name().contains("-to-table") }
-        val statefulJobs = statefulProcessors.filter { it.successors().isEmpty() }
-        val statefulStores = statefulProcessors.flatMap(Processor::stores).distinct()
-        val statefulJoins = statefulProcessors.filter { it.name().contains("-join-") }
+        fun diagram(direction: Direction): String {
+            val topicStyle = topics.joinToString(EOL) { style(it, "#c233b4") }
+            val storeStyle = stores.joinToString(EOL) { style(it, "#78369f") }
+            val jobStyle = jobs.joinToString(EOL) { style(it, "#78369f") }
 
-        val branchedProcessors = processors.filter { it.successors().size > 1 }
+            return template(
+                direction = direction,
+                topics = topics.joinToString(EOL + TAB) { it.topicShape },
+                joins = joins.joinToString(EOL + TAB) { it.joinShape },
+                stateProcessors = stateProcessors.joinToString(EOL + TAB) { it.processorShape },
+                stores = stores.joinToString(EOL + TAB) { it.storeShape },
+                jobs = jobs.joinToString(EOL + TAB) { it.jobShape },
+                branchStreams = branches.joinToString(EOL + TAB),
+                joinStreams = joinStreams.joinToString(EOL + TAB),
+                customStateProcessorStreams = customStateProcessorStreams.joinToString(EOL + TAB),
+                toTableStreams = toTableStreams.joinToString(EOL + TAB),
+                jobStreams = jobStreams.joinToString(EOL + TAB),
+                repartitionStreams = repartitionStreams.joinToString(EOL + TAB),
+                sourcesToSinks = sourcesToSinks.joinToString(EOL + TAB),
+                styles = listOf(topicStyle, storeStyle, jobStyle).distinct().joinToString(EOL),
+            )
+        }
 
-        val topicNames = (sources + sinks).flatMap(::topicNames).distinct()
-        val jobNames = statefulJobs.map(Processor::name).distinct()
-
-        val topicStyle = topicNames.joinToString(EOL) { style(it, "#c233b4") }
-        val storeStyle = statefulStores.joinToString(EOL) { style(it, "#78369f") }
-        val jobStyle = jobNames.joinToString(EOL) { style(it, "#78369f") }
-
-        return template(
-            direction = direction,
-            topics = topicNames.joinToString(EOL + TAB) { it.topicShape },
-            joins = statefulJoins.joinToString(EOL + TAB) { it.name().joinShape },
-            stores = statefulStores.joinToString(EOL + TAB) { it.storeShape },
-            jobs = jobNames.joinToString(EOL + TAB) { it.jobShape },
-            styles = listOf(topicStyle, storeStyle, jobStyle).joinToString(EOL),
-            jobStreams = jobStreams(statefulJobs).joinToString(EOL + TAB),
-            branchStreams = branchStreams(branchedProcessors, statefulJoins).joinToString(EOL + TAB),
-            joinStreams = joinStreams(statefulJoins).joinToString(EOL + TAB),
-            toTableStreams = toTableStreams(statefulToTableProcessors).joinToString(EOL + TAB),
-            repartitionStreams = repartitionStreams(sources, sinks).joinToString(EOL + TAB),
-        )
+        private val String.topicShape get() = "$this([$this])"
+        private val String.joinShape get() = if (this.contains("-left-join-")) "$this{left-join}" else "$this{join}"
+        private val String.processorShape get() = "$this{operation}"
+        private val String.storeShape get() = "$this[($this)]"
+        private val String.jobShape get() = "$this(($this))"
     }
 
-    private fun toTableStreams(statefulToTableProcessors: List<Processor>): List<String> {
-        return statefulToTableProcessors.flatMap { processor ->
-            val sources = findSources(processor)
-            sources.flatMap { source ->
-                val sourceTopics = source.topicSet()
-                sourceTopics.flatMap { sourceTopic ->
-                    val stores = processor.stores()
-                    stores.map { store ->
-                        path(sourceTopic, store)
+    private fun createContent(topology: Topology): List<MermaidContent> =
+        topology.describe().subtopologies().map { subtopology ->
+            val nodes = subtopology.nodes()
+            val sources = nodes.filterIsInstance<Source>()
+            val sinks = nodes.filterIsInstance<Sink>()
+            val processors = nodes.filterIsInstance<Processor>()
+
+            val statefulProcessors = processors.filter { it.stores().isNotEmpty() }
+            val statefulJobs = statefulProcessors.filter { it.successors().isEmpty() }
+            val statefulStores = statefulProcessors.flatMap(Processor::stores).distinct()
+            val statefulJoins = statefulProcessors.filter { it.name().contains("-join-") }
+            val customStateProcessorStreams = statefulProcessors.filter { it.name().contains("-operation-") }
+            val jobNames = statefulJobs.map(Processor::name).distinct()
+
+            val content = if (statefulProcessors.isEmpty()) {
+                val sourcesToSinks = sources.flatMap { source ->
+                    source.topicSet().flatMap { topic ->
+                        findSinks(source).map { sink -> path(topic, sink.topic()) }
                     }
+                }
+                MermaidContent(sourcesToSinks = sourcesToSinks)
+            } else {
+                val statefulToTableProcessors = statefulProcessors.filter { it.name().contains("-to-table") }
+                MermaidContent(
+                    joins = statefulJoins.map { it.name() },
+                    stores = statefulStores,
+                    jobs = jobNames,
+                    jobStreams = jobStreams(statefulJobs),
+                    joinStreams = joinStreams(statefulJoins),
+                    toTableStreams = toTableStreams(statefulToTableProcessors),
+                    repartitionStreams = repartitionStreams(sources, sinks),
+                )
+            }
+
+            content.accumulate(
+                MermaidContent(
+                    stateProcessors = customStateProcessorStreams.map { it.name() },
+                    customStateProcessorStreams = statefulProcessorStreams(customStateProcessorStreams)
+                )
+            )
+
+            val branchedProcessors = processors.filter { it.successors().size > 1 }
+            val topicNames = (sources + sinks).flatMap(::topicNames).toSet()
+
+            content.accumulate(
+                MermaidContent(
+                    topics = topicNames,
+                    branches = branchStreams(branchedProcessors, statefulJoins, customStateProcessorStreams),
+                )
+            )
+        }
+
+    private fun toTableStreams(statefulToTableProcessors: List<Processor>): List<String> =
+        statefulToTableProcessors.flatMap { processor ->
+            findSources(processor).flatMap { source ->
+                source.topicSet().flatMap { sourceTopic ->
+                    processor.stores().map { store -> path(sourceTopic, store) }
                 }
             }
         }
-    }
 
     private fun jobStreams(statefulProcessors: List<Processor>): List<String> =
         statefulProcessors.flatMap { processor ->
             processor.stores().map { storeName -> path(processor.name(), storeName) }
         }
 
-    private fun branchStreams(branchedProcessors: List<Processor>, joins: List<Processor>): List<String> {
-        return branchedProcessors
-            .filterNot { isTraversingAJoin(it, joins) }
-            .flatMap { processor ->
-                findSources(processor).flatMap { source ->
-                    source.topicSet().flatMap { sourceTopic ->
-                        findSinks(processor).filterIsInstance<Sink>().map { it.topic() }.map { sinkTopic ->
-                            path(
-                                sourceTopic,
-                                sinkTopic,
-//                            processor.name(),
-                            )
-                        }
-                    }
+    private fun branchStreams(
+        branchedProcessors: List<Processor>,
+        joins: List<Processor>,
+        customStateProcessors: List<Processor>
+    ): List<String> = branchedProcessors
+        .filterNot { it.isTraversingAny(joins + customStateProcessors) }
+        .flatMap { processor ->
+            findSources(processor).flatMap { source ->
+                source.topicSet().flatMap { sourceTopic ->
+                    findSinks(processor)
+                        .map { it.topic() }
+                        .map { sinkTopic -> path(sourceTopic, sinkTopic) }
                 }
-            }.distinct()
-    }
+            }
+        }
 
     private fun repartitionStreams(sources: List<Source>, sinks: List<Sink>): List<String> {
         val repartitionTopicNames = sinks
@@ -97,7 +165,7 @@ internal object Mermaid {
             .distinct()
 
         return sources
-            .flatMap { findSinks(it).filterIsInstance<Sink>().map { sink -> it.topicSet() to sink.topic() } }
+            .flatMap { findSinks(it).map { sink -> it.topicSet() to sink.topic() } }
             .filter { (_, sink) -> sink in repartitionTopicNames }
             .flatMap { (sources, sink) -> sources.map { source -> path(source, sink, "rekey") } }
             .distinct()
@@ -106,26 +174,32 @@ internal object Mermaid {
     private fun joinStreams(statefulJoins: List<Processor>): List<String> =
         statefulJoins.flatMap { stateJoin ->
             stateJoin.stores().flatMap { store ->
-                val sinkTopics = findSinks(stateJoin).filterIsInstance<Sink>()
                 findSources(stateJoin).flatMap { source ->
                     val leftSide = source.topicSet().map { sourceTopicName -> path(sourceTopicName, stateJoin.name()) }
                     val rightSide = listOf(path(store, stateJoin.name()))
-                    val destination = sinkTopics.map { sinkTopic ->
-                        path(
-                            stateJoin.name(),
-                            sinkTopic.topic(),
-//                            sinkTopic.name(),
-                        )
-                    }
-                    leftSide union rightSide union destination
+                    val target = findSinks(stateJoin).map { sinkTopic -> path(stateJoin.name(), sinkTopic.topic()) }
+                    leftSide union rightSide union target
                 }
             }
         }.distinct()
 
-    private val String.topicShape get() = "$this([$this])"
-    private val String.joinShape get() = if (this.contains("-left-join-")) "$this{left-join}" else "$this{join}"
-    private val String.storeShape get() = "$this[($this)]"
-    private val String.jobShape get() = "$this(($this))"
+    private fun statefulProcessorStreams(customStateProcessors: List<Processor>): List<String> {
+        val streams = customStateProcessors.flatMap { processor ->
+            processor.stores().flatMap { store ->
+                val sources = findSources(processor)
+                sources.flatMap { source ->
+                    val leftSide = source.topicSet().map { sourceTopicName -> path(sourceTopicName, processor.name()) }
+                    val rightSide = listOf(path(store, processor.name()))
+                    val sinks = findSinks(processor)
+                    val target = sinks.map { sinkTopic -> path(processor.name(), sinkTopic.topic()) }
+                    leftSide union rightSide union target
+                }
+            }
+        }
+
+        return streams.distinct()
+    }
+
 
     private fun path(from: String, to: String, label: String? = null): String = when {
         label != null -> "$from --> |$label| $to"
@@ -139,23 +213,23 @@ internal object Mermaid {
         else -> emptyList()
     }
 
-    private fun style(name: String, hexColor: String) =
-        "style $name fill:$hexColor, stroke:#2a204a, stroke-width:2px, color:#2a204a"
-
-    private fun findSinks(node: Node): List<Node> =
-        if (node.successors().isNotEmpty()) node.successors().flatMap { findSinks(it) }
-        else listOf(node)
+    private fun findSinks(node: Node): List<Sink> =
+        when (node.successors().isNotEmpty()) {
+            true -> node.successors().flatMap { findSinks(it) }
+            false -> listOf(node).filterIsInstance<Sink>()
+        }
 
     private fun findSources(node: Node): List<Source> =
-        if (node.predecessors().isNotEmpty()) node.predecessors().flatMap { findSources(it) }
-        else if (node is Source) listOf(node)
-        else error("source node was not of type TopologyDescription.Source")
+        when {
+            node.predecessors().isNotEmpty() -> node.predecessors().flatMap { findSources(it) }
+            node is Source -> listOf(node)
+            else -> error("source node was not of type TopologyDescription.Source")
+        }
 
-    private fun isTraversingAJoin(node: Node, joins: List<Processor>): Boolean {
-        return node.predecessors().any { predecessor ->
+    private fun Node.isTraversingAny(joins: List<Processor>): Boolean =
+        predecessors().any { predecessor ->
             joins.any { join -> join == predecessor }
         }
-    }
 
     enum class Direction(private val description: String) {
         TB("top to bottom"),
@@ -164,20 +238,27 @@ internal object Mermaid {
         RL("right to left"),
         LR("left to right");
     }
+}
 
-    private fun template(
-        direction: Direction,
-        topics: String,
-        joins: String,
-        stores: String,
-        jobs: String,
-        styles: String,
-        joinStreams: String,
-        branchStreams: String,
-        toTableStreams: String,
-        jobStreams: String,
-        repartitionStreams: String,
-    ) = """
+private fun style(name: String, hexColor: String) =
+    "style $name fill:$hexColor, stroke:#2a204a, stroke-width:2px, color:#2a204a"
+
+private fun template(
+    direction: Mermaid.Direction,
+    topics: String,
+    joins: String,
+    stateProcessors: String,
+    stores: String,
+    jobs: String,
+    styles: String,
+    joinStreams: String,
+    customStateProcessorStreams: String,
+    branchStreams: String,
+    toTableStreams: String,
+    jobStreams: String,
+    repartitionStreams: String,
+    sourcesToSinks: String,
+) = """
 %%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#07cff6', 'textColor': '#dad9e0', 'lineColor': '#07cff6'}}}%%
 
 graph ${direction.name}
@@ -189,6 +270,9 @@ subgraph Topologi
     %% JOINS
     $joins
 
+    %% STATE PROCESSORS
+    $stateProcessors
+    
     %% STATE STORES
     $stores
 
@@ -198,7 +282,7 @@ subgraph Topologi
     %% JOIN STREAMS
     $joinStreams
 
-    %% TO TABLE STREAMS
+    %% TABLE STREAMS
     $toTableStreams
 
     %% JOB STREAMS
@@ -209,6 +293,12 @@ subgraph Topologi
 
     %% REPARTITION STREAMS
     $repartitionStreams
+    
+    %% BASIC STREAMS
+    $sourcesToSinks
+    
+    %% CUSTOM PROCESS STREAMS
+    $customStateProcessorStreams
 end
 
 %% COLORS
@@ -221,7 +311,6 @@ end
 %% STYLES
 $styles
 """
-}
 
 private const val EOL = "\n"
 private const val TAB = "\t"

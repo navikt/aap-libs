@@ -17,7 +17,7 @@ abstract class Processor<T, U>(private val named: String) : KProcessor<T, U> {
         internal fun <T, U> KStream<String, T>.addProcessor(processor: Processor<T, U>): KStream<String, U> =
             processValues(
                 { processor.run { InternalProcessor() } },
-                Named.`as`(processor.named),
+                Named.`as`("stateless-operation-${processor.named}"),
             )
     }
 

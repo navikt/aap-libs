@@ -28,7 +28,7 @@ abstract class StateProcessor<T, U, R>(
             processor: StateProcessor<T, U, R>
         ): KStream<String, R> = processValues(
             { processor.run(StateProcessor<T, U, R>::InternalProcessor) },
-            Named.`as`(processor.named),
+            Named.`as`("stateful-operation-${processor.named}"),
             processor.table.table.stateStoreName,
         )
     }

@@ -102,7 +102,10 @@ class ConsumedKStream<T : Any> internal constructor(
     }
 
     fun repartition(partitions: Int = 12): ConsumedKStream<T> {
-        val repartition = Repartitioned.with(topic.keySerde, topic.valueSerde).withNumberOfPartitions(partitions)
+        val repartition = Repartitioned
+            .with(topic.keySerde, topic.valueSerde)
+            .withNumberOfPartitions(partitions)
+            .withName(topic.name)
         return ConsumedKStream(topic, stream.repartition(repartition), namedSupplier)
     }
 

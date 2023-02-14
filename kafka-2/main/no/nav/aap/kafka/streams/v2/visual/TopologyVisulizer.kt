@@ -7,6 +7,5 @@ class TopologyVisulizer(
 ) {
     fun uml() : String = PlantUML.generate(topology)
 
-    fun mermaid(): String = Mermaid.generateCompleteGraph(topology)
-
+    fun mermaid(): Mermaid = Mermaid(topology)
 }
