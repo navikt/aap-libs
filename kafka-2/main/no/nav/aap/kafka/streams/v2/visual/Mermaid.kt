@@ -16,6 +16,13 @@ class Mermaid(
         createContent(topology)
             .map { mermaidContent -> mermaidContent.diagram(direction) }
 
+    fun generateDiagramWithDatabaseSink(direction: Direction = Direction.LR, topicToDb: Map<String, String>): String {
+        val content = createContent(topology)
+            .reduce { acc, mermaidContent -> acc.accumulate(mermaidContent) }
+
+        return content.diagram(direction, topicToDb)
+    }
+
     private class MermaidContent(
         private var sourcesToSinks: List<String> = emptyList(),
         private var joins: List<String> = emptyList(),
@@ -46,7 +53,7 @@ class Mermaid(
             return this
         }
 
-        fun diagram(direction: Direction): String {
+        fun diagram(direction: Direction, topicToDb: Map<String, String> = emptyMap()): String {
             val topicStyle = topics.joinToString(EOL) { style(it, "#c233b4") }
             val storeStyle = stores.joinToString(EOL) { style(it, "#78369f") }
             val jobStyle = jobs.joinToString(EOL) { style(it, "#78369f") }
@@ -66,6 +73,8 @@ class Mermaid(
                 repartitionStreams = repartitionStreams.joinToString(EOL + TAB),
                 sourcesToSinks = sourcesToSinks.joinToString(EOL + TAB),
                 styles = listOf(topicStyle, storeStyle, jobStyle).distinct().joinToString(EOL),
+                customDbs = topicToDb.values.distinct().joinToString(EOL + TAB) { db -> db.storeShape },
+                topicToDbArrows = topicToDb.toList().joinToString(EOL + TAB) { (topic, db) -> "$topic --> $db" },
             )
         }
 
@@ -258,6 +267,8 @@ private fun template(
     jobStreams: String,
     repartitionStreams: String,
     sourcesToSinks: String,
+    customDbs: String,
+    topicToDbArrows: String,
 ) = """
 %%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#07cff6', 'textColor': '#dad9e0', 'lineColor': '#07cff6'}}}%%
 
@@ -275,6 +286,10 @@ subgraph Topologi
     
     %% STATE STORES
     $stores
+    
+    %% DATABASES
+    $customDbs
+    $topicToDbArrows
 
     %% PROCESSOR API JOBS
     $jobs

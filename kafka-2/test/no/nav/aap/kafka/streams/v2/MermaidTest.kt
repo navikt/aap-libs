@@ -31,6 +31,23 @@ class MermaidTest {
     }
 
     @Test
+    fun `include custom topic to db`() {
+        val topology = topology {
+            consume(Topics.A)
+            consume(Topics.B)
+            consume(Topics.C)
+        }
+
+        val kafka = kafka(topology)
+
+        println(kafka.visulize().mermaid().generateDiagramWithDatabaseSink(topicToDb = mapOf(
+            Topics.A.name to "postgres",
+            Topics.B.name to "postgres",
+            Topics.C.name to "postgres",
+        )))
+    }
+
+    @Test
     fun `custom state processor`() {
         val topology = topology {
             val table = consume(Topics.B).produce(Tables.B)
