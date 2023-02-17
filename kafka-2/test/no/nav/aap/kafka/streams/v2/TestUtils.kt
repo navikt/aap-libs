@@ -3,7 +3,7 @@ package no.nav.aap.kafka.streams.v2
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.serde.json.Migratable
-import no.nav.aap.kafka.streams.v2.config.KStreamsConfig
+import no.nav.aap.kafka.streams.v2.config.StreamsConfig
 import no.nav.aap.kafka.streams.v2.serde.JsonSerde
 import no.nav.aap.kafka.streams.v2.visual.TopologyVisulizer
 import org.apache.kafka.common.serialization.Serdes.StringSerde
@@ -48,7 +48,7 @@ class KStreamsMock : KStreams {
     private lateinit var internalTopology: org.apache.kafka.streams.Topology
     private lateinit var internalStreams: TopologyTestDriver
 
-    override fun connect(topology: Topology, config: KStreamsConfig, registry: MeterRegistry) {
+    override fun connect(topology: Topology, config: StreamsConfig, registry: MeterRegistry) {
         topology.registerInternalTopology(this)
         internalStreams = TopologyTestDriver(internalTopology)
     }
@@ -72,11 +72,13 @@ class KStreamsMock : KStreams {
     override fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology) {
         this.internalTopology = internalTopology
     }
+
+    override fun close() = internalStreams.close()
 }
 
 internal fun <V> TestInputTopic<String, V>.produce(key: String, value: V): TestInputTopic<String, V> =
     pipeInput(key, value).let { this }
 
 internal fun kafka(topology: Topology): KStreamsMock = KStreamsMock().apply {
-    connect(topology, KStreamsConfig("", ""), SimpleMeterRegistry())
+    connect(topology, StreamsConfig("", ""), SimpleMeterRegistry())
 }

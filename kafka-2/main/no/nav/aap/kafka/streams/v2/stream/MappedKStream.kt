@@ -67,4 +67,6 @@ class MappedKStream<T : Any> internal constructor(
         val processedStream = stream.addProcessor(processor)
         return MappedKStream(sourceTopicName, processedStream, namedSupplier)
     }
+
+    fun forEach(mapper: (key: String, value: T) -> Unit) = stream.foreach(mapper)
 }

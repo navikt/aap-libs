@@ -2,16 +2,18 @@ package no.nav.aap.kafka.streams.v2
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KafkaStreamsMetrics
-import no.nav.aap.kafka.streams.v2.config.KStreamsConfig
+import no.nav.aap.kafka.streams.v2.config.StreamsConfig
+import no.nav.aap.kafka.streams.v2.consumer.ConsumerFactory
 import no.nav.aap.kafka.streams.v2.exception.ProcessingExceptionHandler
 import no.nav.aap.kafka.streams.v2.listener.RestoreListener
+import no.nav.aap.kafka.streams.v2.producer.ProducerFactory
 import no.nav.aap.kafka.streams.v2.visual.TopologyVisulizer
 import org.apache.kafka.streams.KafkaStreams.State.*
 
-interface KStreams {
+interface KStreams : ProducerFactory, ConsumerFactory, AutoCloseable {
     fun connect(
         topology: Topology,
-        config: KStreamsConfig,
+        config: StreamsConfig,
         registry: MeterRegistry,
     )
 
@@ -29,7 +31,7 @@ class KafkaStreams : KStreams {
 
     override fun connect(
         topology: Topology,
-        config: KStreamsConfig,
+        config: StreamsConfig,
         registry: MeterRegistry,
     ) {
         topology.registerInternalTopology(this)
@@ -45,6 +47,8 @@ class KafkaStreams : KStreams {
     override fun ready(): Boolean = initiallyStarted && internalStreams.state() in listOf(CREATED, REBALANCING, RUNNING)
     override fun live(): Boolean = initiallyStarted && internalStreams.state() != ERROR
     override fun visulize(): TopologyVisulizer = TopologyVisulizer(internalTopology)
+    override fun close() = internalStreams.close()
+
     override fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology) {
         this.internalTopology = internalTopology
     }
