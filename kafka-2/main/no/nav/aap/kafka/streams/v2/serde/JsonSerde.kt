@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
 object JsonSerde {
-    inline fun <reified V : Any> jackson() = JacksonSerde(V::class)
+    inline fun <reified V : Any> jackson(): Serde<V> = JacksonSerde(V::class)
 
     class JacksonSerde<V : Any>(private val kclass: KClass<V>) : Serde<V> {
         override fun serializer(): Serializer<V> = JacksonSerializer()
