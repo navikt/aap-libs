@@ -2,7 +2,7 @@ dependencies {
     implementation(project(":cache"))
     api(project(":kafka-interfaces"))
 
-    api("org.apache.kafka:kafka-streams:3.3.1")
+    implementation("org.apache.kafka:kafka-streams:3.3.1")
 
     implementation("ch.qos.logback:logback-classic:1.4.5")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")

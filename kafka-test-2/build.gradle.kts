@@ -4,6 +4,7 @@ dependencies {
     }
 
     implementation(project(":kafka-2"))
+    implementation("org.apache.kafka:kafka-streams:3.3.1")
 
     implementation(kotlin("test"))
 
