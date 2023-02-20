@@ -2,9 +2,7 @@ package no.nav.aap.kafka.streams.v2.test
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KtorKafkaMetrics
-import no.nav.aap.kafka.streams.v2.KStreams
-import no.nav.aap.kafka.streams.v2.Topic
-import no.nav.aap.kafka.streams.v2.Topology
+import no.nav.aap.kafka.streams.v2.*
 import no.nav.aap.kafka.streams.v2.config.StreamsConfig
 import no.nav.aap.kafka.streams.v2.consumer.ConsumerConfig
 import no.nav.aap.kafka.streams.v2.visual.TopologyVisulizer
@@ -14,7 +12,6 @@ import org.apache.kafka.clients.consumer.OffsetResetStrategy
 import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.streams.StreamsConfig.*
 import org.apache.kafka.streams.TopologyTestDriver
-import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
 
 class KStreamsMock : KStreams {
     private lateinit var internalStreams: TopologyTestDriver
@@ -41,7 +38,8 @@ class KStreamsMock : KStreams {
         this.internalTopology = internalTopology
     }
 
-    fun <T : Any> getStore(name: String): ReadOnlyKeyValueStore<String, T> = internalStreams.getKeyValueStore(name)
+    override fun <T : Any> getStore(table: Table<T>): StateStore<T> =
+        StateStore(internalStreams.getKeyValueStore(table.stateStoreName))
 
     fun <V : Any> testTopic(topic: Topic<V>): TestTopic<V> =
         TestTopic(

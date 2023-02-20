@@ -73,6 +73,8 @@ class KStreamsMock : KStreams {
         this.internalTopology = internalTopology
     }
 
+    override fun <T : Any> getStore(table: Table<T>): StateStore<T> = TODO("Not yet implemented")
+
     override fun close() = internalStreams.close()
 }
 

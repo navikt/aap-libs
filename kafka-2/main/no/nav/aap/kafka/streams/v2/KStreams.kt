@@ -9,6 +9,9 @@ import no.nav.aap.kafka.streams.v2.listener.RestoreListener
 import no.nav.aap.kafka.streams.v2.producer.ProducerFactory
 import no.nav.aap.kafka.streams.v2.visual.TopologyVisulizer
 import org.apache.kafka.streams.KafkaStreams.State.*
+import org.apache.kafka.streams.StoreQueryParameters
+import org.apache.kafka.streams.state.QueryableStoreTypes
+import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
 
 interface KStreams : ProducerFactory, ConsumerFactory, AutoCloseable {
     fun connect(
@@ -21,6 +24,8 @@ interface KStreams : ProducerFactory, ConsumerFactory, AutoCloseable {
     fun live(): Boolean
     fun visulize(): TopologyVisulizer
     fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology)
+
+    fun <T : Any> getStore(table: Table<T>): StateStore<T>
 }
 
 class KafkaStreams : KStreams {
@@ -52,4 +57,13 @@ class KafkaStreams : KStreams {
     override fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology) {
         this.internalTopology = internalTopology
     }
+
+    override fun <T : Any> getStore(table: Table<T>): StateStore<T> = StateStore(
+        internalStreams.store(
+            StoreQueryParameters.fromNameAndType<ReadOnlyKeyValueStore<String, T>>(
+                table.stateStoreName,
+                QueryableStoreTypes.keyValueStore()
+            )
+        )
+    )
 }
