@@ -50,7 +50,10 @@ abstract class StateProcessor<T, U, R>(
             val metadata = ProcessorMetadata(
                 topic = recordMeta.topic(),
                 partition = recordMeta.partition(),
-                offset = recordMeta.offset()
+                offset = recordMeta.offset(),
+                timestamp = record.timestamp(),
+                systemTimeMs = context.currentSystemTimeMs(),
+                streamTimeMs = context.currentStreamTimeMs(),
             )
 
             val valueToForward: R = process(

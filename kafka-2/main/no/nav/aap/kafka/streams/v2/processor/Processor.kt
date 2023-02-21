@@ -36,7 +36,10 @@ abstract class Processor<T, U>(private val named: String) : KProcessor<T, U> {
             val metadata = ProcessorMetadata(
                 topic = recordMeta.topic(),
                 partition = recordMeta.partition(),
-                offset = recordMeta.offset()
+                offset = recordMeta.offset(),
+                timestamp = record.timestamp(),
+                systemTimeMs = context.currentSystemTimeMs(),
+                streamTimeMs = context.currentStreamTimeMs(),
             )
 
             val valueToForward: U = process(
