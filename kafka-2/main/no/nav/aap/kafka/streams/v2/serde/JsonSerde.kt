@@ -128,7 +128,7 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
             .also { migratedDto ->
                 if (logValues) {
                     secureLog.trace(
-                        "Migrerte ved deserialisering {} {} {} {} {}",
+                        "Migrerte ved deserialisering: {} {} {} {} {}",
                         kv("topic", topic),
                         kv("fra_versjon", version),
                         kv("til_versjon", dtoVersion),
