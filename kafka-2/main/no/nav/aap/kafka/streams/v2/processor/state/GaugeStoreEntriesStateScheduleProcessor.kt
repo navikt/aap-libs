@@ -8,13 +8,12 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 
 class GaugeStoreEntriesStateScheduleProcessor<T>(
-    named: String,
-    table: KTable<T>,
+    ktable: KTable<T>,
     interval: Duration,
     registry: MeterRegistry
 ) : StateScheduleProcessor<T>(
-    named = named,
-    table = table,
+    named = "gauge-${ktable.table.stateStoreName}-entries",
+    table = ktable,
     interval = interval,
 ) {
     private val approximateNumberOfRecords = AtomicLong()
@@ -22,7 +21,7 @@ class GaugeStoreEntriesStateScheduleProcessor<T>(
     init {
         registry.gauge(
             "kafka_stream_state_store_entries",
-            listOf(Tag.of("store", table.table.stateStoreName)),
+            listOf(Tag.of("store", ktable.table.stateStoreName)),
             approximateNumberOfRecords
         )
     }
