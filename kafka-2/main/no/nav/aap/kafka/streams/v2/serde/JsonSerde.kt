@@ -10,17 +10,14 @@ import net.logstash.logback.argument.StructuredArguments.kv
 import net.logstash.logback.argument.StructuredArguments.raw
 import no.nav.aap.kafka.serde.json.Migratable
 import org.apache.kafka.common.serialization.Deserializer
-import org.apache.kafka.common.serialization.Serde
 import org.apache.kafka.common.serialization.Serializer
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
 object JsonSerde {
-    inline fun <reified V : Any> jackson(): Serde<V> = JacksonSerde(V::class)
-
-    class JacksonSerde<V : Any>(private val kclass: KClass<V>) : Serde<V> {
+    inline fun <reified V : Any> jackson(): StreamSerde<V> = object : StreamSerde<V> {
         override fun serializer(): Serializer<V> = JacksonSerializer()
-        override fun deserializer(): Deserializer<V> = JacksonDeserializer(kclass)
+        override fun deserializer(): Deserializer<V> = JacksonDeserializer(V::class)
     }
 
     /**
@@ -35,7 +32,7 @@ object JsonSerde {
         noinline versionSupplier: (JsonNode) -> Int? = { json ->
             json.get("version")?.takeIf { it.isNumber }?.intValue()
         },
-    ) = object : Serde<V> {
+    ) = object : StreamSerde<V> {
         override fun serializer(): Serializer<V> = JacksonSerializer()
 
         override fun deserializer(): Deserializer<V> =
@@ -131,7 +128,7 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
             .also { migratedDto ->
                 if (logValues) {
                     secureLog.trace(
-                        "Migrerte ved deserialisering",
+                        "Migrerte ved deserialisering {} {} {} {} {}",
                         kv("topic", topic),
                         kv("fra_versjon", version),
                         kv("til_versjon", dtoVersion),
@@ -140,7 +137,7 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
                     )
                 } else {
                     secureLog.trace(
-                        "Migrerte ved deserialisering",
+                        "Migrerte ved deserialisering: {} {} {}",
                         kv("topic", topic),
                         kv("fra_versjon", version),
                         kv("til_versjon", dtoVersion),

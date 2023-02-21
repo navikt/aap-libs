@@ -5,8 +5,8 @@ import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.config.SslConfig
 import no.nav.aap.kafka.streams.v2.config.StreamsConfig
+import no.nav.aap.kafka.streams.v2.serde.StringSerde
 import no.nav.aap.kafka.streams.v2.topology
-import org.apache.kafka.common.serialization.Serdes
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -49,9 +49,9 @@ internal class Test {
 }
 
 internal object Topics {
-    val A = Topic("A", Serdes.StringSerde())
-    val B = Topic("B", Serdes.StringSerde())
-    val C = Topic("C", Serdes.StringSerde())
+    val A = Topic("A", StringSerde)
+    val B = Topic("B", StringSerde)
+    val C = Topic("C", StringSerde)
 }
 
 internal object Tables {

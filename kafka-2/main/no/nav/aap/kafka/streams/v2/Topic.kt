@@ -1,15 +1,15 @@
 package no.nav.aap.kafka.streams.v2
 
-import org.apache.kafka.common.serialization.Serde
-import org.apache.kafka.common.serialization.Serdes.StringSerde
+import no.nav.aap.kafka.streams.v2.serde.StreamSerde
+import no.nav.aap.kafka.streams.v2.serde.StringSerde
 import org.apache.kafka.streams.kstream.Consumed
 import org.apache.kafka.streams.kstream.Joined
 import org.apache.kafka.streams.kstream.Produced
 
 open class Topic<T>(
     val name: String,
-    val valueSerde: Serde<T>,
-    val keySerde: Serde<String> = StringSerde(),
+    val valueSerde: StreamSerde<T>,
+    val keySerde: StreamSerde<String> = StringSerde,
 ) {
     internal fun consumed(named: String): Consumed<String, T> = Consumed.with(keySerde, valueSerde).withName(named)
     internal open fun produced(named: String): Produced<String, T> = Produced.with(keySerde, valueSerde).withName(named)
