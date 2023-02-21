@@ -2,7 +2,9 @@ package no.nav.aap.kafka.streams.v2
 
 import no.nav.aap.kafka.streams.v2.extension.skipTombstone
 import no.nav.aap.kafka.streams.v2.processor.LogConsumeTopicProcessor
+import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
+import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.kafka.streams.v2.stream.ConsumedKStream
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.KStream
@@ -18,10 +20,14 @@ class Topology internal constructor() {
     fun <T : Any> consume(
         topic: Topic<T>,
         logValue: Boolean = false,
-        onTombstone: (key: String) -> Unit,
+        onEach: (key: String, value: T?, metadata: ProcessorMetadata) -> Unit,
     ): ConsumedKStream<T> {
         val consumedWithTombstones = consumeAll(topic, logValue)
-        consumedWithTombstones.filter { _, value -> value == null }.foreach { key, _ -> onTombstone(key) }
+
+        consumedWithTombstones
+            .addProcessor(MetadataProcessor(topic))
+            .foreach { _, (kv, metadata) -> onEach(kv.key, kv.value, metadata) }
+
         val consumedWithoutTombstones = consumedWithTombstones.skipTombstone(topic)
         return ConsumedKStream(topic, consumedWithoutTombstones) { "from-${topic.name}" }
     }
@@ -44,3 +50,15 @@ class Topology internal constructor() {
 }
 
 fun topology(init: Topology.() -> Unit): Topology = Topology().apply(init)
+
+private class MetadataProcessor<T>(
+    topic: Topic<T>,
+) : Processor<T?, Pair<KeyValue<String, T?>, ProcessorMetadata>>(
+    "from-${topic.name}-enrich-metadata",
+) {
+    override fun process(
+        metadata: ProcessorMetadata,
+        keyValue: KeyValue<String, T?>,
+    ): Pair<KeyValue<String, T?>, ProcessorMetadata> =
+        keyValue to metadata
+}

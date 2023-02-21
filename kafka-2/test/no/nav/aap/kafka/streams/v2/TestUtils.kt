@@ -82,6 +82,9 @@ class KStreamsMock : KStreams {
 internal fun <V> TestInputTopic<String, V>.produce(key: String, value: V): TestInputTopic<String, V> =
     pipeInput(key, value).let { this }
 
+internal fun <V> TestInputTopic<String, V>.produceTombstone(key: String): TestInputTopic<String, V> =
+    pipeInput(key, null).let { this }
+
 internal fun kafka(topology: Topology): KStreamsMock = KStreamsMock().apply {
     connect(topology, StreamsConfig("", ""), SimpleMeterRegistry())
 }

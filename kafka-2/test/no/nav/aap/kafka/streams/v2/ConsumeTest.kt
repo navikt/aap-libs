@@ -1,7 +1,7 @@
 package no.nav.aap.kafka.streams.v2
 
-import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.kafka.streams.v2.processor.Processor
+import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
 import org.apache.kafka.streams.state.TimestampedKeyValueStore
 import org.junit.jupiter.api.Test
@@ -71,6 +71,21 @@ internal class ConsumeTest {
 
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
+
+    @Test
+    fun `consume on each`() {
+        val result = mutableListOf<Int>()
+        val topology = topology {
+            consume(Topics.A) { _, value, _ ->
+                result.add(value?.length ?: -1)
+            }
+        }
+
+        val kafka = kafka(topology)
+        kafka.inputTopic(Topics.A).produce("1", "something").produceTombstone("2")
+
+        assertEquals(result, mutableListOf(9, -1))
+    }
 }
 
 class CustomProcessorWithTable(table: KTable<String>) : StateProcessor<String, String, String>("custom-join", table) {
@@ -82,5 +97,6 @@ class CustomProcessorWithTable(table: KTable<String>) : StateProcessor<String, S
 }
 
 open class CustomProcessor : Processor<String, String>("add-v2-prefix") {
-    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, String>): String = "${keyValue.value}.v2"
+    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, String>): String =
+        "${keyValue.value}.v2"
 }
