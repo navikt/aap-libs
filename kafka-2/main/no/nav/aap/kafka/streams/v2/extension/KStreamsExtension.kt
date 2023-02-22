@@ -1,11 +1,8 @@
 package no.nav.aap.kafka.streams.v2.extension
 
 import no.nav.aap.kafka.streams.v2.KTable
-import no.nav.aap.kafka.streams.v2.NullableKStreamPair
 import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
-import no.nav.aap.kafka.streams.v2.logger.KLogger
-import no.nav.aap.kafka.streams.v2.logger.LogLevel
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
 
@@ -30,22 +27,6 @@ internal fun <L, R, LR> KStream<String, L>.join(
         joiner,
         left join right
     )
-
-internal fun <K, V> KStream<K, V>.log(
-    lvl: LogLevel,
-    keyValue: (K, V) -> Any,
-): KStream<K, V> = this
-    .peek { key, value ->
-        KLogger.log(lvl, keyValue(key, value).toString())
-    }
-
-internal fun <K, L, R> KStream<K, NullableKStreamPair<L, R>>.log(
-    lvl: LogLevel,
-    keyValue: (K, L, R?) -> Any,
-): KStream<K, NullableKStreamPair<L, R>> = this
-    .peek { key, (left, right) ->
-        KLogger.log(lvl, keyValue(key, left, right).toString())
-    }
 
 @Suppress("UNCHECKED_CAST")
 internal fun <K, V> KStream<K, V>.filterNotNull(): KStream<K, V & Any> = this

@@ -4,8 +4,7 @@ import no.nav.aap.kafka.streams.v2.*
 import no.nav.aap.kafka.streams.v2.extension.filterNotNull
 import no.nav.aap.kafka.streams.v2.extension.join
 import no.nav.aap.kafka.streams.v2.extension.leftJoin
-import no.nav.aap.kafka.streams.v2.extension.log
-import no.nav.aap.kafka.streams.v2.logger.LogLevel
+import no.nav.aap.kafka.streams.v2.logger.Log
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
@@ -96,8 +95,13 @@ class ConsumedKStream<T : Any> internal constructor(
         return BranchedKStream(topic, splittedStream, namedSupplier).branch(predicate, consumed)
     }
 
-    fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, T) -> Any): ConsumedKStream<T> {
-        val loggedStream = stream.log(level, keyValue)
+    fun secureLog(log: Log.(value: T) -> Unit): ConsumedKStream<T> {
+        val loggedStream = stream.peek { _, value -> log.invoke(Log.secure, value) }
+        return ConsumedKStream(topic, loggedStream, namedSupplier)
+    }
+
+    fun secureLogWithKey(log: Log.(key: String, value: T) -> Unit): ConsumedKStream<T> {
+        val loggedStream = stream.peek { key, value -> log.invoke(Log.secure, key, value) }
         return ConsumedKStream(topic, loggedStream, namedSupplier)
     }
 

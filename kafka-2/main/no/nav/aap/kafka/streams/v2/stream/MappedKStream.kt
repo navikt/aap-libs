@@ -3,8 +3,7 @@ package no.nav.aap.kafka.streams.v2.stream
 import no.nav.aap.kafka.streams.v2.KTable
 import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
-import no.nav.aap.kafka.streams.v2.extension.log
-import no.nav.aap.kafka.streams.v2.logger.LogLevel
+import no.nav.aap.kafka.streams.v2.logger.Log
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
@@ -53,8 +52,13 @@ class MappedKStream<T : Any> internal constructor(
         return BranchedMappedKStream(sourceTopicName, branchedStream, namedSupplier).branch(predicate, consumed)
     }
 
-    fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, T) -> Any): MappedKStream<T> {
-        val loggedStream = stream.log(level, keyValue)
+    fun secureLog(logger: Log.(value: T) -> Unit): MappedKStream<T> {
+        val loggedStream = stream.peek { _, value -> logger.invoke(Log.secure, value) }
+        return MappedKStream(sourceTopicName, loggedStream, namedSupplier)
+    }
+
+    fun secureLogWithKey(log: Log.(key: String, value: T) -> Unit): MappedKStream<T> {
+        val loggedStream = stream.peek { key, value -> log.invoke(Log.secure, key, value) }
         return MappedKStream(sourceTopicName, loggedStream, namedSupplier)
     }
 

@@ -3,8 +3,7 @@ package no.nav.aap.kafka.streams.v2.stream
 import no.nav.aap.kafka.streams.v2.KStreamPair
 import no.nav.aap.kafka.streams.v2.KeyValue
 import no.nav.aap.kafka.streams.v2.NullableKStreamPair
-import no.nav.aap.kafka.streams.v2.extension.log
-import no.nav.aap.kafka.streams.v2.logger.LogLevel
+import no.nav.aap.kafka.streams.v2.logger.Log
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
 
@@ -29,6 +28,16 @@ class JoinedKStream<L, R> internal constructor(
     ): BranchedMappedKStream<KStreamPair<L, R>> {
         val branchedStream = stream.split(Named.`as`("split-${namedSupplier()}"))
         return BranchedMappedKStream(sourceTopicName, branchedStream, namedSupplier).branch(predicate, consumed)
+    }
+
+    fun secureLog(log: Log.(left: L, right: R) -> Unit): JoinedKStream<L, R> {
+        val loggedStream = stream.peek { _, (left, right) -> log.invoke(Log.secure, left, right) }
+        return JoinedKStream(sourceTopicName, loggedStream, namedSupplier)
+    }
+
+    fun secureLogWithKey(log: Log.(key: String, left: L, right: R) -> Unit): JoinedKStream<L, R> {
+        val loggedStream = stream.peek { key, (left, right) -> log.invoke(Log.secure, key, left, right) }
+        return JoinedKStream(sourceTopicName, loggedStream, namedSupplier)
     }
 }
 
@@ -61,8 +70,13 @@ class LeftJoinedKStream<L, R> internal constructor(
         return BranchedMappedKStream(sourceTopicName, branchedStream, namedSupplier).branch(predicate, consumed)
     }
 
-    fun log(level: LogLevel = LogLevel.INFO, keyValue: (String, L, R?) -> Any): LeftJoinedKStream<L, R> {
-        stream.log(level, keyValue)
-        return this
+    fun secureLog(log: Log.(left: L, right: R?) -> Unit): LeftJoinedKStream<L, R> {
+        val loggedStream = stream.peek { _, (left, right) -> log.invoke(Log.secure, left, right) }
+        return LeftJoinedKStream(sourceTopicName, loggedStream, namedSupplier)
+    }
+
+    fun secureLogWithKey(log: Log.(key: String, left: L, right: R?) -> Unit): LeftJoinedKStream<L, R> {
+        val loggedStream = stream.peek { key, (left, right) -> log.invoke(Log.secure, key, left, right) }
+        return LeftJoinedKStream(sourceTopicName, loggedStream, namedSupplier)
     }
 }
