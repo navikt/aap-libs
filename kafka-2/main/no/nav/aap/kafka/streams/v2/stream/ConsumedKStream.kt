@@ -108,7 +108,7 @@ class ConsumedKStream<T : Any> internal constructor(
         }
 
         val joinedStream = stream.leftJoin(topic, ktable, ::joiner)
-        val named = { "${topic.name}-buffered-join-${ktable.table.sourceTopic.name}" }
+        val named = { "${topic.name}-buffered-left-join-${ktable.table.sourceTopic.name}" }
         return LeftJoinedKStream(topic.name, joinedStream, named)
     }
 
