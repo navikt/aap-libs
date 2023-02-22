@@ -59,7 +59,7 @@ class KStreamsMock : KStreams {
 
     @Suppress("UNCHECKED_CAST")
     override fun <V : Any> createProducer(streamsConfig: StreamsConfig, topic: Topic<V>) = producers.getOrPut(topic) {
-        MockProducer(true, topic.keySerde.serializer(), topic.keySerde.serializer())
+        MockProducer(true, topic.keySerde.serializer(), topic.valueSerde.serializer())
     } as MockProducer<String, V>
 
     @Suppress("UNCHECKED_CAST")
