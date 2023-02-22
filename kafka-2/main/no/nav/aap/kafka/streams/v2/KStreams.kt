@@ -12,6 +12,7 @@ import org.apache.kafka.streams.KafkaStreams.State.*
 import org.apache.kafka.streams.StoreQueryParameters
 import org.apache.kafka.streams.state.QueryableStoreTypes
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
+import org.apache.kafka.streams.state.ValueAndTimestamp
 
 interface KStreams : ProducerFactory, ConsumerFactory, AutoCloseable {
     fun connect(
@@ -60,7 +61,7 @@ class KafkaStreams : KStreams {
 
     override fun <T : Any> getStore(table: Table<T>): StateStore<T> = StateStore(
         internalStreams.store(
-            StoreQueryParameters.fromNameAndType<ReadOnlyKeyValueStore<String, T>>(
+            StoreQueryParameters.fromNameAndType<ReadOnlyKeyValueStore<String, ValueAndTimestamp<T>>>(
                 table.stateStoreName,
                 QueryableStoreTypes.keyValueStore()
             )
