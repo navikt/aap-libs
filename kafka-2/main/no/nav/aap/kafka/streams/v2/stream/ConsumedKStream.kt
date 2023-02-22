@@ -1,6 +1,8 @@
 package no.nav.aap.kafka.streams.v2.stream
 
+import no.nav.aap.kafka.streams.concurrency.Bufferable
 import no.nav.aap.kafka.streams.v2.*
+import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.extension.filterNotNull
 import no.nav.aap.kafka.streams.v2.extension.join
 import no.nav.aap.kafka.streams.v2.extension.leftJoin
@@ -84,9 +86,29 @@ class ConsumedKStream<T : Any> internal constructor(
         return JoinedKStream(topic.name, joinedStream, named)
     }
 
+    fun <U : Bufferable<U>> joinWith(ktable: KTable<U>, buffer: RaceConditionBuffer<U>): JoinedKStream<T, U> {
+        fun joiner(key: String, left: T, right: U): KStreamPair<T, U> {
+            return KStreamPair(left, buffer.velgNyeste(key, right))
+        }
+
+        val joinedStream = stream.join(topic, ktable, ::joiner)
+        val named = { "${topic.name}-buffered-join-${ktable.table.sourceTopic.name}" }
+        return JoinedKStream(topic.name, joinedStream, named)
+    }
+
     fun <U : Any> leftJoinWith(ktable: KTable<U>): LeftJoinedKStream<T, U> {
         val joinedStream = stream.leftJoin(topic, ktable, ::NullableKStreamPair)
         val named = { "${topic.name}-left-join-${ktable.table.sourceTopic.name}" }
+        return LeftJoinedKStream(topic.name, joinedStream, named)
+    }
+
+    fun <U : Bufferable<U>> leftJoinWith(ktable: KTable<U>, buffer: RaceConditionBuffer<U>): LeftJoinedKStream<T, U> {
+        fun joiner(key: String, left: T, right: U?): NullableKStreamPair<T, U> {
+            return NullableKStreamPair(left, buffer.velgNyesteNullable(key, right))
+        }
+
+        val joinedStream = stream.leftJoin(topic, ktable, ::joiner)
+        val named = { "${topic.name}-buffered-join-${ktable.table.sourceTopic.name}" }
         return LeftJoinedKStream(topic.name, joinedStream, named)
     }
 

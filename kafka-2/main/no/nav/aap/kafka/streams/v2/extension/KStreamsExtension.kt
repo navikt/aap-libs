@@ -9,12 +9,34 @@ import org.apache.kafka.streams.kstream.Named
 internal fun <L, R, LR> KStream<String, L>.leftJoin(
     left: Topic<L>,
     right: KTable<R>,
+    joiner: (String, L, R?) -> LR,
+): KStream<String, LR> = this
+    .leftJoin(
+        right.internalKTable,
+        joiner,
+        left leftJoin right
+    )
+
+internal fun <L, R, LR> KStream<String, L>.leftJoin(
+    left: Topic<L>,
+    right: KTable<R>,
     joiner: (L, R?) -> LR,
 ): KStream<String, LR> = this
     .leftJoin(
         right.internalKTable,
         joiner,
         left leftJoin right
+    )
+
+internal fun <L, R, LR> KStream<String, L>.join(
+    left: Topic<L>,
+    right: KTable<R>,
+    joiner: (String, L, R) -> LR,
+): KStream<String, LR> = this
+    .join(
+        right.internalKTable,
+        joiner,
+        left join right
     )
 
 internal fun <L, R, LR> KStream<String, L>.join(
