@@ -3,6 +3,7 @@ package no.nav.aap.kafka.streams.v2.stream
 import no.nav.aap.kafka.streams.v2.KStreamPair
 import no.nav.aap.kafka.streams.v2.KeyValue
 import no.nav.aap.kafka.streams.v2.NullableKStreamPair
+import no.nav.aap.kafka.streams.v2.extension.filterNotNull
 import no.nav.aap.kafka.streams.v2.logger.Log
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
@@ -13,8 +14,8 @@ class JoinedKStream<L, R> internal constructor(
     private val namedSupplier: () -> String
 ) {
     fun <LR : Any> map(joinFunction: (L, R) -> LR): MappedKStream<LR> {
-        val fusedStream = stream.mapValues { pair -> joinFunction(pair.left, pair.right) }
-        return MappedKStream(sourceTopicName, fusedStream, namedSupplier)
+        val mappedStream = stream.mapValues { pair -> joinFunction(pair.left, pair.right) }
+        return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
     }
 
     fun filter(lambda: (KStreamPair<L, R>) -> Boolean): JoinedKStream<L, R> {
@@ -47,19 +48,24 @@ class LeftJoinedKStream<L, R> internal constructor(
     private val namedSupplier: () -> String
 
 ) {
-    fun <LR : Any> map(joinFunction: (L, R?) -> LR): MappedKStream<LR> {
-        val fusedStream = stream.mapValues { pair -> joinFunction(pair.left, pair.right) }
-        return MappedKStream(sourceTopicName, fusedStream, namedSupplier)
+    fun <LR : Any> map(mapper: (L, R?) -> LR): MappedKStream<LR> {
+        val mappedStream = stream.mapValues { (left, right) -> mapper(left, right) }
+        return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
     }
 
     fun <LR : Any> mapKeyValue(mapper: (String, L, R?) -> KeyValue<String, LR>): MappedKStream<LR> {
-        val fusedStream = stream.map { key, (left, right) -> mapper(key, left, right).toInternalKeyValue() }
-        return MappedKStream(sourceTopicName, fusedStream, namedSupplier)
+        val mappedStream = stream.map { key, (left, right) -> mapper(key, left, right).toInternalKeyValue() }
+        return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
+    }
+
+    fun <LR> mapNotNull(mapper: (L, R?) -> LR): MappedKStream<LR & Any> {
+        val mappedStream = stream.mapValues { _, (left, right) -> mapper(left, right) }.filterNotNull()
+        return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
     }
 
     fun filter(lambda: (NullableKStreamPair<L, R>) -> Boolean): LeftJoinedKStream<L, R> {
-        val stream = stream.filter { _, value -> lambda(value) }
-        return LeftJoinedKStream(sourceTopicName, stream, namedSupplier)
+        val filteredStream = stream.filter { _, value -> lambda(value) }
+        return LeftJoinedKStream(sourceTopicName, filteredStream, namedSupplier)
     }
 
     fun branch(
