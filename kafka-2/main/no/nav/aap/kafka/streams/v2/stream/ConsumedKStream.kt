@@ -31,23 +31,28 @@ class ConsumedKStream<T : Any> internal constructor(
     }
 
     fun rekey(selectKeyFromValue: (T) -> String): ConsumedKStream<T> {
-        val stream = stream.selectKey { _, value -> selectKeyFromValue(value) }
-        return ConsumedKStream(topic, stream, namedSupplier)
+        val rekeyedStream = stream.selectKey { _, value -> selectKeyFromValue(value) }
+        return ConsumedKStream(topic, rekeyedStream, namedSupplier)
     }
 
     fun filter(lambda: (T) -> Boolean): ConsumedKStream<T> {
-        val stream = stream.filter { _, value -> lambda(value) }
-        return ConsumedKStream(topic, stream, namedSupplier)
+        val filteredStream = stream.filter { _, value -> lambda(value) }
+        return ConsumedKStream(topic, filteredStream, namedSupplier)
+    }
+
+    fun filterKey(lambda: (String) -> Boolean): ConsumedKStream<T> {
+        val filteredStream = stream.filter { key, _ -> lambda(key) }
+        return ConsumedKStream(topic, filteredStream, namedSupplier)
     }
 
     fun <R : Any> map(mapper: (value: T) -> R): MappedKStream<R> {
-        val fusedStream = stream.mapValues { value -> mapper(value) }
-        return MappedKStream(topic.name, fusedStream, namedSupplier)
+        val mappedStream = stream.mapValues { value -> mapper(value) }
+        return MappedKStream(topic.name, mappedStream, namedSupplier)
     }
 
     fun <R : Any> map(mapper: (key: String, value: T) -> R): MappedKStream<R> {
-        val fusedStream = stream.mapValues { key, value -> mapper(key, value) }
-        return MappedKStream(topic.name, fusedStream, namedSupplier)
+        val mappedStream = stream.mapValues { key, value -> mapper(key, value) }
+        return MappedKStream(topic.name, mappedStream, namedSupplier)
     }
 
     fun <R> mapNotNull(mapper: (key: String, value: T) -> R): MappedKStream<R & Any> {

@@ -1,1 +1,1 @@
-value: hello
+value: ${TEST_VALUE}

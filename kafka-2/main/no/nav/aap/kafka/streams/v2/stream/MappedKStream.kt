@@ -1,9 +1,12 @@
 package no.nav.aap.kafka.streams.v2.stream
 
+import no.nav.aap.kafka.streams.concurrency.Bufferable
 import no.nav.aap.kafka.streams.v2.KTable
 import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
+import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.logger.Log
+import no.nav.aap.kafka.streams.v2.processor.LogProduceTopicProcessor
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
@@ -26,19 +29,42 @@ class MappedKStream<T : Any> internal constructor(
         stream.produceToTopic(topic, named, logValues)
     }
 
+    fun <U : Bufferable<U>> produce(
+        topic: Topic<U>,
+        buffer: RaceConditionBuffer<U>,
+        logValues: Boolean = false,
+        lambda: (T) -> U,
+    ) {
+        val named = "produced-bufferable-${topic.name}-${namedSupplier()}"
+
+        stream
+            .addProcessor(LogProduceTopicProcessor("log-${named}", logValues))
+            .mapValues { key, value ->
+                lambda(value).also {
+                    buffer.lagre(key, it)
+                }
+            }
+            .to(topic.name, topic.produced(named))
+    }
+
     fun <R : Any> map(mapper: (T) -> R): MappedKStream<R> {
         val mappedStream = stream.mapValues { lr -> mapper(lr) }
         return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
     }
 
     fun <R : Any> map(mapper: (key: String, value: T) -> R): MappedKStream<R> {
-        val fusedStream = stream.mapValues { key, value -> mapper(key, value) }
-        return MappedKStream(sourceTopicName, fusedStream, namedSupplier)
+        val mappedStream = stream.mapValues { key, value -> mapper(key, value) }
+        return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
+    }
+
+    fun <R : Any> flatMap(mapper: (value: T) -> Iterable<R>): MappedKStream<R> {
+        val flattenedStream = stream.flatMapValues { _, value -> mapper(value) }
+        return MappedKStream(sourceTopicName, flattenedStream, namedSupplier)
     }
 
     fun rekey(mapper: (value: T) -> String): MappedKStream<T> {
-        val fusedStream = stream.selectKey { _, value -> mapper(value) }
-        return MappedKStream(sourceTopicName, fusedStream, namedSupplier)
+        val rekeyedStream = stream.selectKey { _, value -> mapper(value) }
+        return MappedKStream(sourceTopicName, rekeyedStream, namedSupplier)
     }
 
     fun filter(lambda: (T) -> Boolean): MappedKStream<T> {
