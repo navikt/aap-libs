@@ -3,7 +3,7 @@ package no.nav.aap.kafka.streams.v2.processor.state
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import no.nav.aap.kafka.streams.v2.KTable
-import org.apache.kafka.streams.state.TimestampedKeyValueStore
+import no.nav.aap.kafka.streams.v2.StateStore
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 
@@ -26,7 +26,7 @@ class GaugeStoreEntriesStateScheduleProcessor<T>(
         )
     }
 
-    override fun schedule(timestamp: Long, store: TimestampedKeyValueStore<String, T>) {
+    override fun schedule(timestamp: Long, store: StateStore<T>) {
         approximateNumberOfRecords.set(store.approximateNumEntries())
     }
 }

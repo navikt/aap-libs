@@ -1,6 +1,7 @@
 package no.nav.aap.kafka.streams.v2.processor.state
 
 import no.nav.aap.kafka.streams.v2.KTable
+import no.nav.aap.kafka.streams.v2.StateStore
 import org.apache.kafka.streams.kstream.Named
 import org.apache.kafka.streams.processor.PunctuationType
 import org.apache.kafka.streams.processor.api.FixedKeyProcessor
@@ -11,7 +12,7 @@ import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 internal interface KStateScheduleProcessor<T> {
-    fun schedule(timestamp: Long, store: TimestampedKeyValueStore<String, T>)
+    fun schedule(timestamp: Long, store: StateStore<T>)
 }
 
 abstract class StateScheduleProcessor<T>(
@@ -33,7 +34,7 @@ abstract class StateScheduleProcessor<T>(
         override fun init(context: FixedKeyProcessorContext<String, T>) {
             val store: TimestampedKeyValueStore<String, T> = context.getStateStore(stateStoreName)
             context.schedule(interval.toJavaDuration(), PunctuationType.WALL_CLOCK_TIME) { timestamp ->
-                schedule(timestamp, store)
+                schedule(timestamp, StateStore(store))
             }
         }
 

@@ -12,4 +12,6 @@ class StateStore<T>(private val internalStateStore: ReadOnlyKeyValueStore<String
                 loop(record.key, record.value.value())
             }
         }
+
+    fun approximateNumEntries() = internalStateStore.approximateNumEntries()
 }
