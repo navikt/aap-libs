@@ -12,7 +12,7 @@ import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 internal interface KStateScheduleProcessor<T> {
-    fun schedule(timestamp: Long, store: StateStore<T>)
+    fun schedule(wallClockTime: Long, store: StateStore<T>)
 }
 
 abstract class StateScheduleProcessor<T>(
@@ -33,8 +33,8 @@ abstract class StateScheduleProcessor<T>(
     private inner class InternalProcessor(private val stateStoreName: String) : FixedKeyProcessor<String, T, T> {
         override fun init(context: FixedKeyProcessorContext<String, T>) {
             val store: TimestampedKeyValueStore<String, T> = context.getStateStore(stateStoreName)
-            context.schedule(interval.toJavaDuration(), PunctuationType.WALL_CLOCK_TIME) { timestamp ->
-                schedule(timestamp, StateStore(store))
+            context.schedule(interval.toJavaDuration(), PunctuationType.WALL_CLOCK_TIME) { wallClockTime ->
+                schedule(wallClockTime, StateStore(store))
             }
         }
 

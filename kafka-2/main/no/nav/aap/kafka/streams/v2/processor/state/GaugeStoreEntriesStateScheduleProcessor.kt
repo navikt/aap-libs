@@ -26,7 +26,7 @@ class GaugeStoreEntriesStateScheduleProcessor<T>(
         )
     }
 
-    override fun schedule(timestamp: Long, store: StateStore<T>) {
+    override fun schedule(wallClockTime: Long, store: StateStore<T>) {
         approximateNumberOfRecords.set(store.approximateNumEntries())
     }
 }
