@@ -15,8 +15,8 @@ jobs:
           distribution: 'temurin'
       - uses: gradle/gradle-build-action@v2.4.0
         with:
-          arguments: test --continue --no-daemon --no-cache
-          cache-disabled: true
+          arguments: test --continue --no-daemon
+          gradle-home-cache-cleanup: true
 
       - uses: dorny/test-reporter@v1.6.0
         if: always()
@@ -65,6 +65,6 @@ jobs:
       - uses: gradle/gradle-build-action@v2.4.0
         with:
           arguments: -Pversion=${{ steps.tag.outputs.version }} publish
-          cache-disabled: true
+          gradle-home-cache-cleanup: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
