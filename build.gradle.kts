@@ -34,6 +34,8 @@ subprojects {
     java {
         withSourcesJar()
         withJavadocJar()
+//        setSourceCompatibility(19)
+//        setTargetCompatibility(19)
     }
 
     publishing {
