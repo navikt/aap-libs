@@ -13,6 +13,7 @@ jobs:
         with:
           java-version: 19
           distribution: 'temurin'
+
       - uses: gradle/gradle-build-action@v2.4.0
         with:
           arguments: test --continue --no-daemon
@@ -38,7 +39,7 @@ jobs:
         with:
           fetch-depth: 0 # include git tags
 
-      - uses: paulhatch/semantic-version@v5.0.2
+      - uses: paulhatch/semantic-version@v5.0.3
         id: tag
         with:
           bump_each_commit: true
