@@ -1,7 +1,3 @@
-plugins {
-    kotlin("plugin.serialization")
-}
-
 val ktorVersion = "2.2.3"
 
 dependencies {
