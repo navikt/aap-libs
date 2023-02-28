@@ -17,6 +17,7 @@ jobs:
         with:
           arguments: test --continue --no-daemon
           gradle-home-cache-cleanup: true
+          cache-disabled: true
 
       - uses: dorny/test-reporter@v1.6.0
         if: always()
@@ -66,5 +67,6 @@ jobs:
         with:
           arguments: -Pversion=${{ steps.tag.outputs.version }} publish
           gradle-home-cache-cleanup: true
+          cache-disabled: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
