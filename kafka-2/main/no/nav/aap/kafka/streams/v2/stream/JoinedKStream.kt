@@ -65,6 +65,11 @@ class LeftJoinedKStream<L, R> internal constructor(
         return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
     }
 
+    fun <LR : Any> map(mapper: (key: String, L, R?) -> LR): MappedKStream<LR> {
+        val mappedStream = stream.mapValues { key, (left, right) -> mapper(key, left, right) }
+        return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
+    }
+
     fun <LR : Any> mapKeyValue(mapper: (String, L, R?) -> KeyValue<String, LR>): MappedKStream<LR> {
         val mappedStream = stream.map { key, (left, right) -> mapper(key, left, right).toInternalKeyValue() }
         return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
