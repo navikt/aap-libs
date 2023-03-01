@@ -34,6 +34,11 @@ class JoinedKStream<L : Any, R> internal constructor(
         return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
     }
 
+    fun <LR : Any> flatMapKeyValue(mapper: (String, L, R) -> Iterable<KeyValue<String, LR>>): MappedKStream<LR> {
+        val stream = stream.flatMap { key, (left, right) -> mapper(key, left, right).map { it.toInternalKeyValue() } }
+        return MappedKStream(sourceTopicName, stream, namedSupplier)
+    }
+
     fun <LR> mapNotNull(mapper: (L, R) -> LR): MappedKStream<LR & Any> {
         val mappedStream = stream.mapValues { _, (left, right) -> mapper(left, right) }.filterNotNull()
         return MappedKStream(sourceTopicName, mappedStream, namedSupplier)
