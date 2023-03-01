@@ -5,6 +5,8 @@ import no.nav.aap.kafka.streams.v2.KeyValue
 import no.nav.aap.kafka.streams.v2.NullableKStreamPair
 import no.nav.aap.kafka.streams.v2.extension.filterNotNull
 import no.nav.aap.kafka.streams.v2.logger.Log
+import no.nav.aap.kafka.streams.v2.processor.Processor
+import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
 
@@ -39,6 +41,16 @@ class JoinedKStream<L, R> internal constructor(
     fun secureLogWithKey(log: Log.(key: String, left: L, right: R) -> Unit): JoinedKStream<L, R> {
         val loggedStream = stream.peek { key, (left, right) -> log.invoke(Log.secure, key, left, right) }
         return JoinedKStream(sourceTopicName, loggedStream, namedSupplier)
+    }
+
+    fun <LR : Any> processor(processor: Processor<KStreamPair<L, R>, LR>): MappedKStream<LR> {
+        val processorStream = stream.addProcessor(processor)
+        return MappedKStream(sourceTopicName, processorStream, namedSupplier)
+    }
+
+    fun processor(processor: Processor<KStreamPair<L, R>, KStreamPair<L, R>>): JoinedKStream<L, R> {
+        val processorStream = stream.addProcessor(processor)
+        return JoinedKStream(sourceTopicName, processorStream, namedSupplier)
     }
 }
 
@@ -84,5 +96,15 @@ class LeftJoinedKStream<L, R> internal constructor(
     fun secureLogWithKey(log: Log.(key: String, left: L, right: R?) -> Unit): LeftJoinedKStream<L, R> {
         val loggedStream = stream.peek { key, (left, right) -> log.invoke(Log.secure, key, left, right) }
         return LeftJoinedKStream(sourceTopicName, loggedStream, namedSupplier)
+    }
+
+    fun <LR : Any> processor(processor: Processor<NullableKStreamPair<L, R>, LR>): MappedKStream<LR> {
+        val processorStream = stream.addProcessor(processor)
+        return MappedKStream(sourceTopicName, processorStream, namedSupplier)
+    }
+
+    fun processor(processor: Processor<NullableKStreamPair<L, R>, NullableKStreamPair<L, R>>): LeftJoinedKStream<L, R> {
+        val processorStream = stream.addProcessor(processor)
+        return LeftJoinedKStream(sourceTopicName, processorStream, namedSupplier)
     }
 }
