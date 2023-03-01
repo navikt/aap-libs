@@ -145,6 +145,11 @@ class ConsumedKStream<T : Any> internal constructor(
         return MappedKStream(topic.name, processorStream, namedSupplier)
     }
 
+    fun processor(processor: Processor<T, T>): ConsumedKStream<T> {
+        val processorStream = stream.addProcessor(processor)
+        return ConsumedKStream(topic, processorStream, namedSupplier)
+    }
+
     fun <TABLE, U : Any> processor(processor: StateProcessor<TABLE, T, U>): MappedKStream<U> {
         val processorStream = stream.addProcessor(processor)
         return MappedKStream(topic.name, processorStream, namedSupplier)

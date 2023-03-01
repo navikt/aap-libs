@@ -73,6 +73,55 @@ internal class ConsumeTest {
     }
 
     @Test
+    fun `consume and use custom processor with mapping`() {
+        val topology = topology {
+            consume(Topics.A)
+                .processor(object: Processor<String, Int>("named") {
+                    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, String>): Int {
+                        return keyValue.value.toInt() + 1
+                    }
+                })
+                .map(Int::toString)
+                .produce(Topics.C)
+        }
+
+        val kafka = kafka(topology)
+
+        kafka.inputTopic(Topics.A).produce("a", "1")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(1, result.size)
+        assertEquals("2", result["a"])
+
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
+    }
+
+    @Test
+    fun `consume and use custom processor in place`() {
+        val topology = topology {
+            consume(Topics.A)
+                .processor(object: Processor<String, String>("something") {
+                    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, String>): String {
+                        return keyValue.value
+                    }
+                })
+                .produce(Topics.C)
+        }
+
+        val kafka = kafka(topology)
+
+        kafka.inputTopic(Topics.A).produce("a", "1")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(1, result.size)
+        assertEquals("1", result["a"])
+
+//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
+    }
+
+    @Test
     fun `consume on each`() {
         val result = mutableListOf<Int>()
         val topology = topology {
