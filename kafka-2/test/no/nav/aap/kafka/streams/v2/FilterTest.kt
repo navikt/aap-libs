@@ -32,7 +32,7 @@ internal class FilterTest {
     @Test
     fun `filter a mapped joined stream`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(table)
                 .map { a, b -> b + a }
@@ -62,7 +62,7 @@ internal class FilterTest {
     @Test
     fun `filter a mapped left joined stream`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
                 .map { a, b -> b + a }
@@ -115,7 +115,7 @@ internal class FilterTest {
     @Test
     fun `filter a filtered left joined stream`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
                 .map { a, b -> b + a }

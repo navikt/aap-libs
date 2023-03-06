@@ -13,9 +13,9 @@ internal interface KStateInitProcessor<T> {
     fun init(store: StateStore<T>)
 }
 
-abstract class StateInitProcessor<T: Any>(
+abstract class StateInitProcessor<T>(
     private val named: String,
-    private val table: KTable<T>,
+    private val table: KTable<T & Any>,
 ) : KStateInitProcessor<T> {
     internal fun addToStreams() {
         val stateStoreName = table.table.stateStoreName
@@ -27,7 +27,7 @@ abstract class StateInitProcessor<T: Any>(
         )
     }
 
-    private inner class InternalProcessor : FixedKeyProcessor<String, T, T> {
+    private inner class InternalProcessor : FixedKeyProcessor<String, T?, T> {
         private lateinit var store: ReadOnlyKeyValueStore<String, ValueAndTimestamp<T>>
 
         override fun init(context: FixedKeyProcessorContext<String, T>) {
@@ -35,6 +35,6 @@ abstract class StateInitProcessor<T: Any>(
             init(StateStore(store))
         }
 
-        override fun process(record: FixedKeyRecord<String, T>) {}
+        override fun process(record: FixedKeyRecord<String, T?>) {}
     }
 }

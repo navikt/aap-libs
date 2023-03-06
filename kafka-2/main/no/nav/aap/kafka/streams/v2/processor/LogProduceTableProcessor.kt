@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory
 
 private val log: Logger = LoggerFactory.getLogger("secureLog")
 
-internal class LogProduceTableProcessor<T : Any>(
+internal class LogProduceTableProcessor<T: Any>(
     named: String,
     private val table: Table<T>,
     private val logValue: Boolean,
-) : Processor<T, T>(named) {
+) : Processor<T?, T?>(named) {
 
-    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T>): T {
+    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T?>): T? {
         log.trace(
             "Produserer til KTable ${table.sourceTopicName}",
             kv("key", keyValue.key),

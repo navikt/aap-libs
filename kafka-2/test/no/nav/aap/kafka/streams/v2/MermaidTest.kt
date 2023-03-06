@@ -8,7 +8,7 @@ class MermaidTest {
     @Test
     fun `join i en stream og initier i en annen`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(table)
                 .map { l, r -> r + l }
@@ -50,7 +50,7 @@ class MermaidTest {
     @Test
     fun `custom state processor`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .processor(CustomProcessorWithTable(table))
                 .produce(Topics.C)

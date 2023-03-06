@@ -9,7 +9,7 @@ internal class JoinTest {
     @Test
     fun `join topic with table`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(table)
                 .map { a, b -> b + a }
@@ -36,7 +36,7 @@ internal class JoinTest {
     @Test
     fun `join filtered topic with table`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .filter { it != "humbug" }
                 .joinWith(table)
@@ -69,7 +69,7 @@ internal class JoinTest {
     @Test
     fun `join topic with table and write back to topic`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
                 .map { a, b -> a + b }
@@ -99,7 +99,7 @@ internal class JoinTest {
     @Test
     fun `left join topic with table`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
                 .map { left, _ -> left }
@@ -126,7 +126,7 @@ internal class JoinTest {
     @Test
     fun `left join topic with table with no match`() {
         val topology = topology {
-            val tableB = consume(Topics.B).produce(Tables.B)
+            val tableB = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(tableB)
                 .map { left, right -> right ?: left }
@@ -149,7 +149,7 @@ internal class JoinTest {
     @Test
     fun `left join filtered topic with table`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .filter { it != "humbug" }
                 .leftJoinWith(table)
@@ -182,7 +182,7 @@ internal class JoinTest {
     @Test
     fun `left join filtered topic with empty table is not filtered out`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .filter { it != "humbug" }
                 .leftJoinWith(table)

@@ -1,8 +1,6 @@
 package no.nav.aap.kafka.streams.v2.stream
 
 import no.nav.aap.kafka.streams.concurrency.Bufferable
-import no.nav.aap.kafka.streams.v2.KTable
-import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.logger.Log
@@ -19,11 +17,6 @@ class MappedKStream<T : Any> internal constructor(
     private val stream: KStream<String, T>,
     private val namedSupplier: () -> String,
 ) {
-    fun produce(table: Table<T>, logValues: Boolean = false): KTable<T> {
-        val internalKTable = stream.produceToTable(table, logValues)
-        return KTable(table, internalKTable)
-    }
-
     fun produce(topic: Topic<T>, logValues: Boolean = false) {
         val named = "produced-${topic.name}-${namedSupplier()}"
         stream.produceToTopic(topic, named, logValues)

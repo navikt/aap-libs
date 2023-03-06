@@ -53,7 +53,7 @@ internal class ConsumeTest {
     @Test
     fun `consume and use custom processor with table`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .processor(CustomProcessorWithTable(table))
                 .produce(Topics.C)

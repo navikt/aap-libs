@@ -15,5 +15,5 @@ data class TestTopic<V: Any>(
 
     fun assertThat() = output.readAndAssert()
 
-    fun readValue() = output.readValue()
+    fun readValue(): V = output.readValue()
 }

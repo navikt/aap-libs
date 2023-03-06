@@ -18,7 +18,7 @@ internal class SchedulerTest {
         val registry = SimpleMeterRegistry()
 
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
 
             table.schedule(
                 GaugeStoreEntriesStateScheduleProcessor(
@@ -48,7 +48,7 @@ internal class SchedulerTest {
         val producer = MockProducer(true, Topics.E.keySerde.serializer(), Topics.E.valueSerde.serializer())
 
         val topology = topology {
-            val ktable = consume(Topics.E).produce(Tables.E)
+            val ktable = consume(Tables.E)
             ktable.init(
                 MigrateStateInitProcessor(
                     producer = producer,

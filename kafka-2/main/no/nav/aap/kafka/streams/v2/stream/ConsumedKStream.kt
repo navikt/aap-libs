@@ -20,11 +20,6 @@ class ConsumedKStream<T : Any> internal constructor(
     private val stream: KStream<String, T>,
     private val namedSupplier: () -> String
 ) {
-    fun produce(table: Table<T>, logValues: Boolean = false): KTable<T> {
-        val internalKTable = stream.produceToTable(table, logValues)
-        return KTable(table, internalKTable)
-    }
-
     fun produce(destination: Topic<T>, logValues: Boolean = false) {
         val named = "produced-${destination.name}-${namedSupplier()}"
         stream.produceToTopic(destination, named, logValues)

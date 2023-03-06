@@ -148,7 +148,7 @@ internal class BranchTest {
     @Test
     fun `branch stream from joined stream`() {
         val topology = topology {
-            val tableB = consume(Topics.B).produce(Tables.B)
+            val tableB = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(tableB)
                 .branch({ (left, _) -> left == "lol" }, {
@@ -184,7 +184,7 @@ internal class BranchTest {
     @Test
     fun `default branch from joined stream`() {
         val topology = topology {
-            val tableB = consume(Topics.B).produce(Tables.B)
+            val tableB = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(tableB)
                 .branch({ (left, _) -> left == "lol" }, {
@@ -216,7 +216,7 @@ internal class BranchTest {
     @Test
     fun `branch stream from left joined stream`() {
         val topology = topology {
-            val tableB = consume(Topics.B).produce(Tables.B)
+            val tableB = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(tableB)
                 .branch({ (left, _) -> left == "lol" }, {
@@ -253,7 +253,7 @@ internal class BranchTest {
     @Test
     fun `default branch from left joined stream`() {
         val topology = topology {
-            val tableB = consume(Topics.B).produce(Tables.B)
+            val tableB = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(tableB)
                 .branch({ (left, _) -> left == "lol" }, {

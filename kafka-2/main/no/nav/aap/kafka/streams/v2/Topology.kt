@@ -2,12 +2,15 @@ package no.nav.aap.kafka.streams.v2
 
 import no.nav.aap.kafka.streams.v2.extension.skipTombstone
 import no.nav.aap.kafka.streams.v2.processor.LogConsumeTopicProcessor
+import no.nav.aap.kafka.streams.v2.processor.LogProduceTableProcessor
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.kafka.streams.v2.stream.ConsumedKStream
+import no.nav.aap.kafka.streams.v2.stream.materialized
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.KStream
+import org.apache.kafka.streams.kstream.Named
 
 class Topology internal constructor() {
     private val builder = StreamsBuilder()
@@ -15,6 +18,13 @@ class Topology internal constructor() {
     fun <T : Any> consume(topic: Topic<T>, logValue: Boolean = false): ConsumedKStream<T> {
         val consumed = consumeAll(topic, logValue).skipTombstone(topic)
         return ConsumedKStream(topic, consumed) { "from-${topic.name}" }
+    }
+
+    fun <T : Any> consume(table: Table<T>, logValues: Boolean = false): KTable<T> {
+        val consumed = consumeAll(table.sourceTopic, logValues)
+            .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
+            .toTable(Named.`as`("${table.sourceTopicName}-to-table"), materialized(table.stateStoreName, table.sourceTopic))
+        return KTable(table, consumed)
     }
 
     fun <T : Any> consume(

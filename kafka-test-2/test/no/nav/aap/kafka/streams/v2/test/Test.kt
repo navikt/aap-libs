@@ -15,7 +15,7 @@ internal class Test {
     @Test
     fun `join topic with table`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(table)
                 .map { a, b -> b + a }

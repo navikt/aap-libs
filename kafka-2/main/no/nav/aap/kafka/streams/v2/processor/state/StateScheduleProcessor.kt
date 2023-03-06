@@ -30,7 +30,7 @@ abstract class StateScheduleProcessor<T : Any>(
         )
     }
 
-    private inner class InternalProcessor(private val stateStoreName: String) : FixedKeyProcessor<String, T, T> {
+    private inner class InternalProcessor(private val stateStoreName: String) : FixedKeyProcessor<String, T?, T> {
         override fun init(context: FixedKeyProcessorContext<String, T>) {
             val store: TimestampedKeyValueStore<String, T> = context.getStateStore(stateStoreName)
             context.schedule(interval.toJavaDuration(), PunctuationType.WALL_CLOCK_TIME) { wallClockTime ->
@@ -38,6 +38,6 @@ abstract class StateScheduleProcessor<T : Any>(
             }
         }
 
-        override fun process(record: FixedKeyRecord<String, T>) {}
+        override fun process(record: FixedKeyRecord<String, T?>) {}
     }
 }

@@ -8,7 +8,7 @@ internal class MappedKStreamTest {
     @Test
     fun `map a filtered joined stream`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(table)
                 .filter { (a, _) -> a == "sauce" }
@@ -39,7 +39,7 @@ internal class MappedKStreamTest {
     @Test
     fun `map a filtered left joined stream`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
                 .filter { (a, _) -> a == "sauce" }
@@ -69,7 +69,7 @@ internal class MappedKStreamTest {
     @Test
     fun `map a joined stream`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(table)
                 .map { a, b -> b + a }
@@ -93,11 +93,13 @@ internal class MappedKStreamTest {
         assertEquals("niceprice", result["2"])
 
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
-    }    @Test
+    }
+
+    @Test
     fun `mapNotNull a branched stream`() {
         val topology = topology {
             consume(Topics.A, true)
-                .mapNotNull{ key, value -> if (key == "1") null else value }
+                .mapNotNull { key, value -> if (key == "1") null else value }
                 .produce(Topics.C)
         }
 
@@ -119,7 +121,7 @@ internal class MappedKStreamTest {
     @Test
     fun `map a left joined stream`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
                 .map { a, b -> b + a }
@@ -148,7 +150,7 @@ internal class MappedKStreamTest {
     @Test
     fun `map key and value`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
                 .mapKeyValue { key, left, right -> KeyValue("$key$key", right + left) }
@@ -198,7 +200,7 @@ internal class MappedKStreamTest {
     @Test
     fun `map and use custom processor with table`() {
         val topology = topology {
-            val table = consume(Topics.B).produce(Tables.B)
+            val table = consume(Tables.B)
             consume(Topics.A)
                 .map { v -> v }
                 .processor(CustomProcessorWithTable(table))
@@ -217,6 +219,7 @@ internal class MappedKStreamTest {
 
 //        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
+
     @Test
     fun `rekey a mapped stream`() {
         val topology = topology {
