@@ -34,7 +34,7 @@ internal fun <L : Any, R : Any, LR> KStream<String, L>.join(
     joiner: (String, L, R) -> LR,
 ): KStream<String, LR> = this
     .join(
-        right.internalKTable.skipTombstone(right.table),
+        right.tombstonedInternalKTable,
         joiner,
         left join right
     )
@@ -45,7 +45,7 @@ internal fun <L : Any, R : Any, LR> KStream<String, L>.join(
     joiner: (L, R) -> LR,
 ): KStream<String, LR> = this
     .join(
-        right.internalKTable.skipTombstone(right.table),
+        right.tombstonedInternalKTable,
         joiner,
         left join right
     )
@@ -55,7 +55,7 @@ internal fun <K, V> KStream<K, V>.filterNotNull(): KStream<K, V & Any> = this
     .filter { _, value -> value != null } as KStream<K, V & Any>
 
 @Suppress("UNCHECKED_CAST")
-private fun <K, V : Any> org.apache.kafka.streams.kstream.KTable<K, V?>.skipTombstone(
+internal fun <K, V : Any> org.apache.kafka.streams.kstream.KTable<K, V?>.skipTombstone(
     table: Table<V>,
 ): org.apache.kafka.streams.kstream.KTable<K, V> = this
     .filter(
