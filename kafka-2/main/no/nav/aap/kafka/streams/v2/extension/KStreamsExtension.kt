@@ -51,21 +51,21 @@ internal fun <L : Any, R : Any, LR> KStream<String, L>.join(
     )
 
 @Suppress("UNCHECKED_CAST")
-internal fun <K, V> KStream<K, V>.filterNotNull(): KStream<K, V & Any> = this
-    .filter { _, value -> value != null } as KStream<K, V & Any>
+internal fun <V> KStream<String, V>.filterNotNull(): KStream<String, V & Any> = this
+    .filter { _, value -> value != null } as KStream<String, V & Any>
 
 @Suppress("UNCHECKED_CAST")
-internal fun <K, V : Any> org.apache.kafka.streams.kstream.KTable<K, V?>.skipTombstone(
+internal fun <V : Any> org.apache.kafka.streams.kstream.KTable<String, V?>.skipTombstone(
     table: Table<V>,
-): org.apache.kafka.streams.kstream.KTable<K, V> = this
+): org.apache.kafka.streams.kstream.KTable<String, V> = this
     .filter(
         { _, value -> value != null },
         Named.`as`("skip-table-${table.sourceTopicName}-tombstone")
-    ) as org.apache.kafka.streams.kstream.KTable<K, V>
+    ) as org.apache.kafka.streams.kstream.KTable<String, V>
 
 @Suppress("UNCHECKED_CAST")
-internal fun <K, V : Any> KStream<K, V?>.skipTombstone(topic: Topic<V>): KStream<K, V> = this
+internal fun <V : Any> KStream<String, V?>.skipTombstone(topic: Topic<V>): KStream<String, V> = this
     .filter(
         { _, value -> value != null },
         Named.`as`("skip-${topic.name}-tombstone")
-    ) as KStream<K, V>
+    ) as KStream<String, V>

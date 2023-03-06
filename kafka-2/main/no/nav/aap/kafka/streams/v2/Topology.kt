@@ -11,6 +11,7 @@ import no.nav.aap.kafka.streams.v2.stream.materialized
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
+import org.apache.kafka.streams.kstream.Repartitioned
 
 class Topology internal constructor() {
     private val builder = StreamsBuilder()
@@ -24,6 +25,20 @@ class Topology internal constructor() {
         val consumed = consumeAll(table.sourceTopic, logValues)
             .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
             .toTable(Named.`as`("${table.sourceTopicName}-to-table"), materialized(table.stateStoreName, table.sourceTopic))
+        return KTable(table, consumed)
+    }
+
+    fun <T : Any> consumeRepartitioned(table: Table<T>, partitions: Int = 12, logValues: Boolean = false): KTable<T> {
+        val repartition = Repartitioned
+            .with(table.sourceTopic.keySerde, table.sourceTopic.valueSerde)
+            .withNumberOfPartitions(partitions)
+            .withName(table.sourceTopicName)
+
+        val consumed = consumeAll(table.sourceTopic, logValues)
+            .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
+            .repartition(repartition)
+            .toTable(Named.`as`("${table.sourceTopicName}-to-table"), materialized(table.stateStoreName, table.sourceTopic))
+
         return KTable(table, consumed)
     }
 
