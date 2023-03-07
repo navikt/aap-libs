@@ -17,7 +17,7 @@ class AzureAdTokenProvider(
     private val client: HttpClient = defaultHttpClient,
 ) {
     suspend fun getUsernamePasswordToken(username: String, password: String) = getAccessToken(username) {
-        "client_id=${config.clientId}&scope=$scope&username=$username&password=$password&grant_type=password"
+        "client_id=${config.clientId}&client_secret=${config.clientSecret}&scope=$scope&username=$username&password=$password&grant_type=password"
     }
 
     suspend fun getClientCredentialToken() = getAccessToken(scope) {
