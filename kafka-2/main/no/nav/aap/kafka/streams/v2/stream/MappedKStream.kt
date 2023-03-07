@@ -31,12 +31,18 @@ class MappedKStream<T : Any> internal constructor(
         val named = "produced-bufferable-${topic.name}-${namedSupplier()}"
 
         stream
-            .addProcessor(LogProduceTopicProcessor("log-${named}", logValues))
             .mapValues { key, value ->
                 lambda(value).also {
                     buffer.lagre(key, it)
                 }
             }
+            .addProcessor(
+                LogProduceTopicProcessor(
+                    named = "log-${named}",
+                    topic = topic,
+                    logValue = logValues,
+                )
+            )
             .to(topic.name, topic.produced(named))
     }
 

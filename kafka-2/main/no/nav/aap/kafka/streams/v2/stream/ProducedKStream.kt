@@ -13,7 +13,13 @@ internal fun <T : Any> KStream<String, T>.produceToTopic(
     named: String,
     logValues: Boolean,
 ) = this
-    .addProcessor(LogProduceTopicProcessor("log-${named}", logValues))
+    .addProcessor(
+        LogProduceTopicProcessor(
+            named = "log-${named}",
+            topic = topic,
+            logValue = logValues,
+        )
+    )
     .to(topic.name, topic.produced(named))
 
 internal fun <T : Any> materialized(
