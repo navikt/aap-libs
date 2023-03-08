@@ -1,5 +1,6 @@
 package no.nav.aap.kafka.streams.v2
 
+import net.logstash.logback.argument.StructuredArguments.kv
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
@@ -134,6 +135,45 @@ internal class ConsumeTest {
         kafka.inputTopic(Topics.A).produce("1", "something").produceTombstone("2")
 
         assertEquals(result, mutableListOf(9, -1))
+    }
+
+    @Test
+    fun `consume and secureLog`() {
+        val topology = topology {
+            consume(Topics.A)
+                .secureLog {
+                    info("test message $it")
+                }
+        }
+
+        val kafka = kafka(topology)
+        kafka.inputTopic(Topics.A).produce("1", "something")
+    }
+
+    @Test
+    fun `consume and secureLog with structured arguments`() {
+        val topology = topology {
+            consume(Topics.A)
+                .secureLog {
+                    info("test message $it", kv("test", "hey"))
+                }
+        }
+
+        val kafka = kafka(topology)
+        kafka.inputTopic(Topics.A).produce("1", "something")
+    }
+
+    @Test
+    fun `consume and secureLogWithKey`() {
+        val topology = topology {
+            consume(Topics.A)
+                .secureLogWithKey { key, value ->
+                    info("test message $key $value")
+                }
+        }
+
+        val kafka = kafka(topology)
+        kafka.inputTopic(Topics.A).produce("1", "something")
     }
 }
 
