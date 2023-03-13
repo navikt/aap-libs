@@ -15,14 +15,23 @@ internal class LogProduceTableProcessor<T: Any>(
 ) : Processor<T?, T?>(named) {
 
     override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T?>): T? {
-        log.trace(
-            "Produserer til KTable ${table.sourceTopicName}",
-            kv("key", keyValue.key),
-            kv("table", table.sourceTopicName),
-            kv("store", table.stateStoreName),
-            kv("partition", metadata.partition),
-            if (logValue) kv("value", keyValue.value) else null,
-        )
+        when (keyValue.value) {
+            null -> log.trace(
+                "Produserer tombstone til KTable ${table.sourceTopicName}",
+                kv("key", keyValue.key),
+                kv("table", table.sourceTopicName),
+                kv("store", table.stateStoreName),
+                kv("partition", metadata.partition),
+            )
+            else -> log.trace(
+                "Produserer til KTable ${table.sourceTopicName}",
+                kv("key", keyValue.key),
+                kv("table", table.sourceTopicName),
+                kv("store", table.stateStoreName),
+                kv("partition", metadata.partition),
+                if (logValue) kv("value", keyValue.value) else null,
+            )
+        }
         return keyValue.value
     }
 }
