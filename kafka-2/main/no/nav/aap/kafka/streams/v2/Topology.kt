@@ -1,5 +1,7 @@
 package no.nav.aap.kafka.streams.v2
 
+import no.nav.aap.kafka.streams.concurrency.Bufferable
+import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.extension.skipTombstone
 import no.nav.aap.kafka.streams.v2.processor.LogConsumeTopicProcessor
 import no.nav.aap.kafka.streams.v2.processor.LogProduceTableProcessor
@@ -17,15 +19,36 @@ class Topology internal constructor() {
     private val builder = StreamsBuilder()
 
     fun <T : Any> consume(topic: Topic<T>, logValue: Boolean = false): ConsumedKStream<T> {
-        val consumed = consumeAll(topic, logValue).skipTombstone(topic)
+        val consumed = consumeWithTombstone(topic, logValue).skipTombstone(topic)
         return ConsumedKStream(topic, consumed) { "from-${topic.name}" }
     }
 
     fun <T : Any> consume(table: Table<T>, logValues: Boolean = false): KTable<T> {
-        val consumed = consumeAll(table.sourceTopic, logValues)
+        val consumed = consumeWithTombstone(table.sourceTopic, logValues)
             .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
-            .toTable(Named.`as`("${table.sourceTopicName}-to-table"), materialized(table.stateStoreName, table.sourceTopic))
+            .toTable(
+                Named.`as`("${table.sourceTopicName}-to-table"),
+                materialized(table.stateStoreName, table.sourceTopic)
+            )
         return KTable(table, consumed)
+    }
+
+    fun <T : Bufferable<T>> consume(
+        table: Table<T>,
+        buffer: RaceConditionBuffer<T>,
+        logValues: Boolean = false
+    ): KTable<T> {
+        val consumed = consumeWithTombstone(table.sourceTopic, logValues)
+
+        consumed.filter { _, value -> value == null }.foreach { key, _ -> buffer.slett(key) }
+
+        val internalKtable = consumed
+            .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
+            .toTable(
+                Named.`as`("${table.sourceTopicName}-to-table"),
+                materialized(table.stateStoreName, table.sourceTopic)
+            )
+        return KTable(table, internalKtable)
     }
 
     fun <T : Any> consumeRepartitioned(table: Table<T>, partitions: Int = 12, logValues: Boolean = false): KTable<T> {
@@ -34,10 +57,13 @@ class Topology internal constructor() {
             .withNumberOfPartitions(partitions)
             .withName(table.sourceTopicName)
 
-        val consumed = consumeAll(table.sourceTopic, logValues)
+        val consumed = consumeWithTombstone(table.sourceTopic, logValues)
             .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
             .repartition(repartition)
-            .toTable(Named.`as`("${table.sourceTopicName}-to-table"), materialized(table.stateStoreName, table.sourceTopic))
+            .toTable(
+                Named.`as`("${table.sourceTopicName}-to-table"),
+                materialized(table.stateStoreName, table.sourceTopic)
+            )
 
         return KTable(table, consumed)
     }
@@ -47,7 +73,7 @@ class Topology internal constructor() {
         logValue: Boolean = false,
         onEach: (key: String, value: T?, metadata: ProcessorMetadata) -> Unit,
     ): ConsumedKStream<T> {
-        val consumedWithTombstones = consumeAll(topic, logValue)
+        val consumedWithTombstones = consumeWithTombstone(topic, logValue)
 
         consumedWithTombstones
             .addProcessor(MetadataProcessor(topic))
@@ -57,7 +83,7 @@ class Topology internal constructor() {
         return ConsumedKStream(topic, consumedWithoutTombstones) { "from-${topic.name}" }
     }
 
-    private fun <T : Any> consumeAll(topic: Topic<T>, logValue: Boolean): KStream<String, T?> =
+    private fun <T : Any> consumeWithTombstone(topic: Topic<T>, logValue: Boolean): KStream<String, T?> =
         builder
             .stream(topic.name, topic.consumed("consume-${topic.name}"))
             .addProcessor(

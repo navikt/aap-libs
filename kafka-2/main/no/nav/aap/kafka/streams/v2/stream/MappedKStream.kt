@@ -4,7 +4,6 @@ import no.nav.aap.kafka.streams.concurrency.Bufferable
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.logger.Log
-import no.nav.aap.kafka.streams.v2.processor.LogProduceTopicProcessor
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
@@ -36,14 +35,7 @@ class MappedKStream<T : Any> internal constructor(
                     buffer.lagre(key, it)
                 }
             }
-            .addProcessor(
-                LogProduceTopicProcessor(
-                    named = "log-${named}",
-                    topic = topic,
-                    logValue = logValues,
-                )
-            )
-            .to(topic.name, topic.produced(named))
+            .produceToTopic(topic, named, logValues)
     }
 
     fun <R : Any> map(mapper: (T) -> R): MappedKStream<R> {

@@ -22,6 +22,14 @@ class RaceConditionBuffer<V : Bufferable<V>>(
         }
     }
 
+    internal fun slett(key: String) {
+        buffer.remove(key)
+
+        if (logDebug) {
+            logger.debug("Sletter buffer for $key")
+        }
+    }
+
     internal fun velgNyeste(key: String, other: V): V =
         buffer[key]
             ?.takeIf { it.erNyere(other) }
