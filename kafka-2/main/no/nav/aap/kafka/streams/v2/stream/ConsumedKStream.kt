@@ -14,9 +14,9 @@ import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor.Companion.addProcessor
-import org.apache.kafka.streams.kstream.KStream
-import org.apache.kafka.streams.kstream.Named
-import org.apache.kafka.streams.kstream.Repartitioned
+import org.apache.kafka.streams.kstream.*
+import kotlin.time.Duration
+import kotlin.time.toJavaDuration
 
 class ConsumedKStream<T : Any> internal constructor(
     private val topic: Topic<T>,
@@ -81,6 +81,13 @@ class ConsumedKStream<T : Any> internal constructor(
     fun <R : Any> mapKeyAndValue(mapper: (key: String, value: T) -> KeyValue<String, R>): MappedKStream<R> {
         val fusedStream = stream.map { key, value -> mapper(key, value).toInternalKeyValue() }
         return MappedKStream(topic.name, fusedStream, namedSupplier)
+    }
+
+    fun windowed(window: Duration, gracePeriod: Duration) : WindowedStream<T> {
+        val sliding = SlidingWindows.ofTimeDifferenceAndGrace(window.toJavaDuration(), gracePeriod.toJavaDuration())
+        val groupSerde = Grouped.with(topic.keySerde, topic.valueSerde)
+        val windowedStream = stream.groupByKey(groupSerde).windowedBy(sliding)
+        return WindowedStream(topic, windowedStream, namedSupplier)
     }
 
     fun <U : Any> joinWith(ktable: KTable<U>): JoinedKStream<T, U> {

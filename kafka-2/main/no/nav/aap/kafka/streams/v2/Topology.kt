@@ -11,12 +11,32 @@ import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.kafka.streams.v2.stream.ConsumedKStream
 import no.nav.aap.kafka.streams.v2.stream.materialized
 import org.apache.kafka.streams.StreamsBuilder
-import org.apache.kafka.streams.kstream.KStream
-import org.apache.kafka.streams.kstream.Named
-import org.apache.kafka.streams.kstream.Repartitioned
+import org.apache.kafka.streams.kstream.*
+import java.time.Duration
 
 class Topology internal constructor() {
     private val builder = StreamsBuilder()
+
+    fun test() {
+        val søkere = builder.stream<String?, String?>("søkere")
+        val table = søkere.toTable(Named.`as`("lol"))
+
+        val b: KStream<String, String> = builder.stream("b")
+        val c: KStream<String, String> = builder.stream("c")
+
+        b.mapValues { _, value -> listOf(value.toInt()) }.to("hendelser")
+        c.mapValues { _, value -> listOf(value.toInt()) }.to("hendelser")
+
+        builder.stream<String, List<Int>>("hendelser")
+            .groupByKey()
+            .windowedBy(SlidingWindows.ofTimeDifferenceWithNoGrace(Duration.ofMillis(500)))
+
+            .reduce { value1, value2 -> value1 + value2 }
+            .toStream()
+            .selectKey { key, _ -> key.key() }
+            .join(table) { hendelser, søker -> søker.plus(hendelser.joinToString()) }
+            .to("søkere")
+    }
 
     fun <T : Any> consume(topic: Topic<T>, logValue: Boolean = false): ConsumedKStream<T> {
         val consumed = consumeWithTombstone(topic, logValue).skipTombstone(topic)
