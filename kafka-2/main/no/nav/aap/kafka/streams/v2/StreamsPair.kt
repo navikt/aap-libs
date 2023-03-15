@@ -2,7 +2,7 @@ package no.nav.aap.kafka.streams.v2
 
 import org.apache.kafka.streams.KeyValue
 
-data class KStreamPair<L, R>(
+data class StreamsPair<L, R>(
     val left: L,
     val right: R,
 )

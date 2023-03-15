@@ -3,8 +3,18 @@ package no.nav.aap.kafka.streams.v2.extension
 import no.nav.aap.kafka.streams.v2.KTable
 import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
+import no.nav.aap.kafka.streams.v2.processor.LogProduceTopicProcessor
+import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
+
+internal fun <T : Any> KStream<String, T>.produceWithLogging(
+    topic: Topic<T>,
+    named: String,
+    logValues: Boolean,
+) = this
+    .addProcessor(LogProduceTopicProcessor("log-${named}", topic, logValues))
+    .to(topic.name, topic.produced(named))
 
 internal fun <L : Any, R : Any, LR> KStream<String, L>.leftJoin(
     left: Topic<L>,

@@ -14,7 +14,7 @@ class BranchedKStream<T : Any> internal constructor(
 
     fun branch(
         predicate: (T) -> Boolean,
-        consumed: (ConsumedKStream<T>) -> Unit,
+        consumed: (ConsumedStream<T>) -> Unit,
     ): BranchedKStream<T> {
         val namedBranch = "-branch-$nextBranchNumber"
         val internalPredicate = internalPredicate(predicate)
@@ -23,18 +23,18 @@ class BranchedKStream<T : Any> internal constructor(
         return this
     }
 
-    fun default(consumed: (ConsumedKStream<T>) -> Unit) {
+    fun default(consumed: (ConsumedStream<T>) -> Unit) {
         val namedBranch = "-branch-default"
         val internalBranch = internalBranch(consumed, namedBranch) { "via$namedBranch-${namedSupplier()}" }
         stream.defaultBranch(internalBranch)
     }
 
     private fun internalBranch(
-        branch: (ConsumedKStream<T>) -> Unit,
+        branch: (ConsumedStream<T>) -> Unit,
         namedBranch: String,
         namedSupplier: () -> String,
     ): Branched<String, T> = Branched.withConsumer(
-        { chain: KStream<String, T> -> branch(ConsumedKStream(topic, chain, namedSupplier)) },
+        { chain: KStream<String, T> -> branch(ConsumedStream(topic, chain, namedSupplier)) },
         namedBranch
     )
 }
@@ -49,7 +49,7 @@ class BranchedMappedKStream<T : Any> internal constructor(
 
     fun branch(
         predicate: (T) -> Boolean,
-        consumed: (MappedKStream<T>) -> Unit,
+        consumed: (MappedStream<T>) -> Unit,
     ): BranchedMappedKStream<T> {
         val namedBranch = "-branch-$nextBranchNumber"
         val internalPredicate = internalPredicate(predicate)
@@ -58,18 +58,18 @@ class BranchedMappedKStream<T : Any> internal constructor(
         return this
     }
 
-    fun default(consumed: (MappedKStream<T>) -> Unit) {
+    fun default(consumed: (MappedStream<T>) -> Unit) {
         val namedBranch = "-branch-default"
         val internalBranch = internalBranch(consumed, namedBranch) { "via$namedBranch-${namedSupplier()}" }
         stream.defaultBranch(internalBranch)
     }
 
     private fun internalBranch(
-        branch: (MappedKStream<T>) -> Unit,
+        branch: (MappedStream<T>) -> Unit,
         namedBranch: String,
         namedSupplier: () -> String,
     ): Branched<String, T> = Branched.withConsumer(
-        { chain: KStream<String, T> -> branch(MappedKStream(sourceTopicName, chain, namedSupplier)) },
+        { chain: KStream<String, T> -> branch(MappedStream(sourceTopicName, chain, namedSupplier)) },
         namedBranch
     )
 }

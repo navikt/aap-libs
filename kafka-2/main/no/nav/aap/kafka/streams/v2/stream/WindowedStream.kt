@@ -13,7 +13,7 @@ class WindowedStream<T : Any> internal constructor(
     private val namedSupplier: () -> String,
 ) {
 
-    fun reduce(acc: (T, T) -> T): ConsumedKStream<T> {
+    fun reduce(acc: (T, T) -> T): ConsumedStream<T> {
         val named = "${namedSupplier()}-reduced"
 
         val materialized = Materialized.`as`<String, T, WindowStore<Bytes, ByteArray>>("$named-store")
@@ -25,6 +25,6 @@ class WindowedStream<T : Any> internal constructor(
             .toStream()
             .selectKey { key, _ -> key.key() }
 
-        return ConsumedKStream(topic, reducedStream) { named }
+        return ConsumedStream(topic, reducedStream) { named }
     }
 }
