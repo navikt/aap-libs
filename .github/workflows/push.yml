@@ -22,7 +22,7 @@ jobs:
       - uses: dorny/test-reporter@v1.6.0
         if: always()
         with:
-          name: tests
+          name: test
           path: "*/build/test-results/test/TEST-*.xml"
           reporter: java-junit
           token: ${{ secrets.GITHUB_TOKEN }}
