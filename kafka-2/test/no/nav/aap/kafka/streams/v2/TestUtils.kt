@@ -24,6 +24,15 @@ internal object Topics {
     ))
 }
 
+internal fun kafkaWithTopology(topology: Topology.() -> Unit): KStreamsMock =
+    KStreamsMock().apply {
+        connect(
+            topology = Topology().apply(topology),
+            config = StreamsConfig("", ""),
+            registry = SimpleMeterRegistry()
+        )
+    }
+
 data class VersionedString(
     val value: String,
     val version: Int,
@@ -44,7 +53,7 @@ internal object Tables {
     val E = Table(Topics.E)
 }
 
-class KStreamsMock : KStreams {
+class KStreamsMock : Streams {
     private lateinit var internalTopology: org.apache.kafka.streams.Topology
     private lateinit var internalStreams: TopologyTestDriver
 

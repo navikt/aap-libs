@@ -5,7 +5,7 @@ import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.extension.skipTombstone
 import no.nav.aap.kafka.streams.v2.processor.LogConsumeTopicProcessor
 import no.nav.aap.kafka.streams.v2.processor.LogProduceTableProcessor
-import no.nav.aap.kafka.streams.v2.processor.Processor
+import no.nav.aap.kafka.streams.v2.processor.MetadataProcessor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
 import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.kafka.streams.v2.stream.ConsumedStream
@@ -81,7 +81,7 @@ class Topology internal constructor() {
         return ConsumedStream(topic, consumedWithoutTombstones) { "from-${topic.name}" }
     }
 
-    fun registerInternalTopology(stream: KStreams) {
+    fun registerInternalTopology(stream: Streams) {
         stream.registerInternalTopology(builder.build())
     }
 
@@ -94,18 +94,6 @@ class Topology internal constructor() {
 }
 
 fun topology(init: Topology.() -> Unit): Topology = Topology().apply(init)
-
-private class MetadataProcessor<T : Any>(
-    topic: Topic<T>,
-) : Processor<T?, Pair<KeyValue<String, T?>, ProcessorMetadata>>(
-    "from-${topic.name}-enrich-metadata",
-) {
-    override fun process(
-        metadata: ProcessorMetadata,
-        keyValue: KeyValue<String, T?>,
-    ): Pair<KeyValue<String, T?>, ProcessorMetadata> =
-        keyValue to metadata
-}
 
 private fun <T : Any> materialized(
     storeName: String,

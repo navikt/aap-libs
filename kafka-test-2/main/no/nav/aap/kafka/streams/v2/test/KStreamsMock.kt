@@ -13,7 +13,7 @@ import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.streams.StreamsConfig.*
 import org.apache.kafka.streams.TopologyTestDriver
 
-class KStreamsMock : KStreams {
+class KStreamsMock : Streams {
     private lateinit var internalStreams: TopologyTestDriver
     private lateinit var internalTopology: org.apache.kafka.streams.Topology
 

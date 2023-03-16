@@ -1,9 +1,9 @@
 package no.nav.aap.kafka.streams.v2.stream
 
 import no.nav.aap.kafka.streams.concurrency.Bufferable
-import no.nav.aap.kafka.streams.v2.StreamsPair
 import no.nav.aap.kafka.streams.v2.KTable
 import no.nav.aap.kafka.streams.v2.KeyValue
+import no.nav.aap.kafka.streams.v2.StreamsPair
 import no.nav.aap.kafka.streams.v2.Topic
 import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.extension.filterNotNull
@@ -11,8 +11,10 @@ import no.nav.aap.kafka.streams.v2.extension.join
 import no.nav.aap.kafka.streams.v2.extension.leftJoin
 import no.nav.aap.kafka.streams.v2.extension.produceWithLogging
 import no.nav.aap.kafka.streams.v2.logger.Log
+import no.nav.aap.kafka.streams.v2.processor.MetadataProcessor
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
+import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor.Companion.addProcessor
 import org.apache.kafka.streams.kstream.*
@@ -54,6 +56,13 @@ class ConsumedStream<T : Any> internal constructor(
         return MappedStream(topic.name, mappedStream, namedSupplier)
     }
 
+    fun <R : Any> mapWithMetadata(mapper: (value: T, metadata: ProcessorMetadata) -> R): MappedStream<R> {
+        val mappedStream = stream
+            .addProcessor(MetadataProcessor(topic))
+            .mapValues { (kv, metadata) -> mapper(kv.value, metadata) }
+        return MappedStream(topic.name, mappedStream, namedSupplier)
+    }
+
     fun <R> mapNotNull(mapper: (key: String, value: T) -> R): MappedStream<R & Any> {
         val valuedStream = stream.mapValues { key, value -> mapper(key, value) }.filterNotNull()
         return MappedStream(topic.name, valuedStream, namedSupplier)
@@ -84,7 +93,7 @@ class ConsumedStream<T : Any> internal constructor(
         return MappedStream(topic.name, fusedStream, namedSupplier)
     }
 
-    fun windowed(window: Duration, gracePeriod: Duration) : WindowedStream<T> {
+    fun windowed(window: Duration, gracePeriod: Duration): WindowedStream<T> {
         val sliding = SlidingWindows.ofTimeDifferenceAndGrace(window.toJavaDuration(), gracePeriod.toJavaDuration())
         val groupSerde = Grouped.with(topic.keySerde, topic.valueSerde)
         val windowedStream = stream.groupByKey(groupSerde).windowedBy(sliding)

@@ -14,7 +14,7 @@ import org.apache.kafka.streams.state.QueryableStoreTypes
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
 import org.apache.kafka.streams.state.ValueAndTimestamp
 
-interface KStreams : ProducerFactory, ConsumerFactory, AutoCloseable {
+interface Streams : ProducerFactory, ConsumerFactory, AutoCloseable {
     fun connect(
         topology: Topology,
         config: StreamsConfig,
@@ -29,7 +29,7 @@ interface KStreams : ProducerFactory, ConsumerFactory, AutoCloseable {
     fun <T : Any> getStore(table: Table<T>): StateStore<T>
 }
 
-class KafkaStreams : KStreams {
+class KafkaStreams : Streams {
     private var initiallyStarted: Boolean = false
 
     private lateinit var internalStreams: org.apache.kafka.streams.KafkaStreams
