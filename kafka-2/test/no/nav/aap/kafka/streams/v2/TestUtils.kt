@@ -4,12 +4,16 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.serde.json.Migratable
 import no.nav.aap.kafka.streams.v2.config.StreamsConfig
+import no.nav.aap.kafka.streams.v2.processor.Processor
+import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
+import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
 import no.nav.aap.kafka.streams.v2.serde.JsonSerde
 import no.nav.aap.kafka.streams.v2.serde.StringSerde
 import no.nav.aap.kafka.streams.v2.visual.TopologyVisulizer
 import org.apache.kafka.streams.TestInputTopic
 import org.apache.kafka.streams.TestOutputTopic
 import org.apache.kafka.streams.TopologyTestDriver
+import org.apache.kafka.streams.state.TimestampedKeyValueStore
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
@@ -97,3 +101,17 @@ internal fun <V> TestInputTopic<String, V>.produceTombstone(key: String): TestIn
 internal fun kafka(topology: Topology): KStreamsMock = KStreamsMock().apply {
     connect(topology, StreamsConfig("", ""), SimpleMeterRegistry())
 }
+
+class CustomProcessorWithTable(table: KTable<String>) : StateProcessor<String, String, String>("custom-join", table) {
+    override fun process(
+        metadata: ProcessorMetadata,
+        store: TimestampedKeyValueStore<String, String>,
+        keyValue: KeyValue<String, String>
+    ): String = "${keyValue.value}${store[keyValue.key].value()}"
+}
+
+open class CustomProcessor : Processor<String, String>("add-v2-prefix") {
+    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, String>): String =
+        "${keyValue.value}.v2"
+}
+
