@@ -10,7 +10,8 @@ private val log: Logger = LoggerFactory.getLogger("secureLog")
 
 internal class LogConsumeTopicProcessor<T>(
     private val topic: Topic<T & Any>,
-) : Processor<T, T>("log-consume-${topic.name}") {
+    namedSuffix: String = "",
+) : Processor<T, T>("log-consume-${topic.name}$namedSuffix") {
 
     override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T>): T {
         log.trace(

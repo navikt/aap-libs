@@ -99,7 +99,7 @@ class Topology internal constructor() {
     ): KStream<String, T?> =
         builder
             .stream(topic.name, topic.consumed("consume-${topic.name}$namedSuffix"))
-            .addProcessor(LogConsumeTopicProcessor(topic))
+            .addProcessor(LogConsumeTopicProcessor(topic, namedSuffix))
 }
 
 fun topology(init: Topology.() -> Unit): Topology = Topology().apply(init)
