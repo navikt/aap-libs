@@ -73,8 +73,8 @@ internal fun <V : Any> org.apache.kafka.streams.kstream.KTable<String, V?>.skipT
     ) as org.apache.kafka.streams.kstream.KTable<String, V>
 
 @Suppress("UNCHECKED_CAST")
-internal fun <V : Any> KStream<String, V?>.skipTombstone(topic: Topic<V>): KStream<String, V> = this
+internal fun <V : Any> KStream<String, V?>.skipTombstone(topic: Topic<V>, namedSuffix: String = ""): KStream<String, V> = this
     .filter(
         { _, value -> value != null },
-        Named.`as`("skip-${topic.name}-tombstone")
+        Named.`as`("skip-${topic.name}-tombstone$namedSuffix")
     ) as KStream<String, V>

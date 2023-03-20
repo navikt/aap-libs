@@ -65,6 +65,14 @@ class Topology internal constructor() {
         return KTable(table, stream)
     }
 
+    /**
+     * Bør ikke brukes, men kjekk hvis man har behov for å mocke
+     */
+    fun <T : Any> consume(topic: Topic<T>, namedSuffix: String): ConsumedStream<T> {
+        val consumed = consumeWithLogging(topic, namedSuffix).skipTombstone(topic, namedSuffix)
+        return ConsumedStream(topic, consumed) { "from-${topic.name}-$namedSuffix" }
+    }
+
     fun <T : Any> consume(
         topic: Topic<T>,
         onEach: (key: String, value: T?, metadata: ProcessorMetadata) -> Unit,
@@ -85,9 +93,12 @@ class Topology internal constructor() {
 
     internal fun buildInternalTopology() = builder.build()
 
-    private fun <T : Any> consumeWithLogging(topic: Topic<T>): KStream<String, T?> =
+    private fun <T : Any> consumeWithLogging(
+        topic: Topic<T>,
+        namedSuffix: String = "" ,
+    ): KStream<String, T?> =
         builder
-            .stream(topic.name, topic.consumed("consume-${topic.name}"))
+            .stream(topic.name, topic.consumed("consume-${topic.name}$namedSuffix"))
             .addProcessor(LogConsumeTopicProcessor(topic))
 }
 
