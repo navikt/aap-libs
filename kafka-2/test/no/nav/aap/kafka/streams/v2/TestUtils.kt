@@ -18,14 +18,14 @@ import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 internal object Topics {
-    val A = Topic("A", StringSerde)
-    val B = Topic("B", StringSerde)
-    val C = Topic("C", StringSerde)
-    val D = Topic("D", StringSerde)
+    val A = Topic("A", StringSerde, logValues = true)
+    val B = Topic("B", StringSerde, logValues = true)
+    val C = Topic("C", StringSerde, logValues = true)
+    val D = Topic("D", StringSerde, logValues = true)
     val E = Topic("E", JsonSerde.jackson<VersionedString, VersionedString>(
         dtoVersion = 2,
         migrate = { prev -> prev.copy(version = 2) }
-    ))
+    ), logValues = true)
 }
 
 internal fun kafkaWithTopology(topology: Topology.() -> Unit): KStreamsMock =

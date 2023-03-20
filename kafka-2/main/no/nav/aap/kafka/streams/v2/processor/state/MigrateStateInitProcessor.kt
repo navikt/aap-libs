@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 class MigrateStateInitProcessor<T : Migratable>(
     private val ktable: KTable<T>,
     private val producer: Producer<String, T>,
-    private val logValue: Boolean,
 ) : StateInitProcessor<T>(
     named = "migrate-${ktable.table.stateStoreName}",
     table = ktable,
@@ -29,7 +28,7 @@ class MigrateStateInitProcessor<T : Migratable>(
                             kv("store", ktable.table.stateStoreName),
                             kv("partition", meta.partition()),
                             kv("offset", meta.offset()),
-                            if (logValue) kv("value", value) else null
+                            if (ktable.table.sourceTopic.logValues) kv("value", value) else null
                         )
                     } else {
                         secureLog.error("klarte ikke sende migrert dto", error)

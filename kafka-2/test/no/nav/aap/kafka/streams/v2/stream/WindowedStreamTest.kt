@@ -16,10 +16,10 @@ internal class WindowedStreamTest {
     @Test
     fun tes() {
         val topology = topology {
-            consume(Topics.A, true)
+            consume(Topics.A)
                 .windowed(100.ms, 100.ms)
                 .reduce { s, s2 -> "$s$s2" }
-                .produce(Topics.B, true)
+                .produce(Topics.B)
         }
 
         val kafka = kafka(topology)

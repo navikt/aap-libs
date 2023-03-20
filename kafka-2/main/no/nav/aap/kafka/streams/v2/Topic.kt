@@ -10,6 +10,7 @@ open class Topic<T : Any>(
     val name: String,
     val valueSerde: StreamSerde<T>,
     val keySerde: StreamSerde<String> = StringSerde,
+    val logValues: Boolean = false,
 ) {
     internal fun consumed(named: String): Consumed<String, T> = Consumed.with(keySerde, valueSerde).withName(named)
     internal open fun produced(named: String): Produced<String, T> = Produced.with(keySerde, valueSerde).withName(named)

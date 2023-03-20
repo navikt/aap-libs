@@ -53,7 +53,6 @@ internal class SchedulerTest {
                 MigrateStateInitProcessor(
                     producer = producer,
                     ktable = ktable,
-                    logValue = true
                 )
             )
         }

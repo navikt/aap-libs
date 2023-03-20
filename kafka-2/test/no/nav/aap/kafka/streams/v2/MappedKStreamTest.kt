@@ -98,7 +98,7 @@ internal class MappedKStreamTest {
     @Test
     fun `mapNotNull a branched stream`() {
         val topology = topology {
-            consume(Topics.A, true)
+            consume(Topics.A)
                 .mapNotNull { key, value -> if (key == "1") null else value }
                 .produce(Topics.C)
         }

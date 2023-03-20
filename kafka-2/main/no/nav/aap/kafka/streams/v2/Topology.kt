@@ -20,21 +20,21 @@ import org.apache.kafka.streams.state.KeyValueStore
 class Topology internal constructor() {
     private val builder = StreamsBuilder()
 
-    fun <T : Any> consume(topic: Topic<T>, logValue: Boolean = false): ConsumedStream<T> {
-        val consumed = consumeWithLogging(topic, logValue).skipTombstone(topic)
+    fun <T : Any> consume(topic: Topic<T>): ConsumedStream<T> {
+        val consumed = consumeWithLogging(topic).skipTombstone(topic)
         return ConsumedStream(topic, consumed) { "from-${topic.name}" }
     }
 
-    fun <T : Any> consume(table: Table<T>, logValues: Boolean = false): KTable<T> {
-        val stream = consumeWithLogging(table.sourceTopic, logValues)
-        return stream.toKtable(table, logValues)
+    fun <T : Any> consume(table: Table<T>): KTable<T> {
+        val stream = consumeWithLogging(table.sourceTopic)
+        return stream.toKtable(table)
     }
 
-    private fun <T : Any> KStream<String, T?>.toKtable(table: Table<T>, logValues: Boolean): KTable<T> {
+    private fun <T : Any> KStream<String, T?>.toKtable(table: Table<T>): KTable<T> {
         val tableNamed = Named.`as`("${table.sourceTopicName}-to-table")
         val materializedKeyValueStore = materialized(table.stateStoreName, table.sourceTopic)
         val internalKTable = this
-            .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
+            .addProcessor(LogProduceTableProcessor(table))
             .toTable(tableNamed, materializedKeyValueStore)
         return KTable(table, internalKTable)
     }
@@ -42,22 +42,21 @@ class Topology internal constructor() {
     fun <T : Bufferable<T>> consume(
         table: Table<T>,
         buffer: RaceConditionBuffer<T>,
-        logValues: Boolean = false
     ): KTable<T> {
-        val stream = consumeWithLogging(table.sourceTopic, logValues)
+        val stream = consumeWithLogging(table.sourceTopic)
         stream.filter { _, value -> value == null }.foreach { key, _ -> buffer.slett(key) }
-        return stream.toKtable(table, logValues)
+        return stream.toKtable(table)
     }
 
-    fun <T : Any> consumeRepartitioned(table: Table<T>, partitions: Int = 12, logValues: Boolean = false): KTable<T> {
+    fun <T : Any> consumeRepartitioned(table: Table<T>, partitions: Int = 12): KTable<T> {
         val repartition = Repartitioned
             .with(table.sourceTopic.keySerde, table.sourceTopic.valueSerde)
             .withNumberOfPartitions(partitions)
             .withName(table.sourceTopicName)
 
-        val stream = consumeWithLogging(table.sourceTopic, logValues)
+        val stream = consumeWithLogging(table.sourceTopic)
             .repartition(repartition)
-            .addProcessor(LogProduceTableProcessor("log-produced-${table.sourceTopicName}", table, logValues))
+            .addProcessor(LogProduceTableProcessor(table))
             .toTable(
                 Named.`as`("${table.sourceTopicName}-to-table"),
                 materialized(table.stateStoreName, table.sourceTopic)
@@ -68,10 +67,9 @@ class Topology internal constructor() {
 
     fun <T : Any> consume(
         topic: Topic<T>,
-        logValue: Boolean = false,
         onEach: (key: String, value: T?, metadata: ProcessorMetadata) -> Unit,
     ): ConsumedStream<T> {
-        val stream = consumeWithLogging(topic, logValue)
+        val stream = consumeWithLogging(topic)
 
         stream
             .addProcessor(MetadataProcessor(topic))
@@ -87,10 +85,10 @@ class Topology internal constructor() {
 
     internal fun buildInternalTopology() = builder.build()
 
-    private fun <T : Any> consumeWithLogging(topic: Topic<T>, logValue: Boolean): KStream<String, T?> =
+    private fun <T : Any> consumeWithLogging(topic: Topic<T>): KStream<String, T?> =
         builder
             .stream(topic.name, topic.consumed("consume-${topic.name}"))
-            .addProcessor(LogConsumeTopicProcessor("log-consume-${topic.name}", logValue))
+            .addProcessor(LogConsumeTopicProcessor(topic))
 }
 
 fun topology(init: Topology.() -> Unit): Topology = Topology().apply(init)

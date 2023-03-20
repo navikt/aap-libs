@@ -17,15 +17,14 @@ class MappedStream<T : Any> internal constructor(
     private val stream: KStream<String, T>,
     private val namedSupplier: () -> String,
 ) {
-    fun produce(topic: Topic<T>, logValues: Boolean = false) {
+    fun produce(topic: Topic<T>) {
         val named = "produced-${topic.name}-${namedSupplier()}"
-        stream.produceWithLogging(topic, named, logValues)
+        stream.produceWithLogging(topic, named)
     }
 
     fun <U : Bufferable<U>> produce(
         topic: Topic<U>,
         buffer: RaceConditionBuffer<U>,
-        logValues: Boolean = false,
         lambda: (T) -> U,
     ) {
         val named = "produced-bufferable-${topic.name}-${namedSupplier()}"
@@ -36,7 +35,7 @@ class MappedStream<T : Any> internal constructor(
                     buffer.lagre(key, it)
                 }
             }
-            .produceWithLogging(topic, named, logValues)
+            .produceWithLogging(topic, named)
     }
 
     fun <R : Any> map(mapper: (T) -> R): MappedStream<R> {

@@ -9,10 +9,8 @@ import org.slf4j.LoggerFactory
 private val log: Logger = LoggerFactory.getLogger("secureLog")
 
 internal class LogProduceTableProcessor<T: Any>(
-    named: String,
     private val table: Table<T>,
-    private val logValue: Boolean,
-) : Processor<T?, T?>(named) {
+) : Processor<T?, T?>("log-produced-${table.sourceTopicName}") {
 
     override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T?>): T? {
         when (keyValue.value) {
@@ -29,7 +27,7 @@ internal class LogProduceTableProcessor<T: Any>(
                 kv("table", table.sourceTopicName),
                 kv("store", table.stateStoreName),
                 kv("partition", metadata.partition),
-                if (logValue) kv("value", keyValue.value) else null,
+                if (table.sourceTopic.logValues) kv("value", keyValue.value) else null,
             )
         }
         return keyValue.value

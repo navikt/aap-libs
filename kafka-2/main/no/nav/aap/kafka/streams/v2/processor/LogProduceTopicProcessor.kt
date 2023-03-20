@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory
 internal class LogProduceTopicProcessor<T> internal constructor(
     named: String,
     private val topic: Topic<T & Any>,
-    private val logValue: Boolean,
 ) : Processor<T, T>(named) {
 
     override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T>): T {
@@ -19,7 +18,7 @@ internal class LogProduceTopicProcessor<T> internal constructor(
             kv("source_topic", metadata.topic),
             kv("topic", topic.name),
             kv("partition", metadata.partition),
-            if (logValue) kv("value", keyValue.value) else null,
+            if (topic.logValues) kv("value", keyValue.value) else null,
         )
         return keyValue.value
     }

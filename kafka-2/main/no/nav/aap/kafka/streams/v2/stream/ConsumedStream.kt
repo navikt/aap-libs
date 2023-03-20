@@ -26,9 +26,9 @@ class ConsumedStream<T : Any> internal constructor(
     private val stream: KStream<String, T>,
     private val namedSupplier: () -> String
 ) {
-    fun produce(destination: Topic<T>, logValues: Boolean = false) {
+    fun produce(destination: Topic<T>) {
         val named = "produced-${destination.name}-${namedSupplier()}"
-        stream.produceWithLogging(destination, named, logValues)
+        stream.produceWithLogging(destination, named)
     }
 
     fun rekey(selectKeyFromValue: (T) -> String): ConsumedStream<T> {

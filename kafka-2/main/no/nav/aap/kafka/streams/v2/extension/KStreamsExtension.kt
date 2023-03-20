@@ -11,9 +11,8 @@ import org.apache.kafka.streams.kstream.Named
 internal fun <T : Any> KStream<String, T>.produceWithLogging(
     topic: Topic<T>,
     named: String,
-    logValues: Boolean,
 ) = this
-    .addProcessor(LogProduceTopicProcessor("log-${named}", topic, logValues))
+    .addProcessor(LogProduceTopicProcessor("log-${named}", topic))
     .to(topic.name, topic.produced(named))
 
 internal fun <L : Any, R : Any, LR> KStream<String, L>.leftJoin(
