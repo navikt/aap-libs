@@ -3,7 +3,8 @@ package no.nav.aap.kafka
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import no.nav.aap.kafka.schemaregistry.SchemaRegistryConfig
-import no.nav.aap.kafka.streams.KStreamsConfig
+import no.nav.aap.kafka.streams.v2.config.SslConfig
+import no.nav.aap.kafka.streams.v2.config.StreamsConfig
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -12,7 +13,7 @@ internal class ConfigTest {
 
     @Test
     fun `schemaRegistry is empty without schema registry url`() {
-        val config = KStreamsConfig(
+        val config = StreamsConfig(
             applicationId = "app",
             brokers = "localhost:9092",
             ssl = SslConfig("", "", "")
@@ -27,10 +28,10 @@ internal class ConfigTest {
 
     @Test
     fun `schema registry config is configured when present`() {
-        val config = KStreamsConfig(
+        val config = StreamsConfig(
             applicationId = "app",
             brokers = "localhost:9092",
-            schemaRegistryProperties = schemaConfig.properties(),
+            schemaRegistry = schemaConfig.properties(),
             ssl = SslConfig("", "", "")
         )
 

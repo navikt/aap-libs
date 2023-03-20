@@ -2,8 +2,8 @@ package no.nav.aap.kafka.serde.avro
 
 import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
-import no.nav.aap.kafka.SslConfig
 import no.nav.aap.kafka.schemaregistry.SchemaRegistryConfig
+import no.nav.aap.kafka.streams.v2.config.SslConfig
 import org.apache.avro.specific.SpecificRecord
 import java.util.*
 

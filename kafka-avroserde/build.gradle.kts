@@ -3,7 +3,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":kafka"))
+    implementation(project(":kafka-2"))
 
     api("org.apache.kafka:kafka-streams:3.4.0")
     api("io.confluent:kafka-streams-avro-serde:7.3.0")
