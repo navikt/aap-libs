@@ -22,7 +22,7 @@ internal class Test {
                 .produce(Topics.C)
         }
 
-        val kafka = KStreamsMock()
+        val kafka = StreamsMock()
         val registry = SimpleMeterRegistry()
         val config = StreamsConfig(
             applicationId = "app",
