@@ -20,6 +20,13 @@ object JsonSerde {
         override fun deserializer(): Deserializer<V> = JacksonDeserializer(V::class)
     }
 
+    internal val secureLog = LoggerFactory.getLogger("secureLog")
+    internal val jackson: ObjectMapper = jacksonObjectMapper().apply {
+        registerModule(JavaTimeModule())
+        disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    }
+
     /**
      * OBS!
      * Hvis forrige dto ikke har versjon, og neste versjon kan parses til forrige så vil den ikke migrere.
@@ -47,21 +54,13 @@ object JsonSerde {
 }
 
 class JacksonSerializer<T : Any> : Serializer<T> {
-    private val jackson: ObjectMapper = jacksonObjectMapper().apply {
-        registerModule(JavaTimeModule())
-        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-    }
-
-    override fun serialize(topic: String, data: T?): ByteArray? = data?.let { jackson.writeValueAsBytes(it) }
+    override fun serialize(topic: String, data: T?): ByteArray? =
+        data?.let { JsonSerde.jackson.writeValueAsBytes(it) }
 }
 
 class JacksonDeserializer<T : Any>(private val kclass: KClass<T>) : Deserializer<T> {
-    private val jackson: ObjectMapper = jacksonObjectMapper().apply {
-        registerModule(JavaTimeModule())
-        disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-    }
-
-    override fun deserialize(topic: String, data: ByteArray?): T? = data?.let { jackson.readValue(it, kclass.java) }
+    override fun deserialize(topic: String, data: ByteArray?): T? =
+        data?.let { JsonSerde.jackson.readValue(it, kclass.java) }
 }
 
 class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
@@ -76,7 +75,7 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
 
     override fun deserialize(topic: String, data: ByteArray?): T? =
         data?.let { byteArray ->
-            val json: JsonNode = jackson.readTree(byteArray)
+            val json: JsonNode = JsonSerde.jackson.readTree(byteArray)
 
             when (val version = versionSupplier(json)) {
                 null, previousDtoVersion -> deserializeForMigration(byteArray, topic, version)
@@ -94,9 +93,9 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
 
     private fun deserializeDto(topic: String, bytes: ByteArray, json: JsonNode): T =
         try {
-            jackson.readValue(bytes, kclass.java)
+            JsonSerde.jackson.readValue(bytes, kclass.java)
         } catch (e: Exception) {
-            secureLog.error(
+            JsonSerde.secureLog.error(
                 """
                     Klarte ikke deserializere data på topic $topic
                     Versjon i data og dataklasse ${kclass.java.name} = $dtoVersion
@@ -109,9 +108,9 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
 
     private fun deserializeForMigration(bytes: ByteArray, topic: String, version: Int?): T {
         val previousDto = try {
-            jackson.readValue(bytes, prevKClass.java)
+            JsonSerde.jackson.readValue(bytes, prevKClass.java)
         } catch (e: Exception) {
-            secureLog.error(
+            JsonSerde.secureLog.error(
                 """
                     Klarte ikke deserializere data på topic $topic til forrige dto
                     Forrige versjon = $previousDtoVersion
@@ -127,16 +126,16 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
             }
             .also { migratedDto ->
                 if (logValues) {
-                    secureLog.trace(
+                    JsonSerde.secureLog.trace(
                         "Migrerte ved deserialisering: {} {} {} {} {}",
                         kv("topic", topic),
                         kv("fra_versjon", version),
                         kv("til_versjon", dtoVersion),
                         raw("fra_data", bytes.decodeToString()),
-                        raw("til_data", jackson.writeValueAsString(migratedDto))
+                        raw("til_data", JsonSerde.jackson.writeValueAsString(migratedDto))
                     )
                 } else {
-                    secureLog.trace(
+                    JsonSerde.secureLog.trace(
                         "Migrerte ved deserialisering: {} {} {}",
                         kv("topic", topic),
                         kv("fra_versjon", version),
@@ -144,14 +143,6 @@ class JacksonMigrationDeserializer<T_PREV : Any, T : Migratable>(
                     )
                 }
             }
-    }
-
-    private companion object {
-        private val secureLog = LoggerFactory.getLogger("secureLog")
-        private val jackson: ObjectMapper = jacksonObjectMapper().apply {
-            registerModule(JavaTimeModule())
-            disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        }
     }
 }
 
