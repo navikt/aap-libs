@@ -93,11 +93,68 @@ class ConsumedStream<T : Any> internal constructor(
         return MappedStream(topic.name, fusedStream, namedSupplier)
     }
 
-    fun windowed(window: Duration, gracePeriod: Duration): WindowedStream<T> {
-        val sliding = SlidingWindows.ofTimeDifferenceAndGrace(window.toJavaDuration(), gracePeriod.toJavaDuration())
+    /**
+     * Window will change when something exceeds the window frame or when something new comes in.
+     * @param windowSize the size of the window
+     * |      <- new record
+     * ||     <- new record
+     *  |     <- first record exceeded
+     *  ||    <- new record
+     */
+    fun slidingWindow(windowSize: Duration): TimeWindowedStream<T> {
+        /*
+         * TODO: skal noen av vinduene ha gracePeriod?
+         * Dvs hvor lenge skal streamen vente på at en melding har et timestamp som passer inn i vinduet.  timestamp enn "nå".
+         * Dette vil ta noen out-of-order records som oppstår f.eks dersom klokkene til producerne er ulike
+         */
+        val sliding = SlidingWindows.ofTimeDifferenceWithNoGrace(windowSize.toJavaDuration())
         val groupSerde = Grouped.with(topic.keySerde, topic.valueSerde)
         val windowedStream = stream.groupByKey(groupSerde).windowedBy(sliding)
-        return WindowedStream(topic, windowedStream, namedSupplier)
+        return TimeWindowedStream(topic, windowedStream, namedSupplier)
+    }
+
+    /**
+     * Window size and advance size will overlap some.
+     * @param advanceSize must be less than [windowSize]
+     *  |||||||||||||
+     *             |||||||||||||
+     *                        |||||||||||||
+     */
+    fun hoppingWindow(windowSize: Duration, advanceSize: Duration): TimeWindowedStream<T> {
+        val window = TimeWindows
+            .ofSizeWithNoGrace(windowSize.toJavaDuration())
+            .advanceBy(advanceSize.toJavaDuration())
+
+        val groupSerde = Grouped.with(topic.keySerde, topic.valueSerde)
+        val windowedStream = stream.groupByKey(groupSerde).windowedBy(window)
+        return TimeWindowedStream(topic, windowedStream, namedSupplier)
+    }
+
+    /**
+     * Tumbling window is a hopping window, but where window size and advance size is equal.
+     * This results in no overlaps or duplicates.
+     *  |||||||||||||
+     *               |||||||||||||
+     *                            |||||||||||||
+     */
+    fun tumblingWindow(windowSize: Duration): TimeWindowedStream<T> {
+        val window = TimeWindows.ofSizeWithNoGrace(windowSize.toJavaDuration())
+        val groupSerde = Grouped.with(topic.keySerde, topic.valueSerde)
+        val windowedStream = stream.groupByKey(groupSerde).windowedBy(window)
+        return TimeWindowedStream(topic, windowedStream, namedSupplier)
+    }
+
+    /**
+     * Creates a new window after [inactivityGap] duration.
+     *  |||||||||
+     *               ||||||||
+     *                           |||||||||||||
+     */
+    fun sessionWindow(inactivityGap: Duration): SessionWindowedStream<T> {
+        val window = SessionWindows.ofInactivityGapWithNoGrace(inactivityGap.toJavaDuration())
+        val groupSerde = Grouped.with(topic.keySerde, topic.valueSerde)
+        val windowedStream: SessionWindowedKStream<String, T> = stream.groupByKey(groupSerde).windowedBy(window)
+        return SessionWindowedStream(topic, windowedStream, namedSupplier)
     }
 
     fun <U : Any> joinWith(ktable: KTable<U>): JoinedStream<T, U> {
