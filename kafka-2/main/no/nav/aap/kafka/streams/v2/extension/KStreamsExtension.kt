@@ -1,12 +1,19 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package no.nav.aap.kafka.streams.v2.extension
 
 import no.nav.aap.kafka.streams.v2.KTable
 import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
+import no.nav.aap.kafka.streams.v2.processor.LogProduceTableProcessor
 import no.nav.aap.kafka.streams.v2.processor.LogProduceTopicProcessor
 import no.nav.aap.kafka.streams.v2.processor.Processor.Companion.addProcessor
+import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.kstream.KStream
+import org.apache.kafka.streams.kstream.Materialized
 import org.apache.kafka.streams.kstream.Named
+import org.apache.kafka.streams.kstream.Repartitioned
+import org.apache.kafka.streams.state.KeyValueStore
 
 internal fun <T : Any> KStream<String, T>.produceWithLogging(
     topic: Topic<T>,
@@ -59,22 +66,46 @@ internal fun <L : Any, R : Any, LR> KStream<String, L>.join(
         left join right
     )
 
-@Suppress("UNCHECKED_CAST")
-internal fun <V> KStream<String, V>.filterNotNull(): KStream<String, V & Any> = this
-    .filter { _, value -> value != null } as KStream<String, V & Any>
+internal fun <T : Any> KStream<String, T?>.toKtable(table: Table<T>): KTable<T> {
+    val tableNamed = Named.`as`("${table.sourceTopicName}-to-table")
+    val internalKTable = this
+        .addProcessor(LogProduceTableProcessor(table))
+        .toTable(tableNamed, materialized(table))
+    return KTable(table, internalKTable)
+}
 
-@Suppress("UNCHECKED_CAST")
-internal fun <V : Any> org.apache.kafka.streams.kstream.KTable<String, V?>.skipTombstone(
-    table: Table<V>,
-): org.apache.kafka.streams.kstream.KTable<String, V> = this
-    .filter(
-        { _, value -> value != null },
-        Named.`as`("skip-table-${table.sourceTopicName}-tombstone")
-    ) as org.apache.kafka.streams.kstream.KTable<String, V>
+internal fun <T> repartitioned(table: Table<T & Any>, partitions: Int): Repartitioned<String, T> =
+    Repartitioned
+        .with(table.sourceTopic.keySerde, table.sourceTopic.valueSerde)
+        .withNumberOfPartitions(partitions)
+        .withName(table.sourceTopicName)
 
-@Suppress("UNCHECKED_CAST")
-internal fun <V : Any> KStream<String, V?>.skipTombstone(topic: Topic<V>, namedSuffix: String = ""): KStream<String, V> = this
-    .filter(
-        { _, value -> value != null },
-        Named.`as`("skip-${topic.name}-tombstone$namedSuffix")
-    ) as KStream<String, V>
+internal fun <T : Any> materialized(table: Table<T>): Materialized<String, T?, KeyValueStore<Bytes, ByteArray>> =
+    Materialized.`as`<String, T, KeyValueStore<Bytes, ByteArray>>(table.stateStoreName)
+        .withKeySerde(table.sourceTopic.keySerde)
+        .withValueSerde(table.sourceTopic.valueSerde)
+
+internal fun <V> KStream<String, V>.filterNotNull(): KStream<String, V & Any> {
+    val filteredInternalKStream = filter { _, value -> value != null }
+    return filteredInternalKStream as KStream<String, V & Any>
+}
+
+internal fun <T> org.apache.kafka.streams.kstream.KTable<String, T>.skipTombstone(
+    table: Table<T & Any>
+): org.apache.kafka.streams.kstream.KTable<String, T & Any> {
+    val named = Named.`as`("skip-table-${table.sourceTopicName}-tombstone")
+    val filteredInternalKTable = filter({ _, value -> value != null }, named)
+    return filteredInternalKTable as org.apache.kafka.streams.kstream.KTable<String, T & Any>
+}
+
+internal fun <V> KStream<String, V>.skipTombstone(topic: Topic<V & Any>): KStream<String, V & Any> =
+    skipTombstone(topic, "")
+
+internal fun <V> KStream<String, V>.skipTombstone(
+    topic: Topic<V & Any>,
+    namedSuffix: String,
+): KStream<String, V & Any> {
+    val named = Named.`as`("skip-${topic.name}-tombstone$namedSuffix")
+    val filteredInternalStream = filter({ _, value -> value != null }, named)
+    return filteredInternalStream as KStream<String, V & Any>
+}

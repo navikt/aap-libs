@@ -8,11 +8,11 @@ import org.slf4j.LoggerFactory
 
 private val log: Logger = LoggerFactory.getLogger("secureLog")
 
-internal class LogProduceTableProcessor<T: Any>(
-    private val table: Table<T>,
-) : Processor<T?, T?>("log-produced-${table.sourceTopicName}") {
+internal class LogProduceTableProcessor<T>(
+    private val table: Table<T & Any>,
+) : Processor<T, T>("log-produced-${table.sourceTopicName}") {
 
-    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T?>): T? {
+    override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, T>): T {
         when (keyValue.value) {
             null -> log.trace(
                 "Produserer tombstone til KTable ${table.sourceTopicName}",
@@ -21,6 +21,7 @@ internal class LogProduceTableProcessor<T: Any>(
                 kv("store", table.stateStoreName),
                 kv("partition", metadata.partition),
             )
+
             else -> log.trace(
                 "Produserer til KTable ${table.sourceTopicName}",
                 kv("key", keyValue.key),
