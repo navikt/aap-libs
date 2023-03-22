@@ -15,6 +15,8 @@ import org.apache.kafka.streams.TestOutputTopic
 import org.apache.kafka.streams.TopologyTestDriver
 import org.apache.kafka.streams.state.TimestampedKeyValueStore
 import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import kotlin.time.toJavaDuration
 
 internal object Topics {
@@ -27,6 +29,8 @@ internal object Topics {
         migrate = { prev -> prev.copy(version = 2) }
     ), logValues = true)
 }
+
+internal val Int.ms get() = toDuration(DurationUnit.MILLISECONDS)
 
 internal fun kafkaWithTopology(topology: Topology.() -> Unit): KStreamsMock =
     KStreamsMock().apply {

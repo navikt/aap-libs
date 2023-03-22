@@ -1,5 +1,9 @@
-package no.nav.aap.kafka.streams.v2
+package no.nav.aap.kafka.streams.v2.visual
 
+import no.nav.aap.kafka.streams.v2.*
+import no.nav.aap.kafka.streams.v2.Tables
+import no.nav.aap.kafka.streams.v2.Topics
+import no.nav.aap.kafka.streams.v2.kafka
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

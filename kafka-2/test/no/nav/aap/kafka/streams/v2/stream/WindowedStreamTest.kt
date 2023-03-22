@@ -1,28 +1,23 @@
 package no.nav.aap.kafka.streams.v2.stream
 
 import no.nav.aap.kafka.streams.v2.Topics
-import no.nav.aap.kafka.streams.v2.kafka
+import no.nav.aap.kafka.streams.v2.kafkaWithTopology
+import no.nav.aap.kafka.streams.v2.ms
 import no.nav.aap.kafka.streams.v2.produce
-import no.nav.aap.kafka.streams.v2.topology
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 internal class WindowedStreamTest {
 
-    private val Int.ms get() = toDuration(DurationUnit.MILLISECONDS)
-
     @Test
     fun `reduce with sliding windows`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .slidingWindow(100.ms)
                 .reduce { s, s2 -> "$s$s2" }
                 .produce(Topics.B)
         }
 
-        val kafka = kafka(topology)
         println(kafka.visulize().uml())
         println(kafka.visulize().mermaid().generateDiagram())
 
@@ -40,14 +35,13 @@ internal class WindowedStreamTest {
 
     @Test
     fun `reduce with hopping windows`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .hoppingWindow(100.ms, advanceSize = 50.ms)
                 .reduce { s, s2 -> "$s$s2" }
                 .produce(Topics.B)
         }
 
-        val kafka = kafka(topology)
         println(kafka.visulize().uml())
         println(kafka.visulize().mermaid().generateDiagram())
 
@@ -64,14 +58,13 @@ internal class WindowedStreamTest {
 
     @Test
     fun `reduce with tumbling windows`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .tumblingWindow(100.ms)
                 .reduce { s, s2 -> "$s$s2" }
                 .produce(Topics.B)
         }
 
-        val kafka = kafka(topology)
         println(kafka.visulize().uml())
         println(kafka.visulize().mermaid().generateDiagram())
 
@@ -88,14 +81,13 @@ internal class WindowedStreamTest {
 
     @Test
     fun `reduce with session windows`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .sessionWindow(50.ms)
                 .reduce { s, s2 -> "$s$s2" }
                 .produce(Topics.B)
         }
 
-        val kafka = kafka(topology)
         println(kafka.visulize().uml())
         println(kafka.visulize().mermaid().generateDiagram())
 

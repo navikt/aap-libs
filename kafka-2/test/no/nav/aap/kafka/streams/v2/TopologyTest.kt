@@ -1,8 +1,5 @@
-package no.nav.aap.kafka.streams.v2.stream
+package no.nav.aap.kafka.streams.v2
 
-import no.nav.aap.kafka.streams.v2.Topics
-import no.nav.aap.kafka.streams.v2.kafkaWithTopology
-import no.nav.aap.kafka.streams.v2.produce
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -18,11 +15,26 @@ internal class TopologyTest {
         kafka.inputTopic(Topics.A).produce("1", "hello")
 
         val resultB = kafka.outputTopic(Topics.B).readKeyValuesToMap()
-        val resultC = kafka.outputTopic(Topics.C).readKeyValuesToMap()
-
         assertEquals(1, resultB.size)
         assertEquals("hello", resultB["1"])
+
+        val resultC = kafka.outputTopic(Topics.C).readKeyValuesToMap()
         assertEquals(1, resultC.size)
         assertEquals("hello", resultC["1"])
+    }
+
+    @Test
+    fun `consume on each`() {
+        val result = mutableListOf<Int>()
+
+        val kafka = kafkaWithTopology {
+            consume(Topics.A) { _, value, _ ->
+                result.add(value?.length ?: -1)
+            }
+        }
+
+        kafka.inputTopic(Topics.A).produce("1", "something").produceTombstone("2")
+
+        assertEquals(result, mutableListOf(9, -1))
     }
 }

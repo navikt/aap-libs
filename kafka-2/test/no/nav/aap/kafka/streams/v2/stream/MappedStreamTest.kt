@@ -1,13 +1,14 @@
-package no.nav.aap.kafka.streams.v2
+package no.nav.aap.kafka.streams.v2.stream
 
+import no.nav.aap.kafka.streams.v2.*
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-internal class MappedKStreamTest {
+internal class MappedStreamTest {
     @Test
     fun `map a filtered joined stream`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             val table = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(table)
@@ -15,8 +16,6 @@ internal class MappedKStreamTest {
                 .map { a, b -> b + a }
                 .produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
 
         kafka.inputTopic(Topics.B)
@@ -32,13 +31,11 @@ internal class MappedKStreamTest {
         assertEquals(1, result.size)
         assertEquals("awesomesauce", result["1"])
         assertNull(result["2"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
     fun `map a filtered left joined stream`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
@@ -47,8 +44,6 @@ internal class MappedKStreamTest {
                 .produce(Topics.C)
         }
 
-        val kafka = kafka(topology)
-
         kafka.inputTopic(Topics.B)
             .produce("1", "awesome")
             .produce("2", "nice")
@@ -62,21 +57,17 @@ internal class MappedKStreamTest {
         assertEquals(1, result.size)
         assertEquals("awesomesauce", result["1"])
         assertNull(result["2"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
     fun `map a joined stream`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             val table = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(table)
                 .map { a, b -> b + a }
                 .produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.B)
             .produce("1", "awesome")
@@ -91,19 +82,15 @@ internal class MappedKStreamTest {
         assertEquals(2, result.size)
         assertEquals("awesomesauce", result["1"])
         assertEquals("niceprice", result["2"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
     fun `mapNotNull a branched stream`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .mapNotNull { key, value -> if (key == "1") null else value }
                 .produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.A)
             .produce("1", "sauce")
@@ -114,21 +101,17 @@ internal class MappedKStreamTest {
         assertEquals(1, result.size)
 
         assertEquals("price", result["2"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
     fun `map a left joined stream`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
                 .map { a, b -> b + a }
                 .produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.B)
             .produce("1", "awesome")
@@ -143,21 +126,17 @@ internal class MappedKStreamTest {
         assertEquals(2, result.size)
         assertEquals("awesomesauce", result["1"])
         assertEquals("niceprice", result["2"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
     fun `map key and value`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             val table = consume(Tables.B)
             consume(Topics.A)
                 .leftJoinWith(table)
                 .mapKeyValue { key, left, right -> KeyValue("$key$key", right + left) }
                 .produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.B)
             .produce("1", "awesome")
@@ -172,20 +151,16 @@ internal class MappedKStreamTest {
         assertEquals(2, result.size)
         assertEquals("awesomesauce", result["11"])
         assertEquals("niceprice", result["22"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
     fun `map and use custom processor`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .map { v -> v }
                 .processor(CustomProcessor())
                 .produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.A).produce("1", "a")
 
@@ -193,21 +168,17 @@ internal class MappedKStreamTest {
 
         assertEquals(1, result.size)
         assertEquals("a.v2", result["1"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
     fun `map and use custom processor with table`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             val table = consume(Tables.B)
             consume(Topics.A)
                 .map { v -> v }
                 .processor(CustomProcessorWithTable(table))
                 .produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.B).produce("1", ".v2")
         kafka.inputTopic(Topics.A).produce("1", "a")
@@ -216,20 +187,16 @@ internal class MappedKStreamTest {
 
         assertEquals(1, result.size)
         assertEquals("a.v2", result["1"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
     fun `rekey a mapped stream`() {
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .map { v -> "${v}alue" }
                 .rekey { v -> v }
                 .produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.A).produce("k", "v")
 
@@ -237,7 +204,43 @@ internal class MappedKStreamTest {
 
         assertEquals(1, result.size)
         assertEquals("value", result["value"])
+    }
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+    @Test
+    fun `filter a filtered mapped stream`() {
+        val kafka = kafkaWithTopology {
+            consume(Topics.A)
+                .filter { it.contains("nice") }
+                .filter { it.contains("price") }
+                .produce(Topics.C)
+        }
+
+        kafka.inputTopic(Topics.A)
+            .produce("1", "awesomenice")
+            .produce("2", "niceprice")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(1, result.size)
+        assertEquals("niceprice", result["2"])
+    }
+
+    @Test
+    fun `rekey with mapKeyValue`() {
+        val kafka = kafkaWithTopology {
+            consume(Topics.A)
+                .mapKeyAndValue { key, value -> KeyValue(key = "test:$key", value = "$value$value") }
+                .produce(Topics.C)
+        }
+
+        kafka.inputTopic(Topics.A)
+            .produce("1", "a")
+            .produce("2", "b")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(2, result.size)
+        assertEquals("aa", result["test:1"])
+        assertEquals("bb", result["test:2"])
     }
 }

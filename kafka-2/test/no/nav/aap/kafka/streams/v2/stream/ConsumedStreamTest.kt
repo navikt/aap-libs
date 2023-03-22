@@ -1,17 +1,18 @@
 package no.nav.aap.kafka.streams.v2.stream
 
 import net.logstash.logback.argument.StructuredArguments
+import no.nav.aap.kafka.streams.concurrency.Bufferable
 import no.nav.aap.kafka.streams.v2.*
-import no.nav.aap.kafka.streams.v2.Tables
-import no.nav.aap.kafka.streams.v2.Topics
-import no.nav.aap.kafka.streams.v2.kafka
-import no.nav.aap.kafka.streams.v2.kafkaWithTopology
+import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
-import no.nav.aap.kafka.streams.v2.produce
-import no.nav.aap.kafka.streams.v2.produceTombstone
+import no.nav.aap.kafka.streams.v2.serde.JsonSerde
+import org.apache.kafka.streams.errors.TopologyException
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 internal class ConsumedStreamTest {
 
@@ -26,80 +27,63 @@ internal class ConsumedStreamTest {
         kafka.inputTopic(Topics.A).produce("1", "hello:")
 
         val result = kafka.outputTopic(Topics.B).readKeyValuesToMap()
-
         assertEquals(1, result.size)
         assertEquals("hello:A", result["1"])
     }
 
     @Test
-    fun `consume and produce to a topic`() {
-        val topology = topology {
+    fun `produce to topic`() {
+        val kafka = kafkaWithTopology {
             consume(Topics.A).produce(Topics.C)
             consume(Topics.B).produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.A).produce("1", "a")
         kafka.inputTopic(Topics.B).produce("2", "b")
 
         val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
-
         assertEquals("a", result["1"])
         assertEquals("b", result["2"])
         assertEquals(2, result.size)
-
-//        println(kafka.visulize().mermaid())
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
     }
 
     @Test
-    fun `consume and use custom processor`() {
-        val topology = topology {
+    fun `use costom processor`() {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .processor(CustomProcessor())
                 .produce(Topics.C)
         }
 
-        val kafka = kafka(topology)
-
         kafka.inputTopic(Topics.A).produce("1", "a")
 
         val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
-
         assertEquals(1, result.size)
         assertEquals("a.v2", result["1"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test
-    fun `consume and use custom processor with table`() {
-        val topology = topology {
+    fun `use custom processor with table`() {
+        val kafka = kafkaWithTopology {
             val table = consume(Tables.B)
             consume(Topics.A)
                 .processor(CustomProcessorWithTable(table))
                 .produce(Topics.C)
         }
 
-        val kafka = kafka(topology)
-
         kafka.inputTopic(Topics.B).produce("1", ".v2")
         kafka.inputTopic(Topics.A).produce("1", "a")
 
         val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
-
         assertEquals(1, result.size)
         assertEquals("a.v2", result["1"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test
-    fun `consume and use custom processor with mapping`() {
-        val topology = topology {
+    fun `use custom processor with mapping`() {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
-                .processor(object: Processor<String, Int>("named") {
+                .processor(object : Processor<String, Int>("named") {
                     override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, String>): Int {
                         return keyValue.value.toInt() + 1
                     }
@@ -108,23 +92,18 @@ internal class ConsumedStreamTest {
                 .produce(Topics.C)
         }
 
-        val kafka = kafka(topology)
-
         kafka.inputTopic(Topics.A).produce("a", "1")
 
         val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
-
         assertEquals(1, result.size)
         assertEquals("2", result["a"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test
-    fun `consume and use custom processor in place`() {
-        val topology = topology {
+    fun `use custom processor in place`() {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
-                .processor(object: Processor<String, String>("something") {
+                .processor(object : Processor<String, String>("something") {
                     override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, String>): String {
                         return keyValue.value
                     }
@@ -132,92 +111,275 @@ internal class ConsumedStreamTest {
                 .produce(Topics.C)
         }
 
-        val kafka = kafka(topology)
-
         kafka.inputTopic(Topics.A).produce("a", "1")
 
         val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
-
         assertEquals(1, result.size)
         assertEquals("1", result["a"])
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 
     @Test
-    fun `consume on each`() {
-        val result = mutableListOf<Int>()
-        val topology = topology {
-            consume(Topics.A) { _, value, _ ->
-                result.add(value?.length ?: -1)
-            }
-        }
-
-        val kafka = kafka(topology)
-        kafka.inputTopic(Topics.A).produce("1", "something").produceTombstone("2")
-
-        assertEquals(result, mutableListOf(9, -1))
-    }
-
-    @Test
-    fun `consume and secureLog`() {
-        val topology = topology {
+    fun `secure log`() {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .secureLog {
                     info("test message $it")
                 }
         }
 
-        val kafka = kafka(topology)
         kafka.inputTopic(Topics.A).produce("1", "something")
     }
 
     @Test
-    fun `consume and secureLog with structured arguments`() {
-        val topology = topology {
+    fun `secure log with structured arguments`() {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .secureLog {
                     info("test message $it", StructuredArguments.kv("test", "hey"))
                 }
         }
 
-        val kafka = kafka(topology)
         kafka.inputTopic(Topics.A).produce("1", "something")
     }
 
     @Test
-    fun `consume and secureLogWithKey`() {
-        val topology = topology {
+    fun `secure log with key`() {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .secureLogWithKey { key, value ->
                     info("test message $key $value")
                 }
         }
 
-        val kafka = kafka(topology)
         kafka.inputTopic(Topics.A).produce("1", "something")
     }
 
     @Test
-    fun `filter key`() {
-        val topology = topology {
+    fun `filter on key`() {
+        val kafka = kafkaWithTopology {
             consume(Topics.A)
                 .filterKey { it == "3" }
                 .produce(Topics.C)
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.A)
             .produce("1", "a")
             .produce("3", "b")
 
         val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
-
         assertEquals(1, result.size)
         assertEquals("b", result["3"])
+    }
 
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology))
+    @Test
+    fun `flat map and preserve the type`() {
+        val kafka = kafkaWithTopology {
+            consume(Topics.A)
+                .flatMapPreserveType { _, value -> listOf(value, value) }
+                .produce(Topics.C)
+        }
+
+        kafka.inputTopic(Topics.A).produce("1", "a")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToList()
+        assertEquals(2, result.size)
+        assertEquals(2, result.count { kv -> kv.key == "1" })
+        assertTrue { result.all { kv -> kv.value == "a" } }
+    }
+
+    @Test
+    fun `flat map key and value and preserve the type`() {
+        val kafka = kafkaWithTopology {
+            consume(Topics.A)
+                .flatMapKeyAndValuePreserveType { key, value -> listOf(KeyValue(key, value), KeyValue(value, key)) }
+                .produce(Topics.C)
+        }
+
+        kafka.inputTopic(Topics.A).produce("1", "a")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+        assertEquals(2, result.size)
+        assertEquals("1", result["a"])
+        assertEquals("a", result["1"])
+    }
+
+    @Test
+    fun `flat map`() {
+        val kafka = kafkaWithTopology {
+            consume(Topics.A)
+                .flatMap { _, _ -> listOf("a".hashCode(), "b".hashCode()) }
+                .map { value -> value.toString() }
+                .produce(Topics.C)
+        }
+
+        kafka.inputTopic(Topics.A).produce("1", "a")
+
+        val expectedHashCode = "b".hashCode().toString()
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+        assertEquals(1, result.size)
+        assertEquals(expectedHashCode, result["1"])
+    }
+
+    @Test
+    fun `flat map to key and value`() {
+        val kafka = kafkaWithTopology {
+            consume(Topics.A)
+                .flatMapKeyAndValue { key, value ->
+                    val hashKey = key.hashCode().toString()
+                    val hashValue = value.hashCode().toString()
+
+                    listOf(
+                        KeyValue(hashKey, hashValue),
+                        KeyValue(hashValue, hashKey)
+                    )
+                }
+                .produce(Topics.C)
+        }
+
+        kafka.inputTopic(Topics.A).produce("1", "a")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+        assertEquals(2, result.size)
+        assertEquals("a".hashCode().toString(), result["1".hashCode().toString()])
+        assertEquals("1".hashCode().toString(), result["a".hashCode().toString()])
+    }
+
+    @Test
+    fun `join with bufferable`() {
+        val buffTopic = Topic("buff", JsonSerde.jackson<Buff>())
+        val buffTable = Table(buffTopic)
+        val buffer = RaceConditionBuffer<Buff>()
+
+        val kafka = kafkaWithTopology {
+            val buffKTable = consume(buffTable)
+
+            consume(Topics.A)
+                .joinWith(buffKTable, buffer)
+                .map { a, buff -> buff.copy(value = buff.value + a) }
+                .produce(buffTopic, buffer) { it }
+        }
+
+        kafka.inputTopic(buffTopic).produce("1", Buff("buff"))
+        kafka.inputTopic(Topics.A).produce("1", "a")
+
+        val result = kafka.outputTopic(buffTopic).readKeyValuesToMap()
+        assertEquals(1, result.size)
+        assertEquals(Buff("buffa"), result["1"])
+    }
+
+    @Test
+    fun `left join with bufferable`() {
+        val buffTopic = Topic("buff", JsonSerde.jackson<Buff>())
+        val buffTable = Table(buffTopic)
+        val buffer = RaceConditionBuffer<Buff>()
+
+        val kafka = kafkaWithTopology {
+            val buffKTable = consume(buffTable)
+
+            consume(Topics.A)
+                .leftJoinWith(buffKTable, buffer)
+                .map { a, buff -> buff?.let { Buff(it.value + a) } ?: Buff(a) }
+                .produce(buffTopic, buffer) { it }
+        }
+
+        kafka.inputTopic(Topics.A).produce("1", "a")
+
+        val result = kafka.outputTopic(buffTopic).readKeyValuesToMap()
+        assertEquals(1, result.size)
+        assertEquals(Buff("a"), result["1"])
+    }
+
+    @Test
+    fun repartition() {
+        val msg = assertThrows<TopologyException> {
+            kafkaWithTopology {
+                val ktable = consumeRepartitioned(Tables.B, 3)
+
+                consume(Topics.A)
+                    .repartition(4)
+                    .joinWith(ktable)
+                    .map { a, b -> a + b }
+                    .produce(Topics.C)
+            }
+        }
+
+        assertTrue { msg.stackTraceToString().contains("Following topics do not have the same number of partitions") }
+    }
+
+    @Test
+    fun `for each`() {
+        val result = mutableMapOf<String, String>()
+
+        val kafka = kafkaWithTopology {
+            consume(Topics.A).forEach { key, value -> result[key] = value }
+        }
+
+        kafka.inputTopic(Topics.A).produce("1", "a")
+
+        assertEquals(result, mapOf("1" to "a"))
+    }
+
+    @Test
+    fun `filter consumed topic`() {
+        val kafka = kafkaWithTopology {
+            consume(Topics.A)
+                .filter { it != "b" }
+                .produce(Topics.C)
+        }
+
+        kafka.inputTopic(Topics.A)
+            .produce("1", "a")
+            .produce("2", "b")
+            .produce("3", "c")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(2, result.size)
+        assertNull(result["2"])
+    }
+
+    @Test
+    fun `rekey consumed topic`() {
+        val kafka = kafkaWithTopology {
+            consume(Topics.A)
+                .rekey { "test:$it" }
+                .produce(Topics.C)
+        }
+
+        kafka.inputTopic(Topics.A)
+            .produce("1", "a")
+            .produce("2", "b")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(2, result.size)
+        assertEquals("a", result["test:a"])
+        assertEquals("b", result["test:b"])
+    }
+
+    @Test
+    fun `filter a filtered  stream`() {
+        val kafka = kafkaWithTopology {
+            consume(Topics.A)
+                .filter { it.contains("nice") }
+                .filter { it.contains("price") }
+                .produce(Topics.C)
+        }
+
+        kafka.inputTopic(Topics.A)
+            .produce("1", "niceprice")
+            .produce("2", "nice")
+            .produce("3", "price")
+
+        val result = kafka.outputTopic(Topics.C).readKeyValuesToMap()
+
+        assertEquals(1, result.size)
+        assertNull(result["2"])
+        assertNull(result["3"])
+        assertEquals("niceprice", result["1"])
     }
 }
 
+private data class Buff(val value: String) : Bufferable<Buff> {
+    override fun erNyere(other: Buff): Boolean = true
+}

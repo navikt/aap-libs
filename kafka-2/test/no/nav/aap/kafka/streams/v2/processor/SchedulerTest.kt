@@ -1,6 +1,7 @@
-package no.nav.aap.kafka.streams.v2
+package no.nav.aap.kafka.streams.v2.processor
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import no.nav.aap.kafka.streams.v2.*
 import no.nav.aap.kafka.streams.v2.processor.state.GaugeStoreEntriesStateScheduleProcessor
 import no.nav.aap.kafka.streams.v2.processor.state.MigrateStateInitProcessor
 import org.apache.kafka.clients.producer.MockProducer
@@ -17,7 +18,7 @@ internal class SchedulerTest {
     fun `metric scheduler`() {
         val registry = SimpleMeterRegistry()
 
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             val table = consume(Tables.B)
 
             table.schedule(
@@ -28,8 +29,6 @@ internal class SchedulerTest {
                 )
             )
         }
-
-        val kafka = kafka(topology)
 
         kafka.inputTopic(Topics.B).produce("1", "B")
 
@@ -47,7 +46,7 @@ internal class SchedulerTest {
     fun `migration scheduler`() {
         val producer = MockProducer(true, Topics.E.keySerde.serializer(), Topics.E.valueSerde.serializer())
 
-        val topology = topology {
+        val kafka = kafkaWithTopology {
             val ktable = consume(Tables.E)
             ktable.init(
                 MigrateStateInitProcessor(
@@ -57,11 +56,7 @@ internal class SchedulerTest {
             )
         }
 
-        val kafka = kafka(topology)
-
         val stateStore = kafka.getTimestampedKeyValueStore(Tables.E)
         stateStore.put("1", ValueAndTimestamp.make(VersionedString("E", 1), Instant.now().toEpochMilli()))
-
-//        println(no.nav.aap.kafka.streams.v2.visual.PlantUML.generate(topology.build()))
     }
 }
