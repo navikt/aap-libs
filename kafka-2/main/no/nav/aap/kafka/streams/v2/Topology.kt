@@ -16,14 +16,14 @@ import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Named
 
-private fun <T : Any> namedFrom(topic: Topic<T>): () -> String = { "from-${topic.name}" }
+private fun <T : Any> nameSupplierFrom(topic: Topic<T>): () -> String = { "from-${topic.name}" }
 
 class Topology internal constructor() {
     private val builder = StreamsBuilder()
 
     fun <T : Any> consume(topic: Topic<T>): ConsumedStream<T> {
         val consumed = consumeWithLogging<T?>(topic).skipTombstone(topic)
-        return ConsumedStream(topic, consumed, namedFrom(topic))
+        return ConsumedStream(topic, consumed, nameSupplierFrom(topic))
     }
 
     fun <T : Any> consume(table: Table<T>): KTable<T> {
@@ -52,7 +52,7 @@ class Topology internal constructor() {
     /** Sometimes it is necessary to consume the same topic twice, e.g. mocking a response */
     fun <T : Any> consumeAgain(topic: Topic<T>, namedPrefix: String = "mock"): ConsumedStream<T> {
         val consumed = consumeWithLogging(topic, namedPrefix).skipTombstone(topic, namedPrefix)
-        val prefixedNamedSupplier = { "$namedPrefix-${namedFrom(topic)}" }
+        val prefixedNamedSupplier = { "$namedPrefix-${nameSupplierFrom(topic).invoke()}" }
         return ConsumedStream(topic, consumed, prefixedNamedSupplier)
     }
 
@@ -64,7 +64,7 @@ class Topology internal constructor() {
         stream.addProcessor(MetadataProcessor(topic)).foreach { _, (kv, metadata) ->
             onEach(kv.key, kv.value, metadata)
         }
-        return ConsumedStream(topic, stream.skipTombstone(topic), namedFrom(topic))
+        return ConsumedStream(topic, stream.skipTombstone(topic), nameSupplierFrom(topic))
     }
 
     fun registerInternalTopology(stream: Streams) {
