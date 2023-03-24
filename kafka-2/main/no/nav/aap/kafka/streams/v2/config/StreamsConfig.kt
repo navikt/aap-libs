@@ -10,6 +10,7 @@ import java.util.*
 data class StreamsConfig(
     internal val applicationId: String,
     internal val brokers: String,
+    internal val compressionType: String = "snappy",
     internal val ssl: SslConfig? = null,
     internal val schemaRegistry: Properties = Properties(),
     internal val additionalProperties: Properties = Properties(),
@@ -40,7 +41,7 @@ data class StreamsConfig(
         this[StreamsConfig.producerPrefix(ProducerConfig.LINGER_MS_CONFIG)] = 0 // send immediately
 
         // Configuration for message size
-        this[StreamsConfig.producerPrefix(ProducerConfig.COMPRESSION_TYPE_CONFIG)] = "snappy"
+        this[StreamsConfig.producerPrefix(ProducerConfig.COMPRESSION_TYPE_CONFIG)] = compressionType
 
         /*
          * Enable exactly onces semantics:

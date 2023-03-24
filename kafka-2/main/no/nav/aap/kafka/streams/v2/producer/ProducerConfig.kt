@@ -10,12 +10,14 @@ class ProducerConfig private constructor(
     private val brokers: String,
     private val ssl: SslConfig?,
     private val schemaRegistry: Properties?,
+    private val compressionType: String,
 ) {
 
     constructor(streamsConfig: StreamsConfig) : this(
         brokers = streamsConfig.brokers,
         ssl = streamsConfig.ssl,
         schemaRegistry = streamsConfig.schemaRegistry,
+        compressionType = streamsConfig.compressionType
     )
 
     fun toProperties(clientId: String): Properties = Properties().apply {
@@ -23,6 +25,7 @@ class ProducerConfig private constructor(
         this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = brokers
         this[ProducerConfig.ACKS_CONFIG] = "all"
         this[ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION] = "5"
+        this[ProducerConfig.COMPRESSION_TYPE_CONFIG] = compressionType
 
         /* Security config for accessing Aiven */
         ssl?.let { putAll(it.properties()) }
