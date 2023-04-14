@@ -7,7 +7,7 @@ internal class TopologyTest {
 
     @Test
     fun `consume again`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A).produce(Topics.B)
             consumeAgain(Topics.A).produce(Topics.C)
         }
@@ -27,7 +27,7 @@ internal class TopologyTest {
     fun `consume on each`() {
         val result = mutableListOf<Int>()
 
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A) { _, value, _ ->
                 result.add(value?.length ?: -1)
             }

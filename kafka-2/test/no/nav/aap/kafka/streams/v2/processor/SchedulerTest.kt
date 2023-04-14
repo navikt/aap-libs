@@ -18,7 +18,7 @@ internal class SchedulerTest {
     fun `metric scheduler`() {
         val registry = SimpleMeterRegistry()
 
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             val table = consume(Tables.B)
 
             table.schedule(
@@ -44,9 +44,9 @@ internal class SchedulerTest {
     // TODO: fiks testen så vi får verifisert at den migrerer i processoren og ikke bare i deserializeren.
     @Ignore("fiks testen så vi får verifisert at den migrerer i processoren og ikke bare i deserializeren.")
     fun `migration scheduler`() {
-        val producer = MockProducer(true, Topics.E.keySerde.serializer(), Topics.E.valueSerde.serializer())
+        val producer = MockProducer(true, Topics.migrateable.keySerde.serializer(), Topics.migrateable.valueSerde.serializer())
 
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             val ktable = consume(Tables.E)
             ktable.init(
                 MigrateStateInitProcessor(

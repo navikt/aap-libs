@@ -3,6 +3,7 @@ package no.nav.aap.kafka.streams.v2
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.serde.json.Migratable
+import no.nav.aap.kafka.streams.concurrency.Bufferable
 import no.nav.aap.kafka.streams.v2.config.StreamsConfig
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
@@ -24,24 +25,13 @@ internal object Topics {
     val B = Topic("B", StringSerde, logValues = true)
     val C = Topic("C", StringSerde, logValues = true)
     val D = Topic("D", StringSerde, logValues = true)
-    val E = Topic("E", JsonSerde.jackson<VersionedString, VersionedString>(
+    val migrateable = Topic("E", JsonSerde.jackson<VersionedString, VersionedString>(
         dtoVersion = 2,
         migrate = { prev -> prev.copy(version = 2) }
     ), logValues = true)
 }
 
-internal val Int.ms get() = toDuration(DurationUnit.MILLISECONDS)
-
-internal fun kafkaWithTopology(topology: Topology.() -> Unit): KStreamsMock =
-    KStreamsMock().apply {
-        connect(
-            topology = Topology().apply(topology),
-            config = StreamsConfig("", ""),
-            registry = SimpleMeterRegistry()
-        )
-    }
-
-data class VersionedString(
+internal data class VersionedString(
     val value: String,
     val version: Int,
 ) : Migratable {
@@ -58,12 +48,23 @@ data class VersionedString(
 
 internal object Tables {
     val B = Table(Topics.B)
-    val E = Table(Topics.E)
+    val E = Table(Topics.migrateable)
 }
 
-class KStreamsMock : Streams {
+internal class StreamsMock : Streams {
     private lateinit var internalTopology: org.apache.kafka.streams.Topology
     private lateinit var internalStreams: TopologyTestDriver
+
+    companion object {
+        internal fun withTopology(topology: Topology.() -> Unit): StreamsMock =
+            StreamsMock().apply {
+                connect(
+                    topology = Topology().apply(topology),
+                    config = StreamsConfig("", ""),
+                    registry = SimpleMeterRegistry()
+                )
+            }
+    }
 
     override fun connect(topology: Topology, config: StreamsConfig, registry: MeterRegistry) {
         topology.registerInternalTopology(this)
@@ -96,15 +97,13 @@ class KStreamsMock : Streams {
     override fun close() = internalStreams.close()
 }
 
+internal val Int.ms get() = toDuration(DurationUnit.MILLISECONDS)
+
 internal fun <V> TestInputTopic<String, V>.produce(key: String, value: V): TestInputTopic<String, V> =
     pipeInput(key, value).let { this }
 
 internal fun <V> TestInputTopic<String, V>.produceTombstone(key: String): TestInputTopic<String, V> =
     pipeInput(key, null).let { this }
-
-internal fun kafka(topology: Topology): KStreamsMock = KStreamsMock().apply {
-    connect(topology, StreamsConfig("", ""), SimpleMeterRegistry())
-}
 
 class CustomProcessorWithTable(table: KTable<String>) : StateProcessor<String, String, String>("custom-join", table) {
     override fun process(
@@ -119,3 +118,6 @@ open class CustomProcessor : Processor<String, String>("add-v2-prefix") {
         "${keyValue.value}.v2"
 }
 
+internal data class Buff(val value: String) : Bufferable<Buff> {
+    override fun erNyere(other: Buff): Boolean = true
+}

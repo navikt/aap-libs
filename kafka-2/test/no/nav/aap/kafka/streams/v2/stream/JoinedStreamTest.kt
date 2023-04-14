@@ -9,7 +9,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `join topic with table`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .joinWith(consume(Tables.B))
                 .map { a, b -> b + a }
@@ -27,7 +27,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `join filtered topic with table`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .filter { it != "humbug" }
                 .joinWith(consume(Tables.B))
@@ -53,7 +53,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `join topic with table and write back to topic`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .leftJoinWith(consume(Tables.B))
                 .map { a, b -> a + b }
@@ -76,7 +76,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `left join topic with table`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .leftJoinWith(consume(Tables.B))
                 .map { left, _ -> left }
@@ -93,7 +93,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `left join topic with table with no match`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .leftJoinWith(consume(Tables.B))
                 .map { left, right -> right ?: left }
@@ -109,7 +109,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `left join filtered topic with table`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .filter { it != "humbug" }
                 .leftJoinWith(consume(Tables.B))
@@ -135,7 +135,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `left join filtered topic with empty table is not filtered out`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .filter { it != "humbug" }
                 .leftJoinWith(consume(Tables.B))
@@ -157,7 +157,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `join and flat map key and value`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .filter { it != "humbug" }
                 .joinWith(consume(Tables.B))
@@ -176,7 +176,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `join and secure log with key`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .filter { it != "humbug" }
                 .joinWith(consume(Tables.B))
@@ -188,7 +188,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `left join and secure log with key`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .filter { it != "humbug" }
                 .leftJoinWith(consume(Tables.B))
@@ -199,7 +199,7 @@ internal class JoinedStreamTest {
 
     @Test
     fun `filter a mapped joined stream`() {
-        val kafka = kafkaWithTopology {
+        val kafka = StreamsMock.withTopology {
             val table = consume(Tables.B)
             consume(Topics.A)
                 .joinWith(table)
