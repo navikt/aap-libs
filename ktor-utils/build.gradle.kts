@@ -3,5 +3,5 @@ dependencies {
     implementation("com.sksamuel.hoplite:hoplite-yaml:2.7.4")
 
     testImplementation(kotlin("test"))
-    testImplementation("io.ktor:ktor-server-test-host:2.2.4")
+    testImplementation("io.ktor:ktor-server-test-host:2.3.0")
 }
