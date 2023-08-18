@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.8.21"
+    kotlin("jvm") version "1.9.0"
     `maven-publish`
     `java-library`
 }
@@ -21,7 +21,7 @@ subprojects {
 
     tasks {
         withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "19"
+            kotlinOptions.jvmTarget = "20"
         }
         withType<Jar> {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
