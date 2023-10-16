@@ -1,4 +1,4 @@
-val ktorVersion = "2.3.3"
+val ktorVersion = "2.3.5"
 
 dependencies {
     implementation(project(":cache"))
