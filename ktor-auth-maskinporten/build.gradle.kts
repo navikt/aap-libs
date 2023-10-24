@@ -8,7 +8,7 @@ dependencies {
 
     implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
 
-    implementation("com.nimbusds:nimbus-jose-jwt:9.31")
+    implementation("com.nimbusds:nimbus-jose-jwt:9.37")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.3")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.3")
 
