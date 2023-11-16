@@ -2,12 +2,14 @@ package no.nav.aap.kafka
 
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.config.SslConfigs
-import org.apache.kafka.common.serialization.Serdes
+import org.apache.kafka.common.serialization.Serdes.StringSerde
+import org.apache.kafka.common.serialization.Serializer
 import java.util.*
 
-class KafkaConfig(
+data class KafkaConfig(
     val brokers: String,
     val truststorePath: String,
     val keystorePath: String,
@@ -16,7 +18,11 @@ class KafkaConfig(
 
 class KafkaFactory private constructor() {
     companion object {
-        fun createProducer(clientId: String, config: KafkaConfig): KafkaProducer<String, String> {
+        fun <T : Any> createProducer(
+            clientId: String,
+            config: KafkaConfig,
+            serializer: Serializer<T>,
+        ): Producer<String, T> {
             fun properties(): Properties = Properties().apply {
                 this[CommonClientConfigs.CLIENT_ID_CONFIG] = clientId
                 this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = config.brokers
@@ -33,7 +39,10 @@ class KafkaFactory private constructor() {
                 this[SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG] = ""
             }
 
-            return KafkaProducer(properties(), Serdes.StringSerde().serializer(), Serdes.StringSerde().serializer())
+            return KafkaProducer(properties(), StringSerde().serializer(), serializer)
         }
+
+        fun createProducer(clientId: String, config: KafkaConfig): Producer<String, String> =
+            createProducer(clientId, config, StringSerde().serializer())
     }
 }
