@@ -7,9 +7,13 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import no.nav.aap.cache.Cache
+import org.slf4j.LoggerFactory
+
+private val secureLog = LoggerFactory.getLogger("secureLog")
 
 class AzureAdTokenProvider(
     private val config: AzureConfig,
@@ -36,6 +40,10 @@ class AzureAdTokenProvider(
                 accept(ContentType.Application.Json)
                 contentType(ContentType.Application.FormUrlEncoded)
                 setBody(body())
+            }.also {
+                if(!it.status.isSuccess()) {
+                    secureLog.warn("Feilet token-kall {}: {}", it.status.value, it.bodyAsText())
+                }
             }.body<Token>().also { fetchedToken ->
                 fetchedToken.addToCache(tokenCache, cacheKey)
             }
