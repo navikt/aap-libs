@@ -10,7 +10,6 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
-import no.nav.aap.cache.Cache
 import org.slf4j.LoggerFactory
 
 private val secureLog = LoggerFactory.getLogger("secureLog")
@@ -32,20 +31,20 @@ class AzureAdTokenProvider(
         "client_id=${config.clientId}&client_secret=${config.clientSecret}&assertion=$accessToken&scope=$scope&grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&requested_token_use=on_behalf_of"
     }
 
-    private val tokenCache = Cache<String, Token>()
+    private val cache = TokenCache<String>()
 
     private suspend fun getAccessToken(cacheKey: String, body: () -> String): String {
-        val token = tokenCache[cacheKey]
+        val token = cache.get(cacheKey)
             ?: client.post(config.tokenEndpoint) {
                 accept(ContentType.Application.Json)
                 contentType(ContentType.Application.FormUrlEncoded)
                 setBody(body())
             }.also {
-                if(!it.status.isSuccess()) {
+                if (!it.status.isSuccess()) {
                     secureLog.warn("Feilet token-kall {}: {}", it.status.value, it.bodyAsText())
                 }
-            }.body<Token>().also { fetchedToken ->
-                fetchedToken.addToCache(tokenCache, cacheKey)
+            }.body<Token>().also {
+                cache.add(cacheKey, it)
             }
 
         return token.access_token

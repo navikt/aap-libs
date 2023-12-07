@@ -1,7 +1,7 @@
 val ktorVersion = "2.3.6"
 
 dependencies {
-    implementation(project(":cache"))
+//    implementation(project(":cache"))
 
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
