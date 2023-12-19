@@ -9,5 +9,6 @@ include(
     "kafka-test-2",
     "ktor-auth-azuread",
     "ktor-auth-maskinporten",
+    "ktor-auth-tokenx",
     "ktor-utils",
 )

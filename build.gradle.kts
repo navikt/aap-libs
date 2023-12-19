@@ -21,7 +21,7 @@ subprojects {
 
     tasks {
         withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "20"
+            kotlinOptions.jvmTarget = "21"
         }
         withType<Jar> {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
