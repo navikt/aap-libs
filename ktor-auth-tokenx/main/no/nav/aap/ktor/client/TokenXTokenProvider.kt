@@ -27,7 +27,7 @@ class TokenXTokenProvider(
 ) {
 
     private val jwtFactory = JwtGrantFactory(config)
-    suspend fun getOnBehalfOfToken(tokenx_token: String) = getAccessToken(tokenx_token) {
+    suspend fun getOnBehalfOfToken(tokenx_token: String) = getAccessToken(tokenx_token+audience) {
         """
             grant_type=urn:ietf:params:oauth:grant-type:token-exchange
             &client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer
