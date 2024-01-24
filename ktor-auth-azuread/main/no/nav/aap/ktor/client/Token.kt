@@ -3,6 +3,7 @@ package no.nav.aap.ktor.client
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 internal data class Token(val expires_in: Long, val access_token: String) {
     private val expiry: Instant = Instant.now().plusSeconds(expires_in - LEEWAY_SECONDS)
@@ -25,11 +26,14 @@ internal class TokenCache<K> {
     }
 
     internal suspend fun get(key: K): Token? {
-        tokens[key]?.let {
+        mutex.withLock {
+            tokens[key]
+        }?.let {
             if (it.expired()) {
                 rm(key)
             }
         }
+
         return mutex.withLock {
             tokens[key]
         }
