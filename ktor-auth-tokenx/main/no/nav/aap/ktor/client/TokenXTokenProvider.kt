@@ -39,9 +39,10 @@ class TokenXTokenProvider(
             .replace("\n", "")
     }
 
-    private val cache = TokenCache<String>()
+    private val cache = TokenCache()
 
     private suspend fun getAccessToken(cacheKey: String, body: () -> String): String {
+        cache.logg(secureLog)
         val token = cache.get(cacheKey)
             ?: client.post(config.tokenEndpoint) {
                 accept(io.ktor.http.ContentType.Application.Json)

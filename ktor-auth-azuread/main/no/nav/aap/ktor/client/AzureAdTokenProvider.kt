@@ -31,9 +31,10 @@ class AzureAdTokenProvider(
         "client_id=${config.clientId}&client_secret=${config.clientSecret}&assertion=$accessToken&scope=$scope&grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&requested_token_use=on_behalf_of"
     }
 
-    private val cache = TokenCache<String>()
+    private val cache = TokenCache()
 
     private suspend fun getAccessToken(cacheKey: String, body: () -> String): String {
+        cache.logg(secureLog)
         val token = cache.get(cacheKey)
             ?: client.post(config.tokenEndpoint) {
                 accept(ContentType.Application.Json)

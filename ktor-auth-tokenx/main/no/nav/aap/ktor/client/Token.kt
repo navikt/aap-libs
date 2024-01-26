@@ -2,6 +2,7 @@ package no.nav.aap.ktor.client
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.slf4j.Logger
 import java.time.Instant
 
 internal data class Token(val expires_in: Long, val access_token: String) {
@@ -12,30 +13,43 @@ internal data class Token(val expires_in: Long, val access_token: String) {
     private companion object {
         const val LEEWAY_SECONDS = 60
     }
+
+    override fun toString(): String {
+        return "($expires_in, $access_token)"
+    }
 }
 
-internal class TokenCache<K> {
-    private val tokens: HashMap<K, Token> = hashMapOf()
+internal class TokenCache {
+    private val tokens: HashMap<String, Token> = hashMapOf()
     private val mutex = Mutex()
 
-    internal suspend fun add(key: K, token: Token) {
+    internal suspend fun logg(logger: Logger) {
+        tokens.forEach { (key, value) ->
+            logger.info("Key: $key, Value: $value")
+        }
+    }
+
+    internal suspend fun add(key: String, token: Token) {
         mutex.withLock {
             tokens[key] = token
         }
     }
 
-    internal suspend fun get(key: K): Token? {
-        tokens[key]?.let {
+    internal suspend fun get(key: String): Token? {
+        mutex.withLock {
+            tokens[key]
+        }?.let {
             if (it.expired()) {
                 rm(key)
             }
         }
+
         return mutex.withLock {
             tokens[key]
         }
     }
 
-    private suspend fun rm(key: K) {
+    private suspend fun rm(key: String) {
         mutex.withLock {
             tokens.remove(key)
         }
