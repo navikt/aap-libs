@@ -23,7 +23,7 @@ internal class TokenCache {
     private val tokens: HashMap<String, Token> = hashMapOf()
     private val mutex = Mutex()
 
-    internal suspend fun logg(logger: Logger) {
+    internal fun logg(logger: Logger) {
         tokens.forEach { (key, value) ->
             logger.info("Key: $key, Value: $value")
         }
