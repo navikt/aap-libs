@@ -13,5 +13,5 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
 
     runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3")
-    runtimeOnly("org.slf4j:slf4j-api:2.0.9")
+    runtimeOnly("org.slf4j:slf4j-api:2.0.11")
 }
