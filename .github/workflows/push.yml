@@ -24,7 +24,7 @@ jobs:
           arguments: test --continue --no-daemon
           gradle-home-cache-cleanup: true
 
-      - uses: dorny/test-reporter@v1.7.0
+      - uses: dorny/test-reporter@v1.8.0
         if: always()
         with:
           name: test
