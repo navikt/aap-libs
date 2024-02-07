@@ -11,7 +11,6 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.Application.FormUrlEncoded
 import io.ktor.serialization.jackson.*
-import java.time.Instant
 
 const val GRANT_TYPE = "urn:ietf:params:oauth:grant-type:jwt-bearer"
 const val LEEWAY_SECONDS: Long = 20
@@ -22,20 +21,13 @@ interface Oauth2JwtProvider {
 
 class HttpClientMaskinportenTokenProvider(
     private val config: MaskinportenConfig,
+    private val client: HttpClient = defaultHttpClient
 ) : Oauth2JwtProvider {
     private val grants: JwtGrantFactory = JwtGrantFactory(config)
-    private val cache = mutableMapOf<String, Token>()
-    private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            jackson {
-                registerModule(JavaTimeModule())
-                disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            }
-        }
-    }
+    private val cache = TokenCache()
 
     override suspend fun getToken(): String {
-        val token = cache[config.scope]?.takeUnless(Token::hasExpired) ?: fetchToken()
+        val token = cache.get(config.scope)?.takeUnless(Token::hasExpired) ?: fetchToken()
         return token.access_token.let(SignedJWT::parse).parsedString
     }
 
@@ -44,13 +36,17 @@ class HttpClientMaskinportenTokenProvider(
             contentType(FormUrlEncoded)
             setBody("grant_type=$GRANT_TYPE&assertion=${grants.jwt}")
         }.body<Token>().also { token ->
-            cache[config.scope] = token
+            cache.add(config.scope, token)
         }
 
-    private data class Token(val access_token: String) {
-        private val signedJwt = SignedJWT.parse(access_token)
-        private val expiry = signedJwt.jwtClaimsSet.expirationTime.toInstant().minusSeconds(LEEWAY_SECONDS)
-
-        fun hasExpired() = expiry < Instant.now()
+    private companion object {
+        private val defaultHttpClient = HttpClient(CIO) {
+            install(ContentNegotiation) {
+                jackson {
+                    registerModule(JavaTimeModule())
+                    disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                }
+            }
+        }
     }
 }
