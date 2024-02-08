@@ -8,8 +8,4 @@ include(
     "kafka-avroserde",
     "kafka-test-2",
     "ktor-auth",
-    "ktor-auth-azuread",
-    "ktor-auth-maskinporten",
-    "ktor-auth-tokenx",
-    "ktor-utils",
 )
