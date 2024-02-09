@@ -12,5 +12,4 @@ dependencies {
     implementation("com.nimbusds:nimbus-jose-jwt:9.37.3")
 
     runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3")
-    runtimeOnly("org.slf4j:slf4j-api:2.0.12")
 }
