@@ -11,5 +11,5 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
     implementation("com.nimbusds:nimbus-jose-jwt:9.37.3")
 
-    runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3")
+    runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0")
 }
