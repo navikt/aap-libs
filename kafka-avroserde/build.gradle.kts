@@ -8,7 +8,7 @@ dependencies {
     api("org.apache.kafka:kafka-streams:3.5.1")
     api("io.confluent:kafka-streams-avro-serde:7.4.0")
 
-    implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation("ch.qos.logback:logback-classic:1.5.0")
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
