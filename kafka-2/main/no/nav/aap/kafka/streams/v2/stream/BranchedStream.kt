@@ -14,7 +14,7 @@ class BranchedKStream<T : Any> internal constructor(
 
     fun branch(
         predicate: (T) -> Boolean,
-        consumed: (ConsumedStream<T>) -> Unit,
+        consumed: ConsumedStream<T>.() -> Unit,
     ): BranchedKStream<T> {
         val namedBranch = "-branch-$nextBranchNumber"
         val internalPredicate = internalPredicate(predicate)
@@ -23,7 +23,7 @@ class BranchedKStream<T : Any> internal constructor(
         return this
     }
 
-    fun default(consumed: (ConsumedStream<T>) -> Unit) {
+    fun default(consumed: ConsumedStream<T>.() -> Unit) {
         val namedBranch = "-branch-default"
         val internalBranch = internalBranch(consumed, namedBranch) { "via$namedBranch-${namedSupplier()}" }
         stream.defaultBranch(internalBranch)
@@ -49,7 +49,7 @@ class BranchedMappedKStream<T : Any> internal constructor(
 
     fun branch(
         predicate: (T) -> Boolean,
-        consumed: (MappedStream<T>) -> Unit,
+        consumed: MappedStream<T>.() -> Unit,
     ): BranchedMappedKStream<T> {
         val namedBranch = "-branch-$nextBranchNumber"
         val internalPredicate = internalPredicate(predicate)
@@ -58,7 +58,7 @@ class BranchedMappedKStream<T : Any> internal constructor(
         return this
     }
 
-    fun default(consumed: (MappedStream<T>) -> Unit) {
+    fun default(consumed: MappedStream<T>.() -> Unit) {
         val namedBranch = "-branch-default"
         val internalBranch = internalBranch(consumed, namedBranch) { "via$namedBranch-${namedSupplier()}" }
         stream.defaultBranch(internalBranch)

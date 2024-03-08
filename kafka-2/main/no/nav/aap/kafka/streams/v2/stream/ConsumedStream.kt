@@ -189,7 +189,7 @@ class ConsumedStream<T : Any> internal constructor(
         return JoinedStream(topic.name, joinedStream, named)
     }
 
-    fun branch(predicate: (T) -> Boolean, consumed: (ConsumedStream<T>) -> Unit): BranchedKStream<T> {
+    fun branch(predicate: (T) -> Boolean, consumed: ConsumedStream<T>.() -> Unit): BranchedKStream<T> {
         val splittedStream = stream.split(Named.`as`("split-${namedSupplier()}"))
         return BranchedKStream(topic, splittedStream, namedSupplier).branch(predicate, consumed)
     }

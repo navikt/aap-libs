@@ -14,10 +14,10 @@ internal class BranchedStreamTest {
         val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .branch({ v -> v == "lol" }, {
-                    it.produce(Topics.C)
+                    produce(Topics.C)
                 })
                 .branch({ v -> v != "lol" }, {
-                    it.produce(Topics.B)
+                    produce(Topics.B)
                 })
         }
 
@@ -36,10 +36,10 @@ internal class BranchedStreamTest {
         val kafka = StreamsMock.withTopology {
             consume(Topics.A)
                 .branch({ v -> v == "lol" }, {
-                    it.produce(Topics.C)
+                    produce(Topics.C)
                 })
                 .default {
-                    it.produce(Topics.B)
+                    produce(Topics.B)
                 }
         }
 
@@ -59,10 +59,10 @@ internal class BranchedStreamTest {
             consume(Topics.A)
                 .map { i -> i }
                 .branch({ v -> v == "lol" }, {
-                    it.produce(Topics.C)
+                    produce(Topics.C)
                 })
                 .branch({ v -> v != "lol" }, {
-                    it.produce(Topics.B)
+                    produce(Topics.B)
                 })
         }
 
@@ -82,12 +82,12 @@ internal class BranchedStreamTest {
             consume(Topics.A)
                 .map { i -> i }
                 .branch({ v -> v == "lol" }, {
-                    it
-                        .branch({ true }) { b -> b.produce(Topics.C) }
-                        .branch({ false }) { b -> b.produce(Topics.B) }
+                    this
+                        .branch({ true }) { produce(Topics.C) }
+                        .branch({ false }) { produce(Topics.B) }
                 })
                 .branch({ v -> v != "lol" }, {
-                    it.produce(Topics.B)
+                    produce(Topics.B)
                 })
         }
 
@@ -107,10 +107,10 @@ internal class BranchedStreamTest {
             consume(Topics.A)
                 .map { i -> i }
                 .branch({ v -> v == "lol" }, {
-                    it.produce(Topics.C)
+                    produce(Topics.C)
                 })
                 .default {
-                    it.produce(Topics.B)
+                    produce(Topics.B)
                 }
         }
 
@@ -132,13 +132,13 @@ internal class BranchedStreamTest {
                 .joinWith(tableB)
                 .branch({ (left, _) -> left == "lol" }, {
 
-                    it.map { (left, right) -> left + right }
+                    map { (left, right) -> left + right }
                         .produce(Topics.C)
 
                 })
                 .branch({ (_, right) -> right == "lol" }, {
 
-                    it.map { (_, right) -> right + right }
+                    map { (_, right) -> right + right }
                         .produce(Topics.D)
 
                 })
@@ -163,11 +163,11 @@ internal class BranchedStreamTest {
             consume(Topics.A)
                 .joinWith(tableB)
                 .branch({ (left, _) -> left == "lol" }, {
-                    it.map { (left, right) -> left + right }.produce(Topics.C)
+                    map { (left, right) -> left + right }.produce(Topics.C)
 
                 })
                 .default {
-                    it.map { (_, right) -> right + right }.produce(Topics.D)
+                    map { (_, right) -> right + right }.produce(Topics.D)
                 }
         }
 
@@ -190,16 +190,10 @@ internal class BranchedStreamTest {
             consume(Topics.A)
                 .leftJoinWith(tableB)
                 .branch({ (left, _) -> left == "lol" }, {
-
-                    it.map { (left, right) -> left + right }
-                        .produce(Topics.C)
-
+                    map { (left, right) -> left + right }.produce(Topics.C)
                 })
                 .branch({ (_, right) -> right == "lol" }, {
-
-                    it.map { (_, right) -> right + right }
-                        .produce(Topics.D)
-
+                    map { (_, right) -> right + right }.produce(Topics.D)
                 })
         }
 
@@ -222,11 +216,10 @@ internal class BranchedStreamTest {
             consume(Topics.A)
                 .leftJoinWith(tableB)
                 .branch({ (left, _) -> left == "lol" }, {
-                    it.map { (left, right) -> left + right }.produce(Topics.C)
-
+                    map { (left, right) -> left + right }.produce(Topics.C)
                 })
                 .default {
-                    it.map { (_, right) -> right + right }.produce(Topics.D)
+                    map { (_, right) -> right + right }.produce(Topics.D)
                 }
         }
 
