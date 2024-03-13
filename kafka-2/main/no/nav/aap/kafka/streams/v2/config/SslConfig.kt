@@ -20,4 +20,14 @@ data class SslConfig(
         this[SslConfigs.SSL_KEY_PASSWORD_CONFIG] = credstorePsw
         this[SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG] = ""
     }
+
+    companion object {
+        val DEFAULT: SslConfig by lazy {
+            SslConfig(
+                truststorePath = System.getenv("KAFKA_TRUSTSTORE_PATH"),
+                keystorePath = System.getenv("KAFKA_KEYSTORE_PATH"),
+                credstorePsw = System.getenv("KAFKA_CREDSTORE_PASSWORD")
+            )
+        }
+    }
 }

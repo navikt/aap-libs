@@ -14,4 +14,14 @@ data class SchemaRegistryConfig(
         this[SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE] = "USER_INFO"
         this[SchemaRegistryClientConfig.USER_INFO_CONFIG] = "$user:$password"
     }
+
+    companion object {
+        val DEFAULT: SchemaRegistryConfig by lazy {
+            SchemaRegistryConfig(
+                url = System.getenv("KAFKA_SCHEMA_REGISTRY"),
+                user = System.getenv("KAFKA_SCHEMA_REGISTRY_USER"),
+                password = System.getenv("KAFKA_SCHEMA_REGISTRY_PASSWORD"),
+            )
+        }
+    }
 }

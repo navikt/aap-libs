@@ -5,28 +5,15 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import no.nav.aap.kafka.schemaregistry.SchemaRegistryConfig
 import no.nav.aap.kafka.streams.v2.config.SslConfig
 import org.apache.avro.specific.SpecificRecord
-import java.util.*
 
 object AvroSerde {
-    fun <T : SpecificRecord> specific(): SpecificAvroSerde<T> = SpecificAvroSerde<T>().apply {
-
-        // configureres før appen starter og kan ikke hentes fra KStreamsConfig eller KafkaConfig.
-        val schemaRegistry: Properties = SchemaRegistryConfig(
-            url = System.getenv("KAFKA_SCHEMA_REGISTRY"),
-            user = System.getenv("KAFKA_SCHEMA_REGISTRY_USER"),
-            password = System.getenv("KAFKA_SCHEMA_REGISTRY_PASSWORD"),
-        ).properties()
-
-        // configureres før appen starter og kan ikke hentes fra KStreamsConfig eller KafkaConfig.
-        val ssl: Properties = SslConfig(
-            truststorePath = System.getenv("KAFKA_TRUSTSTORE_PATH"),
-            keystorePath = System.getenv("KAFKA_KEYSTORE_PATH"),
-            credstorePsw = System.getenv("KAFKA_CREDSTORE_PASSWORD")
-        ).properties()
-
-        val avroProperties = schemaRegistry + ssl
-        val avroConfig = avroProperties.map { it.key.toString() to it.value.toString() }
-        configure(avroConfig.toMap(), false)
+    fun <T : SpecificRecord> specific(
+        schema: SchemaRegistryConfig = SchemaRegistryConfig.DEFAULT,
+        ssl: SslConfig = SslConfig.DEFAULT,
+    ): SpecificAvroSerde<T> = SpecificAvroSerde<T>().apply {
+        val properties = schema.properties() + ssl.properties()
+        val serdeConfig = properties.mapKeys { it.key.toString() }
+        configure(serdeConfig, false)
     }
 
     fun generic() = GenericAvroSerde()
