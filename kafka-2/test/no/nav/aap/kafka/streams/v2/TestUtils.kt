@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.serde.json.Migratable
 import no.nav.aap.kafka.streams.concurrency.Bufferable
+import no.nav.aap.kafka.streams.v2.config.SchemaRegistryConfig
 import no.nav.aap.kafka.streams.v2.config.StreamsConfig
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
@@ -60,7 +61,7 @@ internal class StreamsMock : Streams {
             StreamsMock().apply {
                 connect(
                     topology = Topology().apply(topology),
-                    config = StreamsConfig("", ""),
+                    config = StreamsConfig("", "", null, SchemaRegistryConfig("", "", "")),
                     registry = SimpleMeterRegistry()
                 )
             }

@@ -4,10 +4,12 @@ import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.common.config.SslConfigs
 import java.util.*
 
+private fun getEnvVar(envar: String) = System.getenv(envar) ?: error("missing envvar $envar")
+
 data class SslConfig(
-    private val truststorePath: String,
-    private val keystorePath: String,
-    private val credstorePsw: String,
+    private val truststorePath: String = getEnvVar("KAFKA_TRUSTSTORE_PATH"),
+    private val keystorePath: String = getEnvVar("KAFKA_KEYSTORE_PATH"),
+    private val credstorePsw: String = getEnvVar("KAFKA_CREDSTORE_PASSWORD"),
 ) {
     fun properties() = Properties().apply {
         this[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = "SSL"
@@ -19,15 +21,5 @@ data class SslConfig(
         this[SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG] = credstorePsw
         this[SslConfigs.SSL_KEY_PASSWORD_CONFIG] = credstorePsw
         this[SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG] = ""
-    }
-
-    companion object {
-        val DEFAULT: SslConfig by lazy {
-            SslConfig(
-                truststorePath = System.getenv("KAFKA_TRUSTSTORE_PATH"),
-                keystorePath = System.getenv("KAFKA_KEYSTORE_PATH"),
-                credstorePsw = System.getenv("KAFKA_CREDSTORE_PASSWORD")
-            )
-        }
     }
 }

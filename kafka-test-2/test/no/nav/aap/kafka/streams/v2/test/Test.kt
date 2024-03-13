@@ -3,6 +3,7 @@ package no.nav.aap.kafka.streams.v2.test
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.nav.aap.kafka.streams.v2.Table
 import no.nav.aap.kafka.streams.v2.Topic
+import no.nav.aap.kafka.streams.v2.config.SchemaRegistryConfig
 import no.nav.aap.kafka.streams.v2.config.SslConfig
 import no.nav.aap.kafka.streams.v2.config.StreamsConfig
 import no.nav.aap.kafka.streams.v2.serde.StringSerde
@@ -28,6 +29,7 @@ internal class Test {
             applicationId = "app",
             brokers = "mock://kafka",
             ssl = SslConfig("", "", ""),
+            schemaRegistry = SchemaRegistryConfig("", "", ""),
         )
 
         kafka.connect(topology, config, registry)

@@ -16,7 +16,7 @@ class ProducerConfig private constructor(
     constructor(streamsConfig: StreamsConfig) : this(
         brokers = streamsConfig.brokers,
         ssl = streamsConfig.ssl,
-        schemaRegistry = streamsConfig.schemaRegistry,
+        schemaRegistry = streamsConfig.schemaRegistry.properties(),
         compressionType = streamsConfig.compressionType
     )
 

@@ -7,20 +7,22 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.streams.StreamsConfig
 import java.util.*
 
+private fun getEnvVar(envar: String) = System.getenv(envar) ?: error("missing envvar $envar")
+
 data class StreamsConfig(
-    internal val applicationId: String,
-    internal val brokers: String,
-    internal val compressionType: String = "snappy",
-    internal val ssl: SslConfig? = null,
-    internal val schemaRegistry: Properties = Properties(),
-    internal val additionalProperties: Properties = Properties(),
+    val applicationId: String = getEnvVar("KAFKA_STREAMS_APPLICATION_ID"),
+    val brokers: String = getEnvVar("KAFKA_BROKERS"),
+    val ssl: SslConfig? = SslConfig(),
+    val schemaRegistry: SchemaRegistryConfig = SchemaRegistryConfig(),
+    val compressionType: String = "snappy",
+    val additionalProperties: Properties = Properties(),
 ) {
     fun streamsProperties(): Properties = Properties().apply {
         this[StreamsConfig.APPLICATION_ID_CONFIG] = applicationId
         this[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = brokers
 
         ssl?.let { putAll(it.properties()) }
-        putAll(schemaRegistry)
+        putAll(schemaRegistry.properties())
         putAll(additionalProperties)
 
         /* Exception handler when leaving the stream, e.g. serialization */
