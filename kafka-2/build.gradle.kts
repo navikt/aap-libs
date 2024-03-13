@@ -9,7 +9,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.0")
-    implementation("io.micrometer:micrometer-registry-prometheus:1.12.3")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.12.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.8.0")
 
     testImplementation(kotlin("test"))
