@@ -75,4 +75,9 @@ class MappedStream<T : Any> internal constructor(
         val named = Named.`as`("foreach-${namedSupplier()}")
         stream.foreach(mapper, named)
     }
+
+    fun forEach(mapper: (value: T) -> Unit) {
+        val named = Named.`as`("foreach-${namedSupplier()}")
+        stream.foreach { _, value -> mapper(value) }
+    }
 }
