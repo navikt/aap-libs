@@ -1,10 +1,9 @@
 rootProject.name = "aap-libs"
 
 include(
-    "cache",
     "kafka",
-    "kafka-2",
+    "kafka-streams",
     "kafka-avroserde",
-    "kafka-test-2",
+    "kafka-streams-test",
     "ktor-auth",
 )

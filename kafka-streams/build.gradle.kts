@@ -1,12 +1,5 @@
-repositories {
-    maven("https://packages.confluent.io/maven/")
-}
-
 dependencies {
-    implementation(project(":kafka-streams"))
-
-    api("org.apache.kafka:kafka-streams:3.7.0")
-    api("io.confluent:kafka-streams-avro-serde:7.4.0")
+    implementation("org.apache.kafka:kafka-streams:3.7.0")
 
     implementation("ch.qos.logback:logback-classic:1.5.3")
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")
@@ -19,11 +12,5 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("org.apache.kafka:kafka-streams-test-utils:3.7.0") {
         exclude("org.apache.kafka", "kafka-clients")
-    }
-}
-
-configurations.all {
-    resolutionStrategy {
-        force("org.apache.kafka:kafka-clients:3.7.0")
     }
 }
