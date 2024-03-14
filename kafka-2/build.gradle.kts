@@ -1,7 +1,7 @@
 dependencies {
     implementation(project(":cache"))
 
-    implementation("org.apache.kafka:kafka-streams:3.5.1")
+    implementation("org.apache.kafka:kafka-streams:3.7.0")
 
     implementation("ch.qos.logback:logback-classic:1.5.3")
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")
@@ -12,7 +12,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.8.0")
 
     testImplementation(kotlin("test"))
-    testImplementation("org.apache.kafka:kafka-streams-test-utils:3.5.1") {
+    testImplementation("org.apache.kafka:kafka-streams-test-utils:3.7.0") {
         exclude("org.apache.kafka", "kafka-clients")
     }
 }

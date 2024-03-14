@@ -1,4 +1,4 @@
 dependencies {
-    implementation("org.apache.kafka:kafka-clients:3.5.1")
+    implementation("org.apache.kafka:kafka-clients:3.7.0")
     testImplementation(kotlin("test"))
 }

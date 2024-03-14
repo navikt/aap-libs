@@ -5,7 +5,7 @@ repositories {
 dependencies {
     implementation(project(":kafka-2"))
 
-    api("org.apache.kafka:kafka-streams:3.5.1")
+    api("org.apache.kafka:kafka-streams:3.7.0")
     api("io.confluent:kafka-streams-avro-serde:7.4.0")
 
     implementation("ch.qos.logback:logback-classic:1.5.3")
@@ -17,13 +17,13 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.8.0")
 
     testImplementation(kotlin("test"))
-    testImplementation("org.apache.kafka:kafka-streams-test-utils:3.5.1") {
+    testImplementation("org.apache.kafka:kafka-streams-test-utils:3.7.0") {
         exclude("org.apache.kafka", "kafka-clients")
     }
 }
 
 configurations.all {
     resolutionStrategy {
-        force("org.apache.kafka:kafka-clients:3.5.1")
+        force("org.apache.kafka:kafka-clients:3.7.0")
     }
 }
