@@ -12,7 +12,8 @@ class StateStore<T>(private val internalStateStore: ReadOnlyKeyValueStore<String
                 loop(record.key, record.value.value())
             }
         }
- fun forEachTimestamped(loop: (key: String, value: T, timestamp: Long) -> Unit) =
+
+    fun forEachTimestamped(loop: (key: String, value: T, timestamp: Long) -> Unit) =
         internalStateStore.all().use { iterator ->
             iterator.asSequence().forEach { record ->
                 loop(record.key, record.value.value(), record.value.timestamp())

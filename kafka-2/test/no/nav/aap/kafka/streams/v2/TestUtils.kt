@@ -2,14 +2,11 @@ package no.nav.aap.kafka.streams.v2
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import no.nav.aap.kafka.serde.json.Migratable
-import no.nav.aap.kafka.streams.concurrency.Bufferable
 import no.nav.aap.kafka.streams.v2.config.SchemaRegistryConfig
 import no.nav.aap.kafka.streams.v2.config.StreamsConfig
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.kafka.streams.v2.processor.state.StateProcessor
-import no.nav.aap.kafka.streams.v2.serde.JsonSerde
 import no.nav.aap.kafka.streams.v2.serde.StringSerde
 import no.nav.aap.kafka.streams.v2.visual.TopologyVisulizer
 import org.apache.kafka.streams.TestInputTopic
@@ -26,30 +23,10 @@ internal object Topics {
     val B = Topic("B", StringSerde, logValues = true)
     val C = Topic("C", StringSerde, logValues = true)
     val D = Topic("D", StringSerde, logValues = true)
-    val migrateable = Topic("E", JsonSerde.jackson<VersionedString, VersionedString>(
-        dtoVersion = 2,
-        migrate = { prev -> prev.copy(version = 2) }
-    ), logValues = true)
-}
-
-internal data class VersionedString(
-    val value: String,
-    val version: Int,
-) : Migratable {
-    private var erMigrertAkkuratNå: Boolean = false
-
-    override fun markerSomMigrertAkkuratNå() {
-        erMigrertAkkuratNå = true
-    }
-
-    override fun erMigrertAkkuratNå(): Boolean {
-        return erMigrertAkkuratNå
-    }
 }
 
 internal object Tables {
     val B = Table(Topics.B)
-    val E = Table(Topics.migrateable)
 }
 
 internal class StreamsMock : Streams {
@@ -117,8 +94,4 @@ class CustomProcessorWithTable(table: KTable<String>) : StateProcessor<String, S
 open class CustomProcessor : Processor<String, String>("add-v2-prefix") {
     override fun process(metadata: ProcessorMetadata, keyValue: KeyValue<String, String>): String =
         "${keyValue.value}.v2"
-}
-
-internal data class Buff(val value: String) : Bufferable<Buff> {
-    override fun erNyere(other: Buff): Boolean = true
 }

@@ -9,7 +9,7 @@ internal class TopologyTest {
     fun `consume again`() {
         val kafka = StreamsMock.withTopology {
             consume(Topics.A).produce(Topics.B)
-            consumeAgain(Topics.A).produce(Topics.C)
+            consumeForMock(Topics.A).produce(Topics.C)
         }
 
         kafka.inputTopic(Topics.A).produce("1", "hello")

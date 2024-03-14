@@ -1,11 +1,9 @@
 package no.nav.aap.kafka.streams.v2.stream
 
-import no.nav.aap.kafka.streams.concurrency.Bufferable
 import no.nav.aap.kafka.streams.v2.KTable
 import no.nav.aap.kafka.streams.v2.KeyValue
 import no.nav.aap.kafka.streams.v2.StreamsPair
 import no.nav.aap.kafka.streams.v2.Topic
-import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.extension.filterNotNull
 import no.nav.aap.kafka.streams.v2.extension.join
 import no.nav.aap.kafka.streams.v2.extension.leftJoin
@@ -163,29 +161,9 @@ class ConsumedStream<T : Any> internal constructor(
         return JoinedStream(topic.name, joinedStream, named)
     }
 
-    fun <U : Bufferable<U>> joinWith(ktable: KTable<U>, buffer: RaceConditionBuffer<U>): JoinedStream<T, U> {
-        fun joiner(key: String, left: T, right: U): StreamsPair<T, U> {
-            return StreamsPair(left, buffer.velgNyeste(key, right))
-        }
-
-        val joinedStream = stream.join(topic, ktable, ::joiner)
-        val named = { "${topic.name}-buffered-join-${ktable.table.sourceTopic.name}" }
-        return JoinedStream(topic.name, joinedStream, named)
-    }
-
     fun <U : Any> leftJoinWith(ktable: KTable<U>): JoinedStream<T, U?> {
         val joinedStream = stream.leftJoin(topic, ktable, ::StreamsPair)
         val named = { "${topic.name}-left-join-${ktable.table.sourceTopic.name}" }
-        return JoinedStream(topic.name, joinedStream, named)
-    }
-
-    fun <U : Bufferable<U>> leftJoinWith(ktable: KTable<U>, buffer: RaceConditionBuffer<U>): JoinedStream<T, U?> {
-        fun joiner(key: String, left: T, right: U?): StreamsPair<T, U?> {
-            return StreamsPair(left, buffer.velgNyesteNullable(key, right))
-        }
-
-        val joinedStream = stream.leftJoin(topic, ktable, ::joiner)
-        val named = { "${topic.name}-buffered-left-join-${ktable.table.sourceTopic.name}" }
         return JoinedStream(topic.name, joinedStream, named)
     }
 
@@ -204,7 +182,7 @@ class ConsumedStream<T : Any> internal constructor(
         return ConsumedStream(topic, loggedStream, namedSupplier)
     }
 
-    fun repartition(partitions: Int = 12): ConsumedStream<T> {
+    fun repartition(partitions: Int): ConsumedStream<T> {
         val repartition = Repartitioned
             .with(topic.keySerde, topic.valueSerde)
             .withNumberOfPartitions(partitions)

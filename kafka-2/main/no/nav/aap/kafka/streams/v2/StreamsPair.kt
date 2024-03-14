@@ -11,5 +11,7 @@ data class KeyValue<K, V>(
     val key: K,
     val value: V,
 ) {
-    internal fun toInternalKeyValue(): KeyValue<K, V> = KeyValue(key, value)
+    internal fun toInternalKeyValue(): KeyValue<K, V> {
+        return KeyValue(key, value)
+    }
 }

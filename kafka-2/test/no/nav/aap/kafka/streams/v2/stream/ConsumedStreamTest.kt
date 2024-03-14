@@ -2,10 +2,8 @@ package no.nav.aap.kafka.streams.v2.stream
 
 import net.logstash.logback.argument.StructuredArguments
 import no.nav.aap.kafka.streams.v2.*
-import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.processor.Processor
 import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
-import no.nav.aap.kafka.streams.v2.serde.JsonSerde
 import org.apache.kafka.streams.errors.TopologyException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -241,51 +239,6 @@ internal class ConsumedStreamTest {
         assertEquals(2, result.size)
         assertEquals("a".hashCode().toString(), result["1".hashCode().toString()])
         assertEquals("1".hashCode().toString(), result["a".hashCode().toString()])
-    }
-
-    @Test
-    fun `join with bufferable`() {
-        val buffTopic = Topic("buff", JsonSerde.jackson<Buff>())
-        val buffTable = Table(buffTopic)
-        val buffer = RaceConditionBuffer<Buff>()
-
-        val kafka = StreamsMock.withTopology {
-            val buffKTable = consume(buffTable)
-
-            consume(Topics.A)
-                .joinWith(buffKTable, buffer)
-                .map { a, buff -> buff.copy(value = buff.value + a) }
-                .produce(buffTopic, buffer) { it }
-        }
-
-        kafka.inputTopic(buffTopic).produce("1", Buff("buff"))
-        kafka.inputTopic(Topics.A).produce("1", "a")
-
-        val result = kafka.outputTopic(buffTopic).readKeyValuesToMap()
-        assertEquals(1, result.size)
-        assertEquals(Buff("buffa"), result["1"])
-    }
-
-    @Test
-    fun `left join with bufferable`() {
-        val buffTopic = Topic("buff", JsonSerde.jackson<Buff>())
-        val buffTable = Table(buffTopic)
-        val buffer = RaceConditionBuffer<Buff>()
-
-        val kafka = StreamsMock.withTopology {
-            val buffKTable = consume(buffTable)
-
-            consume(Topics.A)
-                .leftJoinWith(buffKTable, buffer)
-                .map { a, buff -> buff?.let { Buff(it.value + a) } ?: Buff(a) }
-                .produce(buffTopic, buffer) { it }
-        }
-
-        kafka.inputTopic(Topics.A).produce("1", "a")
-
-        val result = kafka.outputTopic(buffTopic).readKeyValuesToMap()
-        assertEquals(1, result.size)
-        assertEquals(Buff("a"), result["1"])
     }
 
     @Test

@@ -1,8 +1,6 @@
 package no.nav.aap.kafka.streams.v2.stream
 
-import no.nav.aap.kafka.streams.concurrency.Bufferable
 import no.nav.aap.kafka.streams.v2.Topic
-import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.extension.produceWithLogging
 import no.nav.aap.kafka.streams.v2.logger.Log
 import no.nav.aap.kafka.streams.v2.processor.Processor
@@ -20,22 +18,6 @@ class MappedStream<T : Any> internal constructor(
     fun produce(topic: Topic<T>) {
         val named = "produced-${topic.name}-${namedSupplier()}"
         stream.produceWithLogging(topic, named)
-    }
-
-    fun <U : Bufferable<U>> produce(
-        topic: Topic<U>,
-        buffer: RaceConditionBuffer<U>,
-        lambda: (T) -> U,
-    ) {
-        val named = "produced-bufferable-${topic.name}-${namedSupplier()}"
-
-        stream
-            .mapValues { key, value ->
-                lambda(value).also {
-                    buffer.lagre(key, it)
-                }
-            }
-            .produceWithLogging(topic, named)
     }
 
     fun <R : Any> map(mapper: (T) -> R): MappedStream<R> {

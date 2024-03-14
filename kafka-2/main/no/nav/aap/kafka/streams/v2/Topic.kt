@@ -12,20 +12,29 @@ open class Topic<T : Any>(
     val keySerde: StreamSerde<String> = StringSerde,
     val logValues: Boolean = false,
 ) {
-    internal fun consumed(named: String): Consumed<String, T> = Consumed.with(keySerde, valueSerde).withName(named)
-    internal open fun produced(named: String): Produced<String, T> = Produced.with(keySerde, valueSerde).withName(named)
+    internal fun consumed(named: String): Consumed<String, T> {
+        return Consumed.with(keySerde, valueSerde).withName(named)
+    }
 
-    internal infix fun <U : Any> join(right: KTable<U>): Joined<String, T, U> = Joined.with(
-        keySerde,
-        valueSerde,
-        right.table.sourceTopic.valueSerde,
-        "$name-join-${right.table.sourceTopic.name}",
-    )
+    internal open fun produced(named: String): Produced<String, T> {
+        return Produced.with(keySerde, valueSerde).withName(named)
+    }
 
-    internal infix fun <U : Any> leftJoin(right: KTable<U>): Joined<String, T, U?> = Joined.with(
-        keySerde,
-        valueSerde,
-        right.table.sourceTopic.valueSerde,
-        "$name-left-join-${right.table.sourceTopic.name}",
-    )
+    internal infix fun <U : Any> join(right: KTable<U>): Joined<String, T, U> {
+        return Joined.with(
+            keySerde,
+            valueSerde,
+            right.table.sourceTopic.valueSerde,
+            "$name-join-${right.table.sourceTopic.name}",
+        )
+    }
+
+    internal infix fun <U : Any> leftJoin(right: KTable<U>): Joined<String, T, U?> {
+        return Joined.with(
+            keySerde,
+            valueSerde,
+            right.table.sourceTopic.valueSerde,
+            "$name-left-join-${right.table.sourceTopic.name}",
+        )
+    }
 }

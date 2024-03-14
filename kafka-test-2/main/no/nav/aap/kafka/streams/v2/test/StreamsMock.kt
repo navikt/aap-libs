@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KtorKafkaMetrics
 import no.nav.aap.kafka.streams.v2.*
 import no.nav.aap.kafka.streams.v2.config.StreamsConfig
-import no.nav.aap.kafka.streams.v2.consumer.ConsumerConfig
+import no.nav.aap.kafka.streams.v2.consumer.OffsetResetPolicy
 import no.nav.aap.kafka.streams.v2.visual.TopologyVisulizer
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.MockConsumer
@@ -30,16 +30,20 @@ class StreamsMock : Streams {
     }
 
     override fun ready(): Boolean = true
-
     override fun live(): Boolean = true
 
-    override fun visulize(): TopologyVisulizer = TopologyVisulizer(internalTopology)
+    override fun visulize(): TopologyVisulizer {
+        return TopologyVisulizer(internalTopology)
+    }
+
     override fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology) {
         this.internalTopology = internalTopology
     }
 
-    override fun <T : Any> getStore(table: Table<T>): StateStore<T> =
-        StateStore(internalStreams.getTimestampedKeyValueStore(table.stateStoreName))
+    override fun <T : Any> getStore(table: Table<T>): StateStore<T> {
+        val internalStateStore = internalStreams.getTimestampedKeyValueStore<String, T>(table.stateStoreName)
+        return StateStore(internalStateStore)
+    }
 
     fun <V : Any> testTopic(topic: Topic<V>): TestTopic<V> =
         TestTopic(
@@ -55,24 +59,32 @@ class StreamsMock : Streams {
             )
         )
 
-    private val producers: MutableMap<Topic<*>, MockProducer<String, *>> = mutableMapOf()
+    private val producers = mutableMapOf<Topic<*>, MockProducer<String, *>>()
 
     @Suppress("UNCHECKED_CAST")
-    override fun <V : Any> createProducer(streamsConfig: StreamsConfig, topic: Topic<V>) = producers.getOrPut(topic) {
-        MockProducer(true, topic.keySerde.serializer(), topic.valueSerde.serializer())
-    } as MockProducer<String, V>
+    override fun <V : Any> createProducer(
+        streamsConfig: StreamsConfig,
+        topic: Topic<V>,
+    ): MockProducer<String, V> {
+        return producers.getOrPut(topic) {
+            MockProducer(true, topic.keySerde.serializer(), topic.valueSerde.serializer())
+        } as MockProducer<String, V>
+    }
 
     @Suppress("UNCHECKED_CAST")
-    fun <V : Any> getProducer(topic: Topic<V>) = producers[topic] as MockProducer<String, V>
+    fun <V : Any> getProducer(topic: Topic<V>): MockProducer<String, V> {
+        return producers[topic] as MockProducer<String, V>
+    }
 
     override fun <V : Any> createConsumer(
         streamsConfig: StreamsConfig,
         topic: Topic<V>,
+        maxEstimatedProcessingTimeMs: Long,
         groupIdSuffix: Int,
-        offsetResetPolicy: ConsumerConfig.OffsetResetPolicy
+        offsetResetPolicy: OffsetResetPolicy
     ): Consumer<String, V> {
-        val internalOffsetResetPolicy = enumValueOf<OffsetResetStrategy>(offsetResetPolicy.name.uppercase())
-        return MockConsumer(internalOffsetResetPolicy)
+        val resetPolicy = enumValueOf<OffsetResetStrategy>(offsetResetPolicy.name.uppercase())
+        return MockConsumer(resetPolicy)
     }
 
     override fun close() {

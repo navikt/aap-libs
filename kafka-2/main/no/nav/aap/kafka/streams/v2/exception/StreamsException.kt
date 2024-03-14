@@ -22,7 +22,6 @@ class ReplaceThread(message: Any) : RuntimeException(message.toString())
  * Exceptions during deserialization, networks issues etc.
  */
 class EntryPointExceptionHandler : DeserializationExceptionHandler {
-    override fun configure(configs: MutableMap<String, *>) {}
     override fun handle(context: ProcessorContext, record: ConsumerRecord<ByteArray, ByteArray>, exception: Exception) =
         DeserializationExceptionHandler.DeserializationHandlerResponse.CONTINUE.also {
             secureLog.warn(
@@ -30,6 +29,10 @@ class EntryPointExceptionHandler : DeserializationExceptionHandler {
                 context.taskId(), record.topic(), record.partition(), record.offset(), exception
             )
         }
+
+    override fun configure(configs: MutableMap<String, *>) {
+        // nothing
+    }
 }
 
 /**
@@ -51,10 +54,14 @@ class ProcessingExceptionHandler : StreamsUncaughtExceptionHandler {
     }
 
     private fun logAndReplaceThread(err: Throwable) =
-        REPLACE_THREAD.also { secureLog.error("Uventet feil, logger og leser neste record, ${err.message}") }
+        REPLACE_THREAD.also {
+            secureLog.error("Uventet feil, logger og leser neste record, ${err.message}")
+        }
 
     private fun logAndShutdownClient(err: Throwable) =
-        SHUTDOWN_CLIENT.also { secureLog.error("Uventet feil, logger og avslutter client, ${err.message}") }
+        SHUTDOWN_CLIENT.also {
+            secureLog.error("Uventet feil, logger og avslutter client, ${err.message}")
+        }
 }
 
 /**
@@ -63,7 +70,12 @@ class ProcessingExceptionHandler : StreamsUncaughtExceptionHandler {
  * Exceptions due to serialization, networking etc.
  */
 class ExitPointExceptionHandler : ProductionExceptionHandler {
-    override fun configure(configs: MutableMap<String, *>) {}
     override fun handle(record: ProducerRecord<ByteArray, ByteArray>, exception: Exception) =
-        CONTINUE.also { secureLog.error("Feil i streams, logger og leser neste record", exception) }
+        CONTINUE.also {
+            secureLog.error("Feil i streams, logger og leser neste record", exception)
+        }
+
+    override fun configure(configs: MutableMap<String, *>) {
+        // nothing
+    }
 }

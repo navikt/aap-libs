@@ -74,4 +74,8 @@ class BranchedMappedKStream<T : Any> internal constructor(
     )
 }
 
-private fun <T> internalPredicate(predicate: (T) -> Boolean) = { _: String, value: T -> predicate(value) }
+private fun <T> internalPredicate(
+    predicate: (T) -> Boolean,
+): (String, T) -> Boolean = { _: String, value: T ->
+    predicate(value)
+}

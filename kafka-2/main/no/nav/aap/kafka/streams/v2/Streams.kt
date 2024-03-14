@@ -15,17 +15,11 @@ import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
 import org.apache.kafka.streams.state.ValueAndTimestamp
 
 interface Streams : ProducerFactory, ConsumerFactory, AutoCloseable {
-    fun connect(
-        topology: Topology,
-        config: StreamsConfig,
-        registry: MeterRegistry,
-    )
-
+    fun connect(topology: Topology, config: StreamsConfig, registry: MeterRegistry)
     fun ready(): Boolean
     fun live(): Boolean
     fun visulize(): TopologyVisulizer
     fun registerInternalTopology(internalTopology: org.apache.kafka.streams.Topology)
-
     fun <T : Any> getStore(table: Table<T>): StateStore<T>
 }
 

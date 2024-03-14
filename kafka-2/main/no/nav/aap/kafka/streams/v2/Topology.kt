@@ -1,7 +1,5 @@
 package no.nav.aap.kafka.streams.v2
 
-import no.nav.aap.kafka.streams.concurrency.Bufferable
-import no.nav.aap.kafka.streams.v2.concurrency.RaceConditionBuffer
 import no.nav.aap.kafka.streams.v2.extension.materialized
 import no.nav.aap.kafka.streams.v2.extension.repartitioned
 import no.nav.aap.kafka.streams.v2.extension.skipTombstone
@@ -31,13 +29,7 @@ class Topology internal constructor() {
         return stream.toKtable(table)
     }
 
-    fun <T : Bufferable<T>> consume(table: Table<T>, buffer: RaceConditionBuffer<T>): KTable<T> {
-        val stream = consumeWithLogging<T?>(table.sourceTopic)
-        stream.filter { _, value -> value == null }.foreach { key, _ -> buffer.slett(key) }
-        return stream.toKtable(table)
-    }
-
-    fun <T : Any> consumeRepartitioned(table: Table<T>, partitions: Int = 12): KTable<T> {
+    fun <T : Any> consumeRepartitioned(table: Table<T>, partitions: Int): KTable<T> {
         val internalKTable = consumeWithLogging<T?>(table.sourceTopic)
             .repartition(repartitioned(table, partitions))
             .addProcessor(LogProduceTableProcessor(table))
@@ -49,8 +41,11 @@ class Topology internal constructor() {
         return KTable(table = table, internalKTable = internalKTable)
     }
 
-    /** Sometimes it is necessary to consume the same topic twice, e.g. mocking a response */
-    fun <T : Any> consumeAgain(topic: Topic<T>, namedPrefix: String = "mock"): ConsumedStream<T> {
+    /**
+     * The topology does not allow duplicate named nodes.
+     * Somethimes it is necessary to consume the same topic again for mocking external responses.
+     */
+    fun <T : Any> consumeForMock(topic: Topic<T>, namedPrefix: String = "mock"): ConsumedStream<T> {
         val consumed = consumeWithLogging(topic, namedPrefix).skipTombstone(topic, namedPrefix)
         val prefixedNamedSupplier = { "$namedPrefix-${nameSupplierFrom(topic).invoke()}" }
         return ConsumedStream(topic, consumed, prefixedNamedSupplier)

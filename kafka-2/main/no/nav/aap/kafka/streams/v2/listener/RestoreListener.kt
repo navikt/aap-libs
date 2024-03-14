@@ -12,11 +12,21 @@ import kotlin.time.toDuration
  */
 internal class RestoreListener : StateRestoreListener {
     private val durationForPartition = hashMapOf<Int, Long>()
-    override fun onRestoreStart(partition: TopicPartition, storeName: String, startOffset: Long, endOffset: Long) {
+
+    override fun onRestoreStart(
+        partition: TopicPartition,
+        storeName: String,
+        startOffset: Long,
+        endOffset: Long,
+    ) {
         durationForPartition[partition.partition()] = System.currentTimeMillis()
     }
 
-    override fun onRestoreEnd(partition: TopicPartition, storeName: String, totalRestored: Long) {
+    override fun onRestoreEnd(
+        partition: TopicPartition,
+        storeName: String,
+        totalRestored: Long,
+    ) {
         val startMs = durationForPartition.getOrDefault(partition.partition(), Long.MAX_VALUE)
         val duration = (System.currentTimeMillis() - startMs).toDuration(DurationUnit.MILLISECONDS)
 
