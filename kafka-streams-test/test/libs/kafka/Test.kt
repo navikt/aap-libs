@@ -1,8 +1,8 @@
 package libs.kafka
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import lib.kafka.StreamsMock
 import libs.kafka.serde.StringSerde
-import no.nav.aap.kafka.streams.v2.test.StreamsMock
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

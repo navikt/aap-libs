@@ -1,4 +1,4 @@
-package no.nav.aap.kafka.streams.v2.test
+package lib.kafka
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.kafka.KtorKafkaMetrics

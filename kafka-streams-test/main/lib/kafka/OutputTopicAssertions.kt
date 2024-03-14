@@ -1,4 +1,4 @@
-package no.nav.aap.kafka.streams.v2.test
+package lib.kafka
 
 import org.apache.kafka.streams.KeyValue
 import org.apache.kafka.streams.TestOutputTopic
