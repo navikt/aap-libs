@@ -19,10 +19,10 @@ jobs:
           java-version: 21
           distribution: 'temurin'
 
-      - uses: gradle/gradle-build-action@v3.5.0
-        with:
-          arguments: test --continue --no-daemon
-          gradle-home-cache-cleanup: true
+      - uses: gradle/actions/setup-gradle@v4
+      - name: "Test"
+        run: |
+          ./gradlew  test --continue --no-daemon
 
       - uses: dorny/test-reporter@v1.9.1
         if: always()
