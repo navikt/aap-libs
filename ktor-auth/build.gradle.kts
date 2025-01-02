@@ -9,7 +9,7 @@ dependencies {
 
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2")
-    implementation("com.nimbusds:nimbus-jose-jwt:9.48")
+    implementation("com.nimbusds:nimbus-jose-jwt:10.0")
 
     runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.1")
 }
