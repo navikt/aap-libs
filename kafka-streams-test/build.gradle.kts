@@ -8,5 +8,5 @@ dependencies {
 
     implementation(kotlin("test"))
 
-    implementation("io.micrometer:micrometer-registry-prometheus:1.14.2")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.14.3")
 }
