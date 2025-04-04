@@ -74,9 +74,7 @@ jobs:
             Changes in this Release
             ${{ steps.notes.outputs.CHANGELOG }}
 
-      - uses: gradle/gradle-build-action@v3.5.0
-        with:
-          arguments: -Pversion=${{ steps.tag.outputs.version }} publish
-          gradle-home-cache-cleanup: true
-        env:
+      - env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./gradlew -Pversion=${{ steps.tag.outputs.version }} publish
