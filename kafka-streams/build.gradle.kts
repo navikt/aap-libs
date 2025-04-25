@@ -5,7 +5,7 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:8.1")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.0")
     implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.10.1")
 
