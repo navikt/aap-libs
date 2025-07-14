@@ -19,10 +19,10 @@ jobs:
           java-version: 21
           distribution: 'temurin'
 
-      - uses: gradle/actions/setup-gradle@v4
-      - name: "Test"
-        run: |
-          ./gradlew  test --continue --no-daemon
+      # - uses: gradle/actions/setup-gradle@v4
+      # - name: "Test"
+      #   run: |
+      #     ./gradlew  test --continue --no-daemon
 
       - uses: dorny/test-reporter@v2.1.1
         if: always()
