@@ -24,13 +24,13 @@ jobs:
       #   run: |
       #     ./gradlew  test --continue --no-daemon
 
-      - uses: dorny/test-reporter@v2.1.1
-        if: always()
-        with:
-          name: test
-          path: "*/build/test-results/test/TEST-*.xml"
-          reporter: java-junit
-          token: ${{ secrets.GITHUB_TOKEN }}
+      # - uses: dorny/test-reporter@v2.1.1
+      #   if: always()
+      #   with:
+      #     name: test
+      #     path: "*/build/test-results/test/TEST-*.xml"
+      #     reporter: java-junit
+      #     token: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     runs-on: ubuntu-latest
